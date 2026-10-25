@@ -2,10 +2,10 @@
 
 ## Operator behavior
 
-- Choose English or Bahasa Indonesia on the login screen or in the account menu. The browser remembers the choice. Changing language does not clear form values or alter stored transaction values.
+- Choose English or Bahasa Indonesia in the account menu. The browser remembers the choice. Changing language does not clear form values or alter stored transaction values.
 - PDF language remains controlled by the document's existing language setting. UI language does not change issued document content or historical snapshots.
 - Mobile navigation uses workspace → category → page. The current page's category opens automatically; permissions still determine the available destinations.
-- Mobile login supports narrow screens, landscape, light/dark themes, password managers, and browser zoom. Page entrance motion respects the operating system's reduced-motion preference.
+- Mobile login follows the saved language/theme without showing preference controls. It supports narrow screens, landscape, password managers, and browser zoom. Page entrance motion respects the operating system's reduced-motion preference.
 - Internal approval stamps are removed from generated ERP and operations PDFs. Audit history, document permissions, approval requirements and delivery-recipient signature fields remain.
 
 ## Translation maintenance

@@ -5,6 +5,12 @@ export async function exerciseBilingualRelease(
   origin: string,
   capture: (name: string) => Promise<void>,
 ) {
+  const selectLocale = async (value: "en" | "id") => {
+    await page.evaluate(value => {
+      localStorage.setItem("inb:locale", value);
+      window.dispatchEvent(new Event("storage"));
+    }, value);
+  };
   // Existing authenticated fixture remains available while reviewing the public login.
   await page.goto(origin + "/login");
   for (const size of [
@@ -13,7 +19,7 @@ export async function exerciseBilingualRelease(
     { width: 844, height: 390 },
   ]) {
     await page.setViewportSize(size);
-    await page.getByLabel("Language", { exact: true }).selectOption("id");
+    await selectLocale("id");
     await page.getByRole("heading", { name: "Masuk", exact: true }).waitFor();
     await page.getByRole("button", { name: "Masuk", exact: true }).waitFor();
     await page
@@ -28,7 +34,7 @@ export async function exerciseBilingualRelease(
     );
     const password = page.getByLabel("Kata sandi", { exact: true });
     await password.fill("Typed value remains unchanged");
-    await page.getByLabel("Bahasa", { exact: true }).selectOption("en");
+    await selectLocale("en");
     assert.equal(
       await page.getByLabel("Password", { exact: true }).inputValue(),
       "Typed value remains unchanged",
@@ -37,16 +43,26 @@ export async function exerciseBilingualRelease(
       await page.getByLabel("Username", { exact: true }).inputValue(),
       "operator-test",
     );
-    await page.getByLabel("Language", { exact: true }).selectOption("id");
+    await selectLocale("id");
+    assert.equal(await page.locator(".login-brand-scene").evaluate(el => getComputedStyle(el).display), "grid");
     await capture(`login-id-${size.width}`);
     await page.reload();
     await page.getByRole("heading", { name: "Masuk", exact: true }).waitFor();
-    await page.getByLabel("Bahasa", { exact: true }).selectOption("en");
+    await selectLocale("en");
   }
-  await page.getByRole("button", { name: "Dark theme", exact: true }).click();
+  assert.equal(await page.getByRole("combobox").count(), 0);
+  assert.equal(await page.locator(".theme-control, .login-footer, .login-preferences").count(), 0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => { localStorage.setItem("inb-appearance", "dark"); });
+  await page.reload();
+  await page.waitForFunction(() => document.documentElement.classList.contains("dark"));
   await capture("login-dark-mobile");
-  await page.getByRole("button", { name: "Light theme", exact: true }).click();
-  await page.getByLabel("Language", { exact: true }).selectOption("id");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  assert.equal(await page.locator(".login-brand-scene").evaluate(el => getComputedStyle(el, "::before").animationName), "none");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.evaluate(() => { localStorage.setItem("inb-appearance", "light"); });
+  await page.reload();
+  await selectLocale("id");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(origin + "/dashboard/warehouse/pallets");
   await page
@@ -128,6 +144,6 @@ export async function exerciseBilingualRelease(
   );
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto(origin + "/login");
-  await page.getByLabel("Bahasa", { exact: true }).selectOption("en");
+  await selectLocale("en");
   await page.goto(origin + "/dashboard/quality");
 }
