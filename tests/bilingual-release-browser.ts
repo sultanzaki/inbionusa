@@ -46,6 +46,10 @@ export async function exerciseBilingualRelease(
     await selectLocale("id");
     assert.equal(await page.locator(".login-brand-scene").count(), 0);
     await page.locator(".login-mobile-brand").waitFor();
+    if (size.height >= 568) {
+      assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), "portrait login has no unnecessary vertical scroll");
+    }
+    assert.ok(await page.evaluate(() => getComputedStyle(document.body).backgroundColor === getComputedStyle(document.querySelector(".login-form-panel")!).backgroundColor), "document background matches the login panel");
     await capture(`login-id-${size.width}`);
     await page.reload();
     await page.getByRole("heading", { name: "Masuk", exact: true }).waitFor();
@@ -58,6 +62,14 @@ export async function exerciseBilingualRelease(
   await page.reload();
   await page.waitForFunction(() => document.documentElement.classList.contains("dark"));
   await capture("login-dark-mobile");
+  assert.ok(await page.evaluate(() => getComputedStyle(document.body).backgroundColor === getComputedStyle(document.querySelector(".login-form-panel")!).backgroundColor), "dark login has no white document background");
+  await page.setViewportSize({ width: 390, height: 360 });
+  await page.getByLabel("Password", { exact: true }).focus();
+  const submit = page.getByRole("button", { name: "Sign in", exact: true });
+  await submit.scrollIntoViewIfNeeded();
+  assert.ok(await submit.evaluate(el => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }), "submit remains reachable in a keyboard-sized viewport");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => scrollTo(0, 0));
   await page.emulateMedia({ reducedMotion: "reduce" });
   assert.equal(await page.locator(".login-form-panel").evaluate(el => getComputedStyle(el, "::before").animationName), "none");
   await page.emulateMedia({ reducedMotion: "no-preference" });

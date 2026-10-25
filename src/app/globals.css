@@ -7140,3 +7140,16 @@ html.dark {
   .login-operations .login-form-panel { justify-content: flex-start; }
   .login-mobile-brand { margin-bottom: 28px; }
 }
+
+/* Keep sign-in on the visible mobile viewport, including browser chrome changes.
+   Content can still grow/scroll for the keyboard, errors and increased text size. */
+html:has(.login-layout),
+body:has(.login-layout) {
+  min-height: 0;
+  background: var(--color-page-bg);
+  overscroll-behavior-y: none;
+}
+.login-layout,
+.login-operations .login-form-panel {
+  min-height: 100dvh;
+}
