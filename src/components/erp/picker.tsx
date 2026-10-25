@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { useState, useId } from "react";
 import {
   Search,
@@ -76,6 +78,8 @@ function Picker({
   id,
   ...accessibility
 }: PickerProps) {
+  const { t: localize } = useLocale();
+
   const error = useERPFieldError(name, label);
   const generatedId = useId();
   const triggerId = id || generatedId;
@@ -108,39 +112,44 @@ function Picker({
               aria-describedby={
                 error ? triggerId + "-error" : accessibility["aria-describedby"]
               }
-              aria-label={label}
+              aria-label={localize(label)}
             />
           }
         >
-          {value?.label ||
-            value?.name ||
-            value?.number ||
-            value?.product ||
-            "Select…"}
+          {value?.label || value?.name || value?.number || value?.product || (
+            <Localized>{"Select…"}</Localized>
+          )}
           <ChevronDown className="size-3.5" />
         </PopoverTrigger>
         <PopoverContent className="erp-picker-panel" align="start">
           <div className="erp-picker-search">
             <Search className="size-3.5" />
             <Input
-              aria-label={"Search " + label}
+              aria-label={localize("Search " + label)}
               value={q}
               onChange={(e) => {
                 setQ(e.target.value);
                 setPage(1);
               }}
-              placeholder="Search number, company, product…"
+              placeholder={localize("Search number, company, product…")}
             />
           </div>
           <div className="erp-picker-results">
             {result.loading ? (
-              <p role="status">Loading…</p>
+              <p role="status">
+                <Localized>{"Loading…"}</Localized>
+              </p>
             ) : result.error ? (
-              <p role="alert">{result.error}</p>
+              <p role="alert"><Localized>{result.error}</Localized></p>
             ) : rows.length === 0 ? (
               <p>
-                No eligible {label.toLowerCase()} found. Check the source,
-                status and remaining balance, or try another search.
+                <Localized>{" No eligible "}</Localized>
+                {label.toLowerCase()}{" "}
+                <Localized>
+                  {
+                    " found. Check the source, status and remaining balance, or try another search. "
+                  }
+                </Localized>
               </p>
             ) : (
               rows.map((r) => (
@@ -170,19 +179,20 @@ function Picker({
             <Button
               size="icon-sm"
               variant="ghost"
-              aria-label="Previous options"
+              aria-label={localize("Previous options")}
               disabled={page === 1 || result.loading}
               onClick={() => setPage((p) => p - 1)}
             >
               <ChevronLeft />
             </Button>
             <span>
-              Page {page} · {result.data.total} options
+              <Localized>{" Page "}</Localized>
+              {page} · {result.data.total} <Localized>{" options "}</Localized>
             </span>
             <Button
               size="icon-sm"
               variant="ghost"
-              aria-label="Next options"
+              aria-label={localize("Next options")}
               disabled={result.loading || page * 50 >= result.data.total}
               onClick={() => setPage((p) => p + 1)}
             >
@@ -200,7 +210,11 @@ function Picker({
             aria-expanded={preview}
             onClick={() => setPreview(!preview)}
           >
-            {preview ? "Hide selection details" : "Review selection"}
+            {preview ? (
+              <Localized>{"Hide selection details"}</Localized>
+            ) : (
+              <Localized>{"Review selection"}</Localized>
+            )}
           </button>
           {preview && (
             <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 rounded-md border p-3">
@@ -238,7 +252,9 @@ function Picker({
                 )
                 .map(([k, v]) => (
                   <div key={k} className="contents">
-                    <dt>{humanLabel(k)}</dt>
+                    <dt>
+                      <Localized>{humanLabel(k)}</Localized>
+                    </dt>
                     <dd className="break-words min-w-0">{String(v)}</dd>
                   </div>
                 ))}

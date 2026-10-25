@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { RecordOverview } from "@/components/workspace/record-overview";
 import { useWorkPosition } from "@/components/workspace/use-work-position";
 import { useFileDownload } from "@/components/workspace/use-file-download";
@@ -187,6 +189,8 @@ function identity(row: ERPRow) {
   );
 }
 export function ERPWorkspace({ area }: { area: Area }) {
+  const { t: localize } = useLocale();
+
   const erp = useERP(),
     tabs = sections[area];
   const params = useSearchParams(),
@@ -316,7 +320,7 @@ export function ERPWorkspace({ area }: { area: Area }) {
                 setPage(1);
               }}
             >
-              {t.label}
+              <Localized>{t.label}</Localized>
             </button>
           ))}
         </nav>
@@ -330,23 +334,47 @@ export function ERPWorkspace({ area }: { area: Area }) {
                   <Status value={m.state} />
                 </div>
                 <p>
-                  {m.key === "production"
-                    ? "Finished-goods recording requires an active Warehouse."
-                    : m.key === "quality"
-                      ? "Inspections, lot release, and COAs."
-                      : m.key === "warehouse"
-                        ? "Stock, movements, counts, and dispatch."
-                        : m.key === "purchase"
-                          ? "Suppliers, material purchases and partial receiving."
-                          : m.key === "crm"
-                            ? "Opportunities, customer relationships and follow-up."
-                            : m.key === "documents"
-                              ? "Product documents, controlled revisions and expiry."
-                              : m.key === "finance"
-                                ? "Operational billing, verified payments and dispatch credit controls. Disabled until you activate it."
-                                : m.key === "service"
-                                  ? "Claims, customer receipt evidence, retests and accountable resolution."
-                                  : "Customers, quotations, and sales orders."}
+                  {m.key === "production" ? (
+                    <Localized>
+                      {"Finished-goods recording requires an active Warehouse."}
+                    </Localized>
+                  ) : m.key === "quality" ? (
+                    <Localized>
+                      {"Inspections, lot release, and COAs."}
+                    </Localized>
+                  ) : m.key === "warehouse" ? (
+                    <Localized>
+                      {"Stock, movements, counts, and dispatch."}
+                    </Localized>
+                  ) : m.key === "purchase" ? (
+                    <Localized>
+                      {"Suppliers, material purchases and partial receiving."}
+                    </Localized>
+                  ) : m.key === "crm" ? (
+                    <Localized>
+                      {"Opportunities, customer relationships and follow-up."}
+                    </Localized>
+                  ) : m.key === "documents" ? (
+                    <Localized>
+                      {"Product documents, controlled revisions and expiry."}
+                    </Localized>
+                  ) : m.key === "finance" ? (
+                    <Localized>
+                      {
+                        "Operational billing, verified payments and dispatch credit controls. Disabled until you activate it."
+                      }
+                    </Localized>
+                  ) : m.key === "service" ? (
+                    <Localized>
+                      {
+                        "Claims, customer receipt evidence, retests and accountable resolution."
+                      }
+                    </Localized>
+                  ) : (
+                    <Localized>
+                      {"Customers, quotations, and sales orders."}
+                    </Localized>
+                  )}
                 </p>
                 <div className="erp-actions">
                   {(["active", "read_only", "disabled"] as const)
@@ -362,29 +390,33 @@ export function ERPWorkspace({ area }: { area: Area }) {
                         }}
                         destructive={s === "disabled"}
                       >
-                        {s === "active"
-                          ? "Activate"
-                          : s === "read_only"
-                            ? "Read-only"
-                            : "Disable"}
+                        {s === "active" ? (
+                          <Localized>{"Activate"}</Localized>
+                        ) : s === "read_only" ? (
+                          <Localized>{"Read-only"}</Localized>
+                        ) : (
+                          <Localized>{"Disable"}</Localized>
+                        )}
                       </ERPActionButton>
                     ))}
                 </div>
               </article>
             ))}
             <p className="erp-notice">
-              Disabled modules block direct URLs, APIs, and new transactions.
-              History is retained. Open work can prevent disabling; use
-              read-only to pause operations.
+              <Localized>
+                {
+                  " Disabled modules block direct URLs, APIs, and new transactions. History is retained. Open work can prevent disabling; use read-only to pause operations. "
+                }
+              </Localized>
             </p>
           </div>
         ) : (
           <>
             <div className="erp-toolbar">
               <Input
-                aria-label="Search records"
+                aria-label={localize("Search records")}
                 data-search-input
-                placeholder="Search records…"
+                placeholder={localize("Search records…")}
                 value={search}
                 maxLength={100}
                 onChange={(e) => {
@@ -395,7 +427,7 @@ export function ERPWorkspace({ area }: { area: Area }) {
               />
               {states[tab] && (
                 <select
-                  aria-label="Filter status"
+                  aria-label={localize("Filter status")}
                   value={state}
                   onChange={(e) => {
                     setState(e.target.value);
@@ -403,28 +435,36 @@ export function ERPWorkspace({ area }: { area: Area }) {
                     listURL(search, e.target.value, 1);
                   }}
                 >
-                  <option value="">All statuses</option>
+                  <option value="">
+                    <Localized>{"All statuses"}</Localized>
+                  </option>
                   {states[tab].map((s) => (
                     <option key={s} value={s}>
-                      {s.replaceAll("_", " ")}
+                      <Localized>{s.replaceAll("_", " ")}</Localized>
                     </option>
                   ))}
                 </select>
               )}
               <span>
-                {result.loading
-                  ? "Loading…"
-                  : `${result.data.total.toLocaleString("en-GB")} records`}
+                {result.loading ? (
+                  <Localized>{"Loading…"}</Localized>
+                ) : (
+                  localize(
+                    `${result.data.total.toLocaleString("en-GB")} records`,
+                  )
+                )}
               </span>
               <Button variant="outline" size="sm" onClick={result.refresh}>
-                Refresh
+                <Localized>{" Refresh "}</Localized>
               </Button>
             </div>
             {result.error ? (
               <div role="alert" className="erp-empty">
-                <p>{result.error}</p>
+                <p>
+                  <Localized>{result.error}</Localized>
+                </p>
                 <Button onClick={result.refresh} variant="outline">
-                  Retry
+                  <Localized>{" Retry "}</Localized>
                 </Button>
               </div>
             ) : (
@@ -450,20 +490,30 @@ export function ERPWorkspace({ area }: { area: Area }) {
                   <Table data-actions="true">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Record</TableHead>
                         <TableHead>
-                          {tab === "stock"
-                            ? "On hand"
-                            : tab === "ledger"
-                              ? "Change"
-                              : tab === "catalog"
-                                ? "Units"
-                                : "Details"}
+                          <Localized>{"Record"}</Localized>
                         </TableHead>
                         <TableHead>
-                          {tab === "stock" ? "Available" : "Status"}
+                          {tab === "stock" ? (
+                            <Localized>{"On hand"}</Localized>
+                          ) : tab === "ledger" ? (
+                            <Localized>{"Change"}</Localized>
+                          ) : tab === "catalog" ? (
+                            <Localized>{"Units"}</Localized>
+                          ) : (
+                            <Localized>{"Details"}</Localized>
+                          )}
                         </TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>
+                          {tab === "stock" ? (
+                            <Localized>{"Available"}</Localized>
+                          ) : (
+                            <Localized>{"Status"}</Localized>
+                          )}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          <Localized>{"Actions"}</Localized>
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -471,7 +521,7 @@ export function ERPWorkspace({ area }: { area: Area }) {
                         <TableRow>
                           <TableCell colSpan={4}>
                             <p className="erp-empty" role="status">
-                              Loading records…
+                              <Localized>{" Loading records… "}</Localized>
                             </p>
                           </TableCell>
                         </TableRow>
@@ -480,14 +530,24 @@ export function ERPWorkspace({ area }: { area: Area }) {
                           <TableCell colSpan={4}>
                             <div className="erp-empty">
                               <h2>
-                                {search || state
-                                  ? "No matching records"
-                                  : "No records yet"}
+                                {search || state ? (
+                                  <Localized>{"No matching records"}</Localized>
+                                ) : (
+                                  <Localized>{"No records yet"}</Localized>
+                                )}
                               </h2>
                               <p>
-                                {search || state
-                                  ? "Try another search or clear your filters."
-                                  : "Create a record to start this workflow."}
+                                {search || state ? (
+                                  <Localized>
+                                    {
+                                      "Try another search or clear your filters."
+                                    }
+                                  </Localized>
+                                ) : (
+                                  <Localized>
+                                    {"Create a record to start this workflow."}
+                                  </Localized>
+                                )}
                               </p>
                               {(search || state) && (
                                 <Button
@@ -499,7 +559,7 @@ export function ERPWorkspace({ area }: { area: Area }) {
                                     listURL("", "", 1);
                                   }}
                                 >
-                                  Clear filters
+                                  <Localized>{" Clear filters "}</Localized>
                                 </Button>
                               )}
                             </div>
@@ -535,8 +595,12 @@ export function ERPWorkspace({ area }: { area: Area }) {
                                 : tab === "ledger"
                                   ? `${decimal(row.delta)} ${row.unit || ""}`
                                   : tab === "catalog"
-                                    ? row.units?.find((u) => u.is_base)?.code ||
-                                      "Not configured"
+                                    ? row.units?.find((u) => u.is_base)
+                                        ?.code || (
+                                        <Localized>
+                                          {"Not configured"}
+                                        </Localized>
+                                      )
                                     : row.date ||
                                       row.location ||
                                       row.contact ||
@@ -554,7 +618,8 @@ export function ERPWorkspace({ area }: { area: Area }) {
                                     {decimal(row.available)} {row.unit}
                                   </strong>
                                   <p className="erp-row-description">
-                                    {decimal(row.reserved)} reserved
+                                    {decimal(row.reserved)}{" "}
+                                    <Localized>{" reserved "}</Localized>
                                   </p>
                                 </>
                               ) : row.state ? (
@@ -576,7 +641,7 @@ export function ERPWorkspace({ area }: { area: Area }) {
                                 <button
                                   type="button"
                                   className="row-action"
-                                  aria-label="View record"
+                                  aria-label={localize("View record")}
                                   onClick={() =>
                                     setDetail({ entity: tab, id: row.id })
                                   }
@@ -642,7 +707,9 @@ export function ERPWorkspace({ area }: { area: Area }) {
   }
   if (area === "settings")
     return erp.data && !erp.data.admin ? (
-      <div className="erp-empty">Administrator access required.</div>
+      <div className="erp-empty">
+        <Localized>{"Administrator access required."}</Localized>
+      </div>
     ) : (
       body()
     );
@@ -659,6 +726,8 @@ function RecordDetail({
   onClose: () => void;
   onDone: (id?: string, entity?: string) => void;
 }) {
+  const { t: localize } = useLocale();
+
   const result = useERPPage(entity, "", "", 1, id),
     row = result.data.rows[0],
     erp = useERP();
@@ -704,14 +773,22 @@ function RecordDetail({
       onClose={onClose}
     >
       {result.loading ? (
-        <p role="status">Loading details…</p>
+        <p role="status">
+          <Localized>{"Loading details…"}</Localized>
+        </p>
       ) : result.error ? (
         <div role="alert">
-          <p>{result.error}</p>
-          <Button onClick={result.refresh}>Retry</Button>
+          <p>
+            <Localized>{result.error}</Localized>
+          </p>
+          <Button onClick={result.refresh}>
+            <Localized>{"Retry"}</Localized>
+          </Button>
         </div>
       ) : !row ? (
-        <p>Record not found.</p>
+        <p>
+          <Localized>{"Record not found."}</Localized>
+        </p>
       ) : (
         <>
           <RecordOverview row={row} entity={entity} />
@@ -743,14 +820,14 @@ function RecordDetail({
                 disabled={row.state === "closed"}
                 onClick={() => setBillingKind("payment_request")}
               >
-                Request down payment
+                <Localized>{" Request down payment "}</Localized>
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => setBillingKind("invoice")}
               >
-                Create invoice
+                <Localized>{" Create invoice "}</Localized>
               </Button>
             </div>
           )}
@@ -787,22 +864,26 @@ function RecordDetail({
           {quote && row.state === "accepted" && (
             <section
               className="erp-conversion-panel"
-              aria-label="Sales order conversion"
+              aria-label={localize("Sales order conversion")}
             >
               <h3 className="text-sm font-semibold">
-                {row.sales_order ? "Sales order created" : "Create sales order"}
+                {row.sales_order ? (
+                  <Localized>{"Sales order created"}</Localized>
+                ) : (
+                  <Localized>{"Create sales order"}</Localized>
+                )}
               </h3>
               {row.sales_order ? (
                 <div className="space-y-3">
                   <p className="text-xs text-muted">
-                    This quotation is linked to {row.sales_order.number} (
-                    {row.sales_order.state}).
+                    <Localized>{" This quotation is linked to "}</Localized>
+                    {row.sales_order.number} ({row.sales_order.state}).
                   </p>
                   <Button
                     variant="outline"
                     onClick={() => done(row.sales_order!.id, "orders")}
                   >
-                    Open sales order
+                    <Localized>{" Open sales order "}</Localized>
                   </Button>
                 </div>
               ) : write ? (
@@ -822,8 +903,11 @@ function RecordDetail({
                 </ERPForm>
               ) : (
                 <p className="text-xs text-muted">
-                  Sales write access and an active Sales module are required to
-                  create an order. Contact your administrator.
+                  <Localized>
+                    {
+                      " Sales write access and an active Sales module are required to create an order. Contact your administrator. "
+                    }
+                  </Localized>
                 </p>
               )}
             </section>
@@ -831,37 +915,49 @@ function RecordDetail({
           <div className="erp-detail-summary">
             {row.customer && (
               <p>
-                <span>Customer</span>
+                <span>
+                  <Localized>{"Customer"}</Localized>
+                </span>
                 <strong>{row.customer}</strong>
               </p>
             )}
             {row.location && (
               <p>
-                <span>Location</span>
+                <span>
+                  <Localized>{"Location"}</Localized>
+                </span>
                 <strong>{row.location}</strong>
               </p>
             )}
             {row.date && (
               <p>
-                <span>Date</span>
+                <span>
+                  <Localized>{"Date"}</Localized>
+                </span>
                 <strong>{row.date}</strong>
               </p>
             )}
             {row.expiry_date && (
               <p>
-                <span>Expiry</span>
+                <span>
+                  <Localized>{"Expiry"}</Localized>
+                </span>
                 <strong>{row.expiry_date}</strong>
               </p>
             )}
             {row.reason && (
               <p>
-                <span>Reference</span>
+                <span>
+                  <Localized>{"Reference"}</Localized>
+                </span>
                 <strong>{row.reason}</strong>
               </p>
             )}
             {row.assigned && (
               <p>
-                <span>Assigned to</span>
+                <span>
+                  <Localized>{"Assigned to"}</Localized>
+                </span>
                 <strong>{row.assigned}</strong>
               </p>
             )}
@@ -870,7 +966,7 @@ function RecordDetail({
             {(movement || quote) && (
               <Button variant="outline" size="sm" onClick={() => setPdf(true)}>
                 <Eye className="size-3.5" />
-                Preview PDF
+                <Localized>{" Preview PDF "}</Localized>
               </Button>
             )}
             {(movement || quote) && (
@@ -888,9 +984,11 @@ function RecordDetail({
                 }
               >
                 {!fileDownload.busy && <FileDown className="size-3.5" />}
-                {fileDownload.busy === "pdf"
-                  ? "Preparing PDF…"
-                  : "Download PDF"}
+                {fileDownload.busy === "pdf" ? (
+                  <Localized>{"Preparing PDF…"}</Localized>
+                ) : (
+                  <Localized>{"Download PDF"}</Localized>
+                )}
               </Button>
             )}
             {movement && row.state === "draft" && write && (
@@ -901,14 +999,14 @@ function RecordDetail({
                   disabled={row.kind === "delivery"}
                   onClick={() => setEdit(true)}
                 >
-                  Edit draft
+                  <Localized>{" Edit draft "}</Localized>
                 </Button>
                 <ERPActionButton
                   action="post_move"
                   payload={{ id, version: row.version }}
                   onDone={done}
                 >
-                  Post movement
+                  <Localized>{" Post movement "}</Localized>
                 </ERPActionButton>
                 <ERPActionButton
                   action="cancel_move"
@@ -917,7 +1015,7 @@ function RecordDetail({
                   reason
                   destructive
                 >
-                  Cancel draft
+                  <Localized>{" Cancel draft "}</Localized>
                 </ERPActionButton>
               </>
             )}
@@ -933,12 +1031,12 @@ function RecordDetail({
                   reason
                   destructive
                 >
-                  Reverse movement
+                  <Localized>{" Reverse movement "}</Localized>
                 </ERPActionButton>
               )}
             {customer && write && (
               <Button size="sm" variant="outline" onClick={() => setEdit(true)}>
-                Edit customer
+                <Localized>{" Edit customer "}</Localized>
               </Button>
             )}
             {quote && write && row.state === "draft" && (
@@ -948,14 +1046,14 @@ function RecordDetail({
                   variant="outline"
                   onClick={() => setEdit(true)}
                 >
-                  Edit draft
+                  <Localized>{" Edit draft "}</Localized>
                 </Button>
                 <ERPActionButton
                   action="issue_quote"
                   payload={{ id, version: row.version }}
                   onDone={done}
                 >
-                  Issue / request approval
+                  <Localized>{" Issue / request approval "}</Localized>
                 </ERPActionButton>
               </>
             )}
@@ -967,7 +1065,7 @@ function RecordDetail({
                   onDone={done}
                   reason
                 >
-                  Approve quotation
+                  <Localized>{" Approve quotation "}</Localized>
                 </ERPActionButton>
                 <ERPActionButton
                   action="return_quote"
@@ -975,7 +1073,7 @@ function RecordDetail({
                   onDone={done}
                   reason
                 >
-                  Return for changes
+                  <Localized>{" Return for changes "}</Localized>
                 </ERPActionButton>
               </>
             )}
@@ -989,14 +1087,14 @@ function RecordDetail({
                     payload={{ id }}
                     onDone={done}
                   >
-                    Mark accepted
+                    <Localized>{" Mark accepted "}</Localized>
                   </ERPActionButton>
                   <ERPActionButton
                     action="reject_quote"
                     payload={{ id }}
                     onDone={done}
                   >
-                    Mark rejected
+                    <Localized>{" Mark rejected "}</Localized>
                   </ERPActionButton>
                 </>
               )}
@@ -1010,7 +1108,7 @@ function RecordDetail({
                   payload={{ id }}
                   onDone={done}
                 >
-                  Create revision
+                  <Localized>{" Create revision "}</Localized>
                 </ERPActionButton>
               )}
             {quote &&
@@ -1023,7 +1121,7 @@ function RecordDetail({
                   reason
                   destructive
                 >
-                  Cancel quotation
+                  <Localized>{" Cancel quotation "}</Localized>
                 </ERPActionButton>
               )}
             {count && approve && row.state === "draft" && (
@@ -1032,7 +1130,7 @@ function RecordDetail({
                 variant="outline"
                 onClick={() => setSubForm({ type: "assign_count" })}
               >
-                Assign counter
+                <Localized>{" Assign counter "}</Localized>
               </Button>
             )}
             {count && write && row.state === "draft" && (
@@ -1041,7 +1139,7 @@ function RecordDetail({
                 payload={{ id }}
                 onDone={done}
               >
-                Start count & freeze location
+                <Localized>{" Start count & freeze location "}</Localized>
               </ERPActionButton>
             )}
             {count && write && row.state === "counting" && (
@@ -1051,14 +1149,14 @@ function RecordDetail({
                   variant="outline"
                   onClick={() => setSubForm({ type: "count_add" })}
                 >
-                  Add unlisted lot
+                  <Localized>{" Add unlisted lot "}</Localized>
                 </Button>
                 <ERPActionButton
                   action="submit_count"
                   payload={{ id }}
                   onDone={done}
                 >
-                  Submit count
+                  <Localized>{" Submit count "}</Localized>
                 </ERPActionButton>
               </>
             )}
@@ -1069,7 +1167,7 @@ function RecordDetail({
                 onDone={done}
                 reason
               >
-                Approve adjustment
+                <Localized>{" Approve adjustment "}</Localized>
               </ERPActionButton>
             )}
             {count &&
@@ -1082,7 +1180,7 @@ function RecordDetail({
                   reason
                   destructive
                 >
-                  Cancel count
+                  <Localized>{" Cancel count "}</Localized>
                 </ERPActionButton>
               )}
             {entity === "lots" &&
@@ -1095,9 +1193,11 @@ function RecordDetail({
                   onDone={done}
                   reason
                 >
-                  {row.qc_status === "released"
-                    ? "Return to quarantine"
-                    : "Approve manual release"}
+                  {row.qc_status === "released" ? (
+                    <Localized>{"Return to quarantine"}</Localized>
+                  ) : (
+                    <Localized>{"Approve manual release"}</Localized>
+                  )}
                 </ERPActionButton>
               )}
           </div>
@@ -1118,8 +1218,12 @@ function RecordDetail({
                   </strong>
                   {quote && (
                     <p>
-                      {row.currency} {decimal(l.price)} per {l.unit} · Discount{" "}
-                      {decimal(l.discount)}% · Amount {decimal(l.amount)}
+                      {row.currency} {decimal(l.price)}{" "}
+                      <Localized>{" per "}</Localized>
+                      {l.unit} <Localized>{" · Discount"}</Localized>{" "}
+                      {decimal(l.discount)}
+                      <Localized>{"% · Amount "}</Localized>
+                      {decimal(l.amount)}
                     </p>
                   )}
                   {movement &&
@@ -1141,9 +1245,11 @@ function RecordDetail({
                           )
                         }
                       >
-                        {fileDownload.busy === `coa-${i}`
-                          ? "Preparing COA…"
-                          : "Download attached COA"}
+                        {fileDownload.busy === `coa-${i}` ? (
+                          <Localized>{"Preparing COA…"}</Localized>
+                        ) : (
+                          <Localized>{"Download attached COA"}</Localized>
+                        )}
                       </Button>
                     )}
                 </article>
@@ -1164,19 +1270,43 @@ function RecordDetail({
           )}
           {quote && (row.terms || row.delivery_terms || row.lead_time) && (
             <div className="erp-notice">
-              {row.lead_time && <p>Lead time: {row.lead_time}</p>}
-              {row.terms && <p>Terms: {row.terms}</p>}
-              {row.delivery_terms && <p>Delivery: {row.delivery_terms}</p>}
+              {row.lead_time && (
+                <p>
+                  <Localized>{"Lead time: "}</Localized>
+                  {row.lead_time}
+                </p>
+              )}
+              {row.terms && (
+                <p>
+                  <Localized>{"Terms: "}</Localized>
+                  {row.terms}
+                </p>
+              )}
+              {row.delivery_terms && (
+                <p>
+                  <Localized>{"Delivery: "}</Localized>
+                  {row.delivery_terms}
+                </p>
+              )}
             </div>
           )}
           {count && (
             <>
               <p className="erp-notice">
-                {row.blind
-                  ? "Blind count. System quantities are hidden on this count sheet while counting; approvers can review them."
-                  : "System quantities are visible."}{" "}
-                Counting/submitted locations are frozen until approved or
-                cancelled.
+                {row.blind ? (
+                  <Localized>
+                    {
+                      "Blind count. System quantities are hidden on this count sheet while counting; approvers can review them."
+                    }
+                  </Localized>
+                ) : (
+                  <Localized>{"System quantities are visible."}</Localized>
+                )}{" "}
+                <Localized>
+                  {
+                    " Counting/submitted locations are frozen until approved or cancelled. "
+                  }
+                </Localized>
               </p>
               <CountLines
                 countId={id}
@@ -1194,7 +1324,7 @@ function RecordDetail({
                     size="sm"
                     onClick={() => setSubForm({ type: "delivery" })}
                   >
-                    Create delivery
+                    <Localized>{" Create delivery "}</Localized>
                   </Button>
                 )}
               </div>
@@ -1203,9 +1333,12 @@ function RecordDetail({
                   <article key={l.id}>
                     <h3>{l.product}</h3>
                     <p>
-                      {decimal(l.quantity)} {l.unit} ordered ·{" "}
-                      {decimal(l.delivered)} delivered · {decimal(l.reserved)}{" "}
-                      reserved
+                      {decimal(l.quantity)} {l.unit}{" "}
+                      <Localized>{" ordered ·"}</Localized>{" "}
+                      {decimal(l.delivered)}{" "}
+                      <Localized>{" delivered · "}</Localized>
+                      {decimal(l.reserved)}{" "}
+                      <Localized>{" reserved "}</Localized>
                     </p>
                     {row.state === "confirmed" &&
                       erp.can("sales", "write") &&
@@ -1217,13 +1350,15 @@ function RecordDetail({
                             setSubForm({ type: "reserve", line: l })
                           }
                         >
-                          Reserve stock
+                          <Localized>{" Reserve stock "}</Localized>
                         </Button>
                       )}
                   </article>
                 ))}
               </div>
-              <h3 className="erp-section-title">Reservations</h3>
+              <h3 className="erp-section-title">
+                <Localized>{"Reservations"}</Localized>
+              </h3>
               <div className="erp-detail-lines">
                 {row.reservations?.map((r) => (
                   <article key={r.id}>
@@ -1231,8 +1366,8 @@ function RecordDetail({
                       {r.product} · {r.lot}
                     </h3>
                     <p>
-                      {r.location} · {decimal(r.remaining)} {r.unit} remaining ·{" "}
-                      {r.state}
+                      {r.location} · {decimal(r.remaining)} {r.unit}{" "}
+                      <Localized>{" remaining ·"}</Localized> {r.state}
                     </p>
                     {r.state === "active" && erp.can("sales", "write") && (
                       <ERPActionButton
@@ -1241,13 +1376,15 @@ function RecordDetail({
                         onDone={done}
                         reason
                       >
-                        Release reservation
+                        <Localized>{" Release reservation "}</Localized>
                       </ERPActionButton>
                     )}
                   </article>
                 ))}
               </div>
-              <h3 className="erp-section-title">Deliveries</h3>
+              <h3 className="erp-section-title">
+                <Localized>{"Deliveries"}</Localized>
+              </h3>
               <div className="erp-detail-lines">
                 {row.deliveries?.map((d) => (
                   <article key={d.id}>
@@ -1268,25 +1405,33 @@ function RecordDetail({
           {entity === "stock" && (
             <div className="erp-detail-summary">
               <p>
-                <span>Physical stock</span>
+                <span>
+                  <Localized>{"Physical stock"}</Localized>
+                </span>
                 <strong>
                   {decimal(row.on_hand)} {row.unit}
                 </strong>
               </p>
               <p>
-                <span>Reserved</span>
+                <span>
+                  <Localized>{"Reserved"}</Localized>
+                </span>
                 <strong>
                   {decimal(row.reserved)} {row.unit}
                 </strong>
               </p>
               <p>
-                <span>Available to sell</span>
+                <span>
+                  <Localized>{"Available to sell"}</Localized>
+                </span>
                 <strong>
                   {decimal(row.available)} {row.unit}
                 </strong>
               </p>
               <p>
-                <span>QC status</span>
+                <span>
+                  <Localized>{"QC status"}</Localized>
+                </span>
                 <strong>{row.qc_status}</strong>
               </p>
             </div>
@@ -1305,7 +1450,9 @@ function RecordDetail({
                 ] as const
               ).map((k) => (
                 <p key={k}>
-                  <span>{k.replaceAll("_", " ")}</span>
+                  <span>
+                    <Localized>{k.replaceAll("_", " ")}</Localized>
+                  </span>
                   <strong>{row[k] || "—"}</strong>
                 </p>
               ))}
@@ -1317,9 +1464,12 @@ function RecordDetail({
                 <article key={u.id}>
                   <h3>
                     {u.code}
-                    {u.is_base ? " · base unit" : ""}
+                    {u.is_base ? <Localized>{" · base unit"}</Localized> : ""}
                   </h3>
-                  <p>Conversion factor: {decimal(u.factor)}</p>
+                  <p>
+                    <Localized>{"Conversion factor: "}</Localized>
+                    {decimal(u.factor)}
+                  </p>
                 </article>
               ))}
             </div>
@@ -1381,7 +1531,7 @@ function RecordDetail({
           )}
           {pdf && (
             <ERPModal
-              title="Document preview"
+              title={localize("Document preview")}
               description={
                 row.state === "draft" || row.state === "pending"
                   ? "Draft preview. Not an issued document."
@@ -1395,11 +1545,11 @@ function RecordDetail({
                 rel="noopener noreferrer"
                 className="erp-document-link"
               >
-                Open PDF in a new tab
+                <Localized>{" Open PDF in a new tab "}</Localized>
                 <ExternalLink className="size-3.5" />
               </a>
               <iframe
-                title="Document PDF preview"
+                title={localize("Document PDF preview")}
                 src={docURL + "#toolbar=0"}
                 className="erp-pdf-frame"
               />
@@ -1411,12 +1561,14 @@ function RecordDetail({
   );
 }
 export function OperationsHome() {
+  const { t: localize } = useLocale();
+
   const erp = useERP();
   return (
     <div className="page-stack">
       <PageHeader
         eyebrow="Overview"
-        title="Your operation"
+        title={localize("Your operation")}
         description="Choose a workspace to continue today's work."
       />
       <div className="erp-module-cards">
@@ -1427,12 +1579,17 @@ export function OperationsHome() {
               <h2>{names[m]}</h2>
               <p>{descriptions[m]}</p>
               <span>
-                Open workspace <ArrowUpRight className="inline size-4" />
+                <Localized>{" Open workspace "}</Localized>
+                <ArrowUpRight className="inline size-4" />
               </span>
             </Link>
           ))}
       </div>
-      {erp.error && <p role="alert">{erp.error}</p>}
+      {erp.error && (
+        <p role="alert">
+          <Localized>{erp.error}</Localized>
+        </p>
+      )}
     </div>
   );
 }
@@ -1446,6 +1603,8 @@ function CountLines({
   editable: boolean;
   onEntry: (line: CountLine) => void;
 }) {
+  const { t: localize } = useLocale();
+
   const [q, setQ] = useState(""),
     [page, setPage] = useState(1),
     [state, setState] = useState("");
@@ -1454,8 +1613,8 @@ function CountLines({
     <div>
       <div className="erp-toolbar">
         <Input
-          aria-label="Search count lines"
-          placeholder="Find product or lot…"
+          aria-label={localize("Search count lines")}
+          placeholder={localize("Find product or lot…")}
           value={q}
           onChange={(e) => {
             setQ(e.target.value);
@@ -1463,23 +1622,33 @@ function CountLines({
           }}
         />
         <select
-          aria-label="Count entry status"
+          aria-label={localize("Count entry status")}
           value={state}
           onChange={(e) => {
             setState(e.target.value);
             setPage(1);
           }}
         >
-          <option value="">All lines</option>
-          <option value="uncounted">Not counted</option>
-          <option value="counted">Counted</option>
+          <option value="">
+            <Localized>{"All lines"}</Localized>
+          </option>
+          <option value="uncounted">
+            <Localized>{"Not counted"}</Localized>
+          </option>
+          <option value="counted">
+            <Localized>{"Counted"}</Localized>
+          </option>
         </select>
       </div>
       <div className="erp-detail-lines">
         {result.loading ? (
-          <p role="status">Loading count lines…</p>
+          <p role="status">
+            <Localized>{"Loading count lines…"}</Localized>
+          </p>
         ) : result.error ? (
-          <p role="alert">{result.error}</p>
+          <p role="alert">
+            <Localized>{result.error}</Localized>
+          </p>
         ) : (
           (result.data.rows as unknown as CountLine[]).map((l) => (
             <article key={l.lot_id}>
@@ -1487,14 +1656,15 @@ function CountLines({
                 {l.product} · {l.lot}
               </h3>
               <p>
-                Counted: {decimal(l.counted)} {l.unit}
+                <Localized>{" Counted: "}</Localized>
+                {decimal(l.counted)} {l.unit}
                 {l.baseline !== null
                   ? ` · System: ${decimal(l.baseline)} · Difference: ${decimal(l.difference)}`
                   : ""}
               </p>
               {editable && (
                 <Button size="sm" variant="outline" onClick={() => onEntry(l)}>
-                  Enter count
+                  <Localized>{" Enter count "}</Localized>
                 </Button>
               )}
             </article>

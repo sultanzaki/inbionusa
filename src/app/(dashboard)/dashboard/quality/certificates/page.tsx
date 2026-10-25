@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { useFileDownload } from "@/components/workspace/use-file-download";
 import { useTableState } from "@/components/tables/use-table-state";
 import { AdvancedRecordsTable } from "@/components/tables/advanced-records-table";
@@ -35,7 +37,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/app/(dashboard)/user-context";
 import { canAction } from "@/lib/types";
 import type { CoaRow, HasilUjiRow, UserRole } from "@/lib/types";
-import { toast } from "sonner";
+import { toast } from "@/components/i18n/toast";
 import {
   issueCoaAction,
   updateCoaAction,
@@ -132,13 +134,19 @@ function coaStatusBadge(tanggalExpired: string) {
     .join("-");
   const expired = tanggalExpired !== "" && tanggalExpired < today;
   return expired ? (
-    <Badge variant="destructive">Expired</Badge>
+    <Badge variant="destructive">
+      <Localized>{"Expired"}</Localized>
+    </Badge>
   ) : (
-    <Badge>Valid</Badge>
+    <Badge>
+      <Localized>{"Valid"}</Localized>
+    </Badge>
   );
 }
 
 export default function COAPage() {
+  const { t: localize } = useLocale();
+
   const erp = useERP();
   const qualityWrite = erp.can("quality", "write");
   const qualityApprove = erp.can("quality", "approve");
@@ -505,7 +513,7 @@ export default function COAPage() {
     <div className="page-stack">
       <PageHeader
         eyebrow="Certification"
-        title="Certificate of Analysis"
+        title={localize("Certificate of Analysis")}
         description="Issue and manage certificates of analysis."
       >
         <DomainDialog
@@ -522,7 +530,8 @@ export default function COAPage() {
             <DialogTrigger
               render={
                 <Button>
-                  <Plus className="size-4" /> Issue COA
+                  <Plus className="size-4" />{" "}
+                  <Localized>{" Issue COA "}</Localized>
                 </Button>
               }
             />
@@ -530,12 +539,22 @@ export default function COAPage() {
 
           <DialogContent className="flex max-h-[90svh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
             <DialogHeader className="gap-1 border-b border-border-soft px-6 py-4 pr-14">
-              <p className="micro-label">CERTIFICATE</p>
+              <p className="micro-label">
+                <Localized>{"CERTIFICATE"}</Localized>
+              </p>
               <DialogTitle className="text-2xl font-semibold tracking-tight">
-                {editingId ? "Edit COA" : "Issue COA"}
+                {editingId ? (
+                  <Localized>{"Edit COA"}</Localized>
+                ) : (
+                  <Localized>{"Issue COA"}</Localized>
+                )}
               </DialogTitle>
               <DialogDescription className="mt-2 text-xs leading-relaxed">
-                Select a passed inspection and enter the certificate details.
+                <Localized>
+                  {
+                    " Select a passed inspection and enter the certificate details. "
+                  }
+                </Localized>
               </DialogDescription>
             </DialogHeader>
             <DomainForm
@@ -587,7 +606,9 @@ export default function COAPage() {
                             }
                           }}
                         >
-                          <option value="">Select an inspection…</option>
+                          <option value="">
+                            <Localized>{"Select an inspection…"}</Localized>
+                          </option>
                           {availableHasil.map((h) => (
                             <option key={h.id} value={h.id}>
                               {h.no_lot} — {h.master_produk?.nama_produk || ""}
@@ -597,21 +618,29 @@ export default function COAPage() {
                       </Field>
                       {availableError && (
                         <p role="alert">
-                          Could not load test results.{" "}
+                          <Localized>
+                            {" Could not load test results."}
+                          </Localized>{" "}
                           <button
                             type="button"
                             onClick={() => void fetchAvailableHasil()}
                           >
-                            Retry
+                            <Localized>{" Retry "}</Localized>
                           </button>
                         </p>
                       )}
-                      {availableLoading && <p>Loading test results…</p>}
+                      {availableLoading && (
+                        <p>
+                          <Localized>{"Loading test results…"}</Localized>
+                        </p>
+                      )}
                       {!availableError &&
                         !availableLoading &&
                         availableHasil.length === 0 && (
                           <p className="text-[13px] text-muted">
-                            No passed inspections available.
+                            <Localized>
+                              {" No passed inspections available. "}
+                            </Localized>
                           </p>
                         )}
                     </div>
@@ -628,8 +657,12 @@ export default function COAPage() {
                           }))
                         }
                       >
-                        <option value="en">English</option>
-                        <option value="id">Indonesian</option>
+                        <option value="en">
+                          <Localized>{"English"}</Localized>
+                        </option>
+                        <option value="id">
+                          <Localized>{"Indonesian"}</Localized>
+                        </option>
                       </select>
                     </Field>
                     <Field label="INCI name" name="inci_name">
@@ -638,7 +671,7 @@ export default function COAPage() {
                         onChange={(e) =>
                           setForm((v) => ({ ...v, inci_name: e.target.value }))
                         }
-                        placeholder="Product INCI name"
+                        placeholder={localize("Product INCI name")}
                       />
                     </Field>
                   </div>
@@ -653,7 +686,9 @@ export default function COAPage() {
                             no_coa: e.target.value,
                           }))
                         }
-                        placeholder="Assigned automatically if empty"
+                        placeholder={localize(
+                          "Assigned automatically if empty",
+                        )}
                       />
                     </Field>
                     <Field label="Release date" name="tanggal_rilis" required>
@@ -676,11 +711,13 @@ export default function COAPage() {
                     >
                       <output
                         className="coa-expiry-output"
-                        aria-label="Expiry date"
+                        aria-label={localize("Expiry date")}
                       >
                         {form.mfg_date
                           ? coaExpiryDate(form.mfg_date)
-                          : form.tanggal_expired || "Set manufacturing date"}
+                          : form.tanggal_expired || (
+                              <Localized>{"Set manufacturing date"}</Localized>
+                            )}
                       </output>
                     </Field>
                     <Field
@@ -730,7 +767,7 @@ export default function COAPage() {
                           tanda_tangan: e.target.value,
                         }))
                       }
-                      placeholder="Approver name"
+                      placeholder={localize("Approver name")}
                     />
                   </Field>
 
@@ -755,7 +792,9 @@ export default function COAPage() {
                   </div>
                   {!editingId && selectedHasil && (
                     <div className="border-t border-border pt-4">
-                      <p className="micro-label">Preview test results</p>
+                      <p className="micro-label">
+                        <Localized>{"Preview test results"}</Localized>
+                      </p>
                       <div className="mt-3">
                         <ResultTable items={selectedHasil.hasil_detail ?? []} />
                       </div>
@@ -766,7 +805,11 @@ export default function COAPage() {
 
               <DialogFooter className="m-0 flex-row items-center justify-between gap-2 rounded-b-lg px-6 py-4 sm:justify-between">
                 <DialogClose
-                  render={<Button variant="outline">Cancel</Button>}
+                  render={
+                    <Button variant="outline">
+                      <Localized>{"Cancel"}</Localized>
+                    </Button>
+                  }
                 />
                 {canWrite && (
                   <Button
@@ -777,7 +820,13 @@ export default function COAPage() {
                       (!editingId && (availableLoading || availableError))
                     }
                   >
-                    {saving ? "Saving…" : editingId ? "Save" : "Preview COA"}
+                    {saving ? (
+                      <Localized>{"Saving…"}</Localized>
+                    ) : editingId ? (
+                      <Localized>{"Save"}</Localized>
+                    ) : (
+                      <Localized>{"Preview COA"}</Localized>
+                    )}
                   </Button>
                 )}
               </DialogFooter>
@@ -800,7 +849,7 @@ export default function COAPage() {
         <DataToolbar
           search={searchInput}
           onSearch={onSearchChange}
-          placeholder="Search COAs or products…"
+          placeholder={localize("Search COAs or products…")}
           total={totalCount}
           loading={loading}
           onRefresh={() => void fetchData()}
@@ -857,13 +906,27 @@ export default function COAPage() {
           <Table data-actions>
             <TableHeader>
               <TableRow className="hover:bg-surface-alt">
-                <TableHead className="pl-4">COA number</TableHead>
-                <TableHead>Products</TableHead>
-                <TableHead>Lot number</TableHead>
-                <TableHead className="text-right">Release date</TableHead>
-                <TableHead className="text-right">Expiry date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="pr-4">Actions</TableHead>
+                <TableHead className="pl-4">
+                  <Localized>{"COA number"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Products"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Lot number"}</Localized>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Localized>{"Release date"}</Localized>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Localized>{"Expiry date"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Status"}</Localized>
+                </TableHead>
+                <TableHead className="pr-4">
+                  <Localized>{"Actions"}</Localized>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -873,7 +936,7 @@ export default function COAPage() {
                   <TableCell colSpan={7} className="!p-0">
                     <EmptyState
                       error
-                      title="Could not load data"
+                      title={localize("Could not load data")}
                       description="Check your connection and reload."
                     >
                       <Button
@@ -881,7 +944,7 @@ export default function COAPage() {
                         size="sm"
                         onClick={() => fetchData()}
                       >
-                        Retry
+                        <Localized>{" Retry "}</Localized>
                       </Button>
                     </EmptyState>
                   </TableCell>
@@ -897,16 +960,24 @@ export default function COAPage() {
                       <p className="text-base font-semibold tracking-tight">
                         {search ||
                         filter !== "all" ||
-                        Object.values(advanced).some(Boolean)
-                          ? "No matching results"
-                          : "No certificates yet"}
+                        Object.values(advanced).some(Boolean) ? (
+                          <Localized>{"No matching results"}</Localized>
+                        ) : (
+                          <Localized>{"No certificates yet"}</Localized>
+                        )}
                       </p>
                       <p className="text-xs text-muted">
                         {search ||
                         filter !== "all" ||
-                        Object.values(advanced).some(Boolean)
-                          ? "Try another keyword or clear your filters."
-                          : "Add your first record to get started."}
+                        Object.values(advanced).some(Boolean) ? (
+                          <Localized>
+                            {"Try another keyword or clear your filters."}
+                          </Localized>
+                        ) : (
+                          <Localized>
+                            {"Add your first record to get started."}
+                          </Localized>
+                        )}
                       </p>
                       {!search && filter === "all" && canIssue && (
                         <Button
@@ -917,7 +988,8 @@ export default function COAPage() {
                             setDialogOpen(true);
                           }}
                         >
-                          <Plus className="size-3.5" /> Issue COA
+                          <Plus className="size-3.5" />{" "}
+                          <Localized>{" Issue COA "}</Localized>
                         </Button>
                       )}
                       {(search ||
@@ -932,7 +1004,7 @@ export default function COAPage() {
                             setAdvanced({ ...emptyFilters });
                           }}
                         >
-                          Clear filters
+                          <Localized>{" Clear filters "}</Localized>
                         </Button>
                       )}
                     </div>
@@ -964,7 +1036,9 @@ export default function COAPage() {
                     </TableCell>
                     <TableCell>
                       {coa.withdrawn ? (
-                        <Badge variant="destructive">Withdrawn</Badge>
+                        <Badge variant="destructive">
+                          <Localized>{"Withdrawn"}</Localized>
+                        </Badge>
                       ) : (
                         coaStatusBadge(coa.tanggal_expired)
                       )}
@@ -976,7 +1050,7 @@ export default function COAPage() {
                           type="button"
                           className="row-action"
                           onClick={() => openDetail(coa)}
-                          title="Detail"
+                          title={localize("Detail")}
                         >
                           <Eye className="size-3.5" />
                         </button>
@@ -985,7 +1059,7 @@ export default function COAPage() {
                             type="button"
                             className="row-action"
                             onClick={() => openEdit(coa)}
-                            title="Edit"
+                            title={localize("Edit")}
                           >
                             <Pencil className="size-3.5" />
                           </button>
@@ -1012,7 +1086,7 @@ export default function COAPage() {
                           type="button"
                           className="row-action"
                           onClick={() => handlePrint(coa)}
-                          title="Print"
+                          title={localize("Print")}
                           disabled={coa.withdrawn}
                         >
                           <Printer className="size-3.5" />
@@ -1023,7 +1097,7 @@ export default function COAPage() {
                             className="row-action"
                             data-tone="danger"
                             onClick={() => handleDelete(coa.id)}
-                            title="Delete"
+                            title={localize("Delete")}
                           >
                             <Trash2 className="size-3.5" />
                           </button>
@@ -1058,12 +1132,16 @@ export default function COAPage() {
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="flex max-h-[90svh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
           <DialogHeader className="gap-1 border-b border-border-soft px-6 py-4 pr-14">
-            <p className="micro-label">CERTIFICATE</p>
+            <p className="micro-label">
+              <Localized>{"CERTIFICATE"}</Localized>
+            </p>
             <DialogTitle className="text-2xl font-semibold tracking-tight">
-              COA details
+              <Localized>{" COA details "}</Localized>
             </DialogTitle>
             <DialogDescription>
-              Test results captured when the certificate was issued.
+              <Localized>
+                {" Test results captured when the certificate was issued. "}
+              </Localized>
             </DialogDescription>
           </DialogHeader>
 
@@ -1072,29 +1150,37 @@ export default function COAPage() {
               <div className="space-y-5">
                 <div className="detail-metadata grid grid-cols-1 gap-5 rounded-xl border border-border-soft bg-surface-alt p-5 sm:grid-cols-2">
                   <div>
-                    <p className="micro-label">COA number</p>
+                    <p className="micro-label">
+                      <Localized>{"COA number"}</Localized>
+                    </p>
                     <p className="font-data mt-0.5 text-sm">
                       {detailItem.no_coa}
                     </p>
                   </div>
                   <div>
-                    <p className="micro-label">Products</p>
+                    <p className="micro-label">
+                      <Localized>{"Products"}</Localized>
+                    </p>
                     <p className="mt-0.5 text-sm font-medium">
                       {detailItem.hasil_uji_snapshot?.produk || "-"}
                     </p>
                   </div>
                   <div>
-                    <p className="micro-label">Lot number</p>
+                    <p className="micro-label">
+                      <Localized>{"Lot number"}</Localized>
+                    </p>
                     <p className="font-data mt-0.5 text-sm">
                       {detailItem.no_lot}
                     </p>
                   </div>
                   <div>
-                    <p className="micro-label">Status</p>
+                    <p className="micro-label">
+                      <Localized>{"Status"}</Localized>
+                    </p>
                     <p className="mt-0.5">
                       {detailItem.withdrawn ? (
                         <Badge variant="destructive">
-                          Withdrawn certificate
+                          <Localized>{" Withdrawn certificate "}</Localized>
                         </Badge>
                       ) : (
                         coaStatusBadge(detailItem.tanggal_expired)
@@ -1102,27 +1188,35 @@ export default function COAPage() {
                     </p>
                   </div>
                   <div>
-                    <p className="micro-label">Release date</p>
+                    <p className="micro-label">
+                      <Localized>{"Release date"}</Localized>
+                    </p>
                     <p className="font-data mt-0.5 text-sm">
                       {detailItem.tanggal_rilis}
                     </p>
                   </div>
                   <div>
-                    <p className="micro-label">Expiry date</p>
+                    <p className="micro-label">
+                      <Localized>{"Expiry date"}</Localized>
+                    </p>
                     <p className="font-data mt-0.5 text-sm">
                       {detailItem.tanggal_expired}
                     </p>
                   </div>
                   {detailItem.mfg_date && (
                     <div>
-                      <p className="micro-label">MFG Date</p>
+                      <p className="micro-label">
+                        <Localized>{"MFG Date"}</Localized>
+                      </p>
                       <p className="font-data mt-0.5 text-sm">
                         {detailItem.mfg_date}
                       </p>
                     </div>
                   )}
                   <div>
-                    <p className="micro-label">Approver</p>
+                    <p className="micro-label">
+                      <Localized>{"Approver"}</Localized>
+                    </p>
                     <p className="mt-0.5 text-sm">
                       {detailItem.tanda_tangan_digital}
                     </p>
@@ -1131,7 +1225,9 @@ export default function COAPage() {
 
                 {detailItem.hasil_uji_snapshot?.items?.length > 0 && (
                   <div className="border-t border-border pt-4">
-                    <p className="micro-label">Test results</p>
+                    <p className="micro-label">
+                      <Localized>{"Test results"}</Localized>
+                    </p>
                     <ResultTable items={detailItem.hasil_uji_snapshot.items} />
                   </div>
                 )}
@@ -1140,7 +1236,13 @@ export default function COAPage() {
           </div>
 
           <DialogFooter className="m-0 flex-row items-center justify-end gap-2 rounded-b-lg px-6 py-4 sm:justify-end">
-            <DialogClose render={<Button variant="outline">Close</Button>} />
+            <DialogClose
+              render={
+                <Button variant="outline">
+                  <Localized>{"Close"}</Localized>
+                </Button>
+              }
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>

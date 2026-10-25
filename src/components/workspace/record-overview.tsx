@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { useEffect, useRef } from "react";
 import { Package, FileText, MapPin, ArrowUpRight } from "lucide-react";
 import { humanLabel, displayNumber, money } from "@/lib/erp/ux";
@@ -14,6 +16,8 @@ function first(row: Row, keys: string[]) {
   return keys.map((k) => text(row[k])).find(Boolean) || "";
 }
 export function RecordOverview({ row, entity }: { row: Row; entity: string }) {
+  const { t: localize } = useLocale();
+
   const snapshot =
     row.snapshot && typeof row.snapshot === "object"
       ? (row.snapshot as Row)
@@ -45,38 +49,57 @@ export function RecordOverview({ row, entity }: { row: Row; entity: string }) {
     text(totals.total);
   const state = first(row, ["display_state", "state"]);
   return (
-    <section className="record-overview" aria-label="Record overview">
+    <section
+      className="record-overview"
+      aria-label={localize("Record overview")}
+    >
       <div className="record-overview-mark">
         <FileText size={22} />
       </div>
       <div className="record-overview-heading">
-        <span className="record-eyebrow">{humanLabel(entity)}</span>
-        <p className="record-overview-title">{title || "Record details"}</p>
+        <span className="record-eyebrow">
+          <Localized>{humanLabel(entity)}</Localized>
+        </span>
+        <p className="record-overview-title">
+          {title || <Localized>{"Record details"}</Localized>}
+        </p>
         {party && party !== title && <p>{party}</p>}
       </div>
-      {state && <Badge variant="secondary">{humanLabel(state)}</Badge>}
+      {state && (
+        <Badge variant="secondary">
+          <Localized>{humanLabel(state)}</Localized>
+        </Badge>
+      )}
       <dl className="record-overview-metrics">
         {date && (
           <div>
-            <dt>Document date</dt>
+            <dt>
+              <Localized>{"Document date"}</Localized>
+            </dt>
             <dd>{date.slice(0, 10)}</dd>
           </div>
         )}
         {amount && currency ? (
           <div>
-            <dt>Document value</dt>
+            <dt>
+              <Localized>{"Document value"}</Localized>
+            </dt>
             <dd>{money(amount, currency)}</dd>
           </div>
         ) : null}
         {Array.isArray(row.lines) && (
           <div>
-            <dt>Line items</dt>
+            <dt>
+              <Localized>{"Line items"}</Localized>
+            </dt>
             <dd>{row.lines.length}</dd>
           </div>
         )}
         {text(row.location) && (
           <div>
-            <dt>Location</dt>
+            <dt>
+              <Localized>{"Location"}</Localized>
+            </dt>
             <dd>{text(row.location)}</dd>
           </div>
         )}
@@ -121,18 +144,24 @@ export function ContextSummary({
   return (
     <details ref={panel} className="context-summary">
       <summary>
-        <span>{title}</span>
+        <span>
+          <Localized>{title}</Localized>
+        </span>
       </summary>
       <dl>
         {lines && (
           <div>
-            <dt>Line items</dt>
+            <dt>
+              <Localized>{"Line items"}</Localized>
+            </dt>
             <dd>{(lines[1] as unknown[]).length}</dd>
           </div>
         )}
         {entries.slice(0, 6).map((k) => (
           <div key={k}>
-            <dt>{humanLabel(k)}</dt>
+            <dt>
+              <Localized>{humanLabel(k)}</Localized>
+            </dt>
             <dd>
               {[
                 "quantity",
@@ -163,21 +192,31 @@ export function WarehouseBoard({
   onSelect: (id: string) => void;
   total: number;
 }) {
+  const { t: localize } = useLocale();
+
   return (
-    <section className="warehouse-board" aria-label="Warehouse visual overview">
+    <section
+      className="warehouse-board"
+      aria-label={localize("Warehouse visual overview")}
+    >
       <header>
         <div>
-          <span className="record-eyebrow">Warehouse overview</span>
+          <span className="record-eyebrow">
+            <Localized>{"Warehouse overview"}</Localized>
+          </span>
           <h3>
-            {entity === "pallets"
-              ? "Pallets"
-              : entity === "warehouses"
-                ? "Warehouses"
-                : "Storage locations"}
+            {entity === "pallets" ? (
+              <Localized>{"Pallets"}</Localized>
+            ) : entity === "warehouses" ? (
+              <Localized>{"Warehouses"}</Localized>
+            ) : (
+              <Localized>{"Storage locations"}</Localized>
+            )}
           </h3>
         </div>
         <p>
-          {rows.length} shown · {total} matching records
+          {rows.length} <Localized>{" shown · "}</Localized>
+          {total} <Localized>{" matching records "}</Localized>
         </p>
       </header>
       <div className="warehouse-card-grid">
@@ -195,15 +234,19 @@ export function WarehouseBoard({
                 <MapPin size={23} />
               )}
               <Badge variant="secondary">
-                {humanLabel(text(row.state) || "Record")}
+                <Localized>{humanLabel(text(row.state) || "Record")}</Localized>
               </Badge>
               <ArrowUpRight size={16} />
             </div>
             <strong>
-              {first(row, ["number", "label", "name", "code"]) || "View record"}
+              {first(row, ["number", "label", "name", "code"]) || (
+                <Localized>{"View record"}</Localized>
+              )}
             </strong>
             <span>
-              {first(row, ["warehouse", "address"]) || "Open for details"}
+              {first(row, ["warehouse", "address"]) || (
+                <Localized>{"Open for details"}</Localized>
+              )}
             </span>
             <div className="warehouse-card-location">
               <MapPin size={14} />
@@ -217,7 +260,9 @@ export function WarehouseBoard({
       </div>
       {!rows.length && (
         <p className="warehouse-board-empty">
-          No records match this view. Adjust your search or filters.
+          <Localized>
+            {" No records match this view. Adjust your search or filters. "}
+          </Localized>
         </p>
       )}
     </section>

@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Activity, ShieldCheck, FileCheck2 } from "lucide-react";
@@ -23,6 +25,8 @@ const day = (s: string) =>
     timeZone: "UTC",
   }).format(new Date(s + "T00:00:00Z"));
 export function DashboardAnalytics() {
+  const { t: localize } = useLocale();
+
   const [view, setView] = useState<View>("activity"),
     [period, setPeriod] = useState<AnalyticsPeriod>(30),
     [retry, setRetry] = useState(0);
@@ -94,24 +98,37 @@ export function DashboardAnalytics() {
           ? "of inspected lots passed"
           : "";
   return (
-    <section className="analytics-studio" aria-label="Quality analytics">
+    <section
+      className="analytics-studio"
+      aria-label={localize("Quality analytics")}
+    >
       <div className="analytics-heading">
         <div>
-          <p className="micro-label">Explore your operation</p>
-          <h2>Analytics</h2>
+          <p className="micro-label">
+            <Localized>{"Explore your operation"}</Localized>
+          </p>
+          <h2>
+            <Localized>{"Analytics"}</Localized>
+          </h2>
         </div>
         <label className="analytics-period">
-          <span className="sr-only">Analytics period</span>
+          <span className="sr-only">
+            <Localized>{"Analytics period"}</Localized>
+          </span>
           <select
-            aria-label="Analytics period"
+            aria-label={localize("Analytics period")}
             value={period}
             onChange={(e) => {
               setPeriod(Number(e.target.value) as AnalyticsPeriod);
               setSelected(null);
             }}
           >
-            <option value="30">Last 30 days</option>
-            <option value="90">Last 90 days</option>
+            <option value="30">
+              <Localized>{"Last 30 days"}</Localized>
+            </option>
+            <option value="90">
+              <Localized>{"Last 90 days"}</Localized>
+            </option>
           </select>
         </label>
       </div>
@@ -122,11 +139,16 @@ export function DashboardAnalytics() {
           setSelected(null);
         }}
       >
-        <TabsList className="analytics-tabs" aria-label="Analytics views">
+        <TabsList
+          className="analytics-tabs"
+          aria-label={localize("Analytics views")}
+        >
           {views.map(({ id, label, icon: Icon }) => (
             <TabsTrigger value={id} key={id}>
               <Icon className="size-3.5" />
-              <span>{label}</span>
+              <span>
+                <Localized>{label}</Localized>
+              </span>
             </TabsTrigger>
           ))}
         </TabsList>
@@ -134,11 +156,13 @@ export function DashboardAnalytics() {
           <TabsContent value={id} key={id}>
             {!current ? (
               <div className="analytics-placeholder" role="status">
-                Loading analytics…
+                <Localized>{" Loading analytics… "}</Localized>
               </div>
             ) : current.error ? (
               <div className="analytics-placeholder" role="alert">
-                <p>Could not load analytics.</p>
+                <p>
+                  <Localized>{"Could not load analytics."}</Localized>
+                </p>
                 <Button
                   variant="outline"
                   size="sm"
@@ -147,7 +171,7 @@ export function DashboardAnalytics() {
                     setRetry((v) => v + 1);
                   }}
                 >
-                  Retry analytics
+                  <Localized>{" Retry analytics "}</Localized>
                 </Button>
               </div>
             ) : (
@@ -163,8 +187,10 @@ export function DashboardAnalytics() {
                         {view === "activity" ? (
                           <>
                             <span className="analytics-dot" />
-                            {number(active?.passed ?? totals.passed)} passed ·{" "}
-                            {number(active?.failed ?? totals.failed)} failed
+                            {number(active?.passed ?? totals.passed)}{" "}
+                            <Localized>{" passed ·"}</Localized>{" "}
+                            {number(active?.failed ?? totals.failed)}{" "}
+                            <Localized>{" failed "}</Localized>
                           </>
                         ) : view === "quality" ? (
                           inspected ? (
@@ -183,7 +209,12 @@ export function DashboardAnalytics() {
                             : "/dashboard/quality/inspections"
                         }
                       >
-                        Open {view === "issuance" ? "COAs" : "inspections"}
+                        <Localized>{" Open "}</Localized>
+                        {view === "issuance" ? (
+                          <Localized>{"COAs"}</Localized>
+                        ) : (
+                          <Localized>{"inspections"}</Localized>
+                        )}
                         <ArrowUpRight className="size-3.5" />
                       </Link>
                     </div>
@@ -192,7 +223,7 @@ export function DashboardAnalytics() {
                         <div
                           className="analytics-bar-chart"
                           role="group"
-                          aria-label="Inspections by test date"
+                          aria-label={localize("Inspections by test date")}
                         >
                           {data.buckets.map((b, i) => (
                             <button
@@ -275,17 +306,19 @@ export function DashboardAnalytics() {
                               textAnchor="middle"
                               className="analytics-ring-label"
                             >
-                              lots tested
+                              <Localized>{" lots tested "}</Localized>
                             </text>
                           </svg>
                           <div className="analytics-donut-legend">
                             <span>
                               <i className="analytics-passed" />
-                              PASS <strong>{number(totals.passed)}</strong>
+                              <Localized>{" PASS "}</Localized>
+                              <strong>{number(totals.passed)}</strong>
                             </span>
                             <span>
                               <i className="analytics-failed" />
-                              FAIL <strong>{number(totals.failed)}</strong>
+                              <Localized>{" FAIL "}</Localized>
+                              <strong>{number(totals.failed)}</strong>
                             </span>
                           </div>
                         </div>
@@ -345,9 +378,15 @@ export function DashboardAnalytics() {
                   </div>
                   <div className="analytics-footer">
                     <span>
-                      {view === "quality"
-                        ? "Based on test dates · PASS and FAIL lots"
-                        : "Select an interval to inspect it"}
+                      {view === "quality" ? (
+                        <Localized>
+                          {"Based on test dates · PASS and FAIL lots"}
+                        </Localized>
+                      ) : (
+                        <Localized>
+                          {"Select an interval to inspect it"}
+                        </Localized>
+                      )}
                     </span>
                     <span>
                       {views.findIndex((v) => v.id === view) + 1} /{" "}
@@ -355,7 +394,9 @@ export function DashboardAnalytics() {
                     </span>
                   </div>
                   <details className="analytics-data">
-                    <summary>View chart data</summary>
+                    <summary>
+                      <Localized>{"View chart data"}</Localized>
+                    </summary>
                     <div>
                       <table>
                         <caption>

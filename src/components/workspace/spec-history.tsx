@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { requestTimeout } from "@/lib/request-timeout";
 import { RecordSkeleton } from "./record-loading";
 import { useEffect, useState } from "react";
@@ -24,6 +26,8 @@ export function SpecHistory({
   productId: string;
   current: SpesifikasiItem[];
 }) {
+  const { t: localize } = useLocale();
+
   const [versions, setVersions] = useState<SpecVersion[]>([]),
     [selected, setSelected] = useState(""),
     [error, setError] = useState(false),
@@ -96,34 +100,39 @@ export function SpecHistory({
     .map((s) => `${s.parameter_uji}: added after this version`);
   return (
     <section className="spec-history">
-      <h3 className="text-sm font-semibold">Specification history</h3>
+      <h3 className="text-sm font-semibold">
+        <Localized>{"Specification history"}</Localized>
+      </h3>
       {loading ? (
         <RecordSkeleton compact label="Loading specification history…" />
       ) : error ? (
         <div role="alert" className="py-4 text-xs text-danger">
-          Could not load version history.
+          <Localized>{" Could not load version history. "}</Localized>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setRetry((v) => v + 1)}
           >
-            Retry
+            <Localized>{" Retry "}</Localized>
           </Button>
         </div>
       ) : versions.length === 0 ? (
-        <p className="mt-4 text-xs text-muted">No version history yet.</p>
+        <p className="mt-4 text-xs text-muted">
+          <Localized>{"No version history yet."}</Localized>
+        </p>
       ) : (
         <>
           <label className="form-label mt-4">
-            Version
+            <Localized>{" Version "}</Localized>
             <select
-              aria-label="Specification version"
+              aria-label={localize("Specification version")}
               value={selected}
               onChange={(e) => setSelected(e.target.value)}
             >
               {versions.map((v) => (
                 <option key={v.id} value={v.id}>
-                  Version {v.version} ·{" "}
+                  <Localized>{" Version "}</Localized>
+                  {v.version} ·{" "}
                   {new Intl.DateTimeFormat("en-GB", {
                     dateStyle: "medium",
                     timeZone: "Asia/Jakarta",
@@ -135,23 +144,29 @@ export function SpecHistory({
           {version && (
             <>
               <p className="my-4 text-xs leading-relaxed text-muted">
-                By {version.actor}
+                <Localized>{" By "}</Localized>
+                {version.actor}
                 {version.revision_note && <> · {version.revision_note}</>}
               </p>
               <p className="mb-3 text-xs text-muted">
-                Product in this version: {version.product_snapshot.nama_produk}{" "}
-                · {version.product_snapshot.kode_produk}
+                <Localized>{" Product in this version: "}</Localized>
+                {version.product_snapshot.nama_produk} ·{" "}
+                {version.product_snapshot.kode_produk}
               </p>
               <SpecificationParameters items={historic} />
               <details className="mt-4 rounded-lg bg-surface-alt p-4">
                 <summary className="cursor-pointer text-xs font-medium">
-                  Changes from the current version
+                  <Localized>{" Changes from the current version "}</Localized>
                 </summary>
                 <ul className="mt-3 space-y-2 text-xs text-muted">
                   {changes.length || added.length ? (
                     [...changes, ...added].map((c, i) => <li key={i}>{c}</li>)
                   ) : (
-                    <li>Parameters match the current version.</li>
+                    <li>
+                      <Localized>
+                        {"Parameters match the current version."}
+                      </Localized>
+                    </li>
                   )}
                 </ul>
               </details>

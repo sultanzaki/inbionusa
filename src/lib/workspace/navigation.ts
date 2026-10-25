@@ -10,13 +10,28 @@ export function navigationSections(module: string, links: string[][]) {
       "CAPA actions": "Improvement",
       "Quality analytics": "Improvement",
     },
+    Finance: {
+      "Invoices & billing": "Billing & payments",
+      Payments: "Billing & payments",
+      "Dispatch clearance": "Order controls",
+      "Purchase matching": "Order controls",
+      "Customer credit": "Credit & aging",
+      "AR / AP aging": "Credit & aging",
+    },
+    CRM: {
+      Pipeline: "Opportunities",
+      Activities: "Follow-up",
+      "Customer interactions": "Follow-up",
+      "Customer samples": "Samples & documents",
+      "Document distribution": "Samples & documents",
+    },
     Warehouse: {
       "Inventory by warehouse": "Inventory",
       Stock: "Inventory",
       "Material stock": "Inventory",
       "Lots & traceability": "Inventory",
       "Stock counts": "Inventory",
-      "Pallet tracking": "Operations",
+      "Pallet tracking": "Pallets",
       "Warehouse transfers": "Operations",
       Movements: "Operations",
       Dispatch: "Operations",
@@ -27,7 +42,7 @@ export function navigationSections(module: string, links: string[][]) {
       "Storage locations": "Setup",
     },
   };
-  if (links.length <= 6) return [{ name: "", links }];
+  if (links.length <= 6 && !categories[module]) return [{ name: "", links }];
   const grouped = new Map<string, string[][]>();
   for (const link of links) {
     const category =

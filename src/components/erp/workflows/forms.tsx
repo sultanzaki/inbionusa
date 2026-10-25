@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { useOperatorState } from "@/components/workspace/form-recovery";
 import {
   humanLabel,
@@ -55,6 +57,8 @@ export function WorkflowForm({
   row?: WorkflowRow;
   onDone: () => void;
 }) {
+  const { t: localize } = useLocale();
+
   const erp = useERP(),
     terms = object(row, "terms");
   const [purpose, setPurpose] = useOperatorState(
@@ -409,39 +413,41 @@ export function WorkflowForm({
       >
         {options.map((x) => (
           <option value={x} key={x}>
-            {key === "direction"
-              ? (
-                  {
-                    receipt: "Customer payment received",
-                    payment: "Supplier payment sent",
-                    refund: "Customer refund sent",
-                    supplier_refund: "Supplier refund received",
-                  } as Record<string, string>
-                )[x] || humanLabel(x)
-              : key === "billing_event" ||
-                  key === "mode" ||
-                  [
-                    "payment_request",
-                    "supplier_request",
-                    "invoice",
-                    "supplier_bill",
-                    "credit_note",
-                    "supplier_credit",
-                  ].includes(x)
-                ? humanLabel(x)
-                : key === "source_type"
-                  ? (
-                      {
-                        receipt: "Material receipt",
-                        order: "Sales order",
-                        purchase: "Purchase order",
-                        delivery: "Delivery",
-                        lot: "Product lot",
-                        product: "Product",
-                        document: "Product document",
-                      } as Record<string, string>
-                    )[x] || x.replaceAll("_", " ")
-                  : x.replaceAll("_", " ")}
+            <Localized>
+              {key === "direction"
+                ? (
+                    {
+                      receipt: "Customer payment received",
+                      payment: "Supplier payment sent",
+                      refund: "Customer refund sent",
+                      supplier_refund: "Supplier refund received",
+                    } as Record<string, string>
+                  )[x] || humanLabel(x)
+                : key === "billing_event" ||
+                    key === "mode" ||
+                    [
+                      "payment_request",
+                      "supplier_request",
+                      "invoice",
+                      "supplier_bill",
+                      "credit_note",
+                      "supplier_credit",
+                    ].includes(x)
+                  ? humanLabel(x)
+                  : key === "source_type"
+                    ? (
+                        {
+                          receipt: "Material receipt",
+                          order: "Sales order",
+                          purchase: "Purchase order",
+                          delivery: "Delivery",
+                          lot: "Product lot",
+                          product: "Product",
+                          document: "Product document",
+                        } as Record<string, string>
+                      )[x] || x.replaceAll("_", " ")
+                    : x.replaceAll("_", " ")}
+            </Localized>
           </option>
         ))}
       </select>
@@ -454,7 +460,7 @@ export function WorkflowForm({
         checked={Boolean(form[key])}
         onChange={(e) => set(key, e.target.checked)}
       />
-      {label}
+      <Localized>{label}</Localized>
     </label>
   );
   const sourcePicker = (
@@ -510,9 +516,12 @@ export function WorkflowForm({
           {value(l, "product", value(l, "name", value(l, "lot")))}
         </strong>
         <small>
-          Ordered {value(l, "quantity", value(l, "base_quantity"))} ·
-          Delivered/received {value(l, "delivered", value(l, "received", "—"))}{" "}
-          · Unbilled {value(l, "unbilled", "—")}
+          <Localized>{" Ordered "}</Localized>
+          {value(l, "quantity", value(l, "base_quantity"))}{" "}
+          <Localized>{" · Delivered/received "}</Localized>
+          {value(l, "delivered", value(l, "received", "—"))}{" "}
+          <Localized>{" · Unbilled "}</Localized>
+          {value(l, "unbilled", "—")}
         </small>
         {action === "ops_delivery_receipt" ? (
           ["accepted", "rejected"].map((k) => (
@@ -566,7 +575,8 @@ export function WorkflowForm({
                     set("lines", lines);
                   }}
                 >
-                  Use remaining {value(l, "unbilled", "0")}
+                  <Localized>{" Use remaining "}</Localized>
+                  {value(l, "unbilled", "0")}
                 </button>
               )}
               <Input
@@ -805,7 +815,9 @@ export function WorkflowForm({
             "returned",
           ])}
           {details.loading && source ? (
-            <p role="status">Loading delivery lines…</p>
+            <p role="status">
+              <Localized>{"Loading delivery lines…"}</Localized>
+            </p>
           ) : (
             mappedLines
           )}
@@ -825,8 +837,11 @@ export function WorkflowForm({
       ].includes(action) && (
         <>
           <p className="erp-notice">
-            Execution uses base stock units, consumes the approved quantity and
-            creates an immutable stock transaction.
+            <Localized>
+              {
+                " Execution uses base stock units, consumes the approved quantity and creates an immutable stock transaction. "
+              }
+            </Localized>
           </p>
           {action !== "ops_customer_return" && (
             <ERPPicker
@@ -863,9 +878,11 @@ export function WorkflowForm({
       {amendment && (
         <>
           <p className="erp-notice">
-            Agreed prices remain unchanged. Existing dispatch reservations are
-            released for re-planning. Quantities cannot fall below delivered or
-            received stock.
+            <Localized>
+              {
+                " Agreed prices remain unchanged. Existing dispatch reservations are released for re-planning. Quantities cannot fall below delivered or received stock. "
+              }
+            </Localized>
           </p>
           {mappedLines}
           {action === "ops_amend_purchase" && (
@@ -893,8 +910,11 @@ export function WorkflowForm({
       {action === "fin_terms" && (
         <>
           <p className="erp-notice">
-            Terms changes require Finance approval again. Dispatch is checked at
-            posting time.
+            <Localized>
+              {
+                " Terms changes require Finance approval again. Dispatch is checked at posting time. "
+              }
+            </Localized>
           </p>
           {select("mode", "Payment terms", [
             "prepaid",
@@ -920,8 +940,11 @@ export function WorkflowForm({
             true,
           )}
           <p className="erp-notice">
-            An approved exception is auditable and does not mark the customer
-            debt as paid.
+            <Localized>
+              {
+                " An approved exception is auditable and does not mark the customer debt as paid. "
+              }
+            </Localized>
           </p>
         </>
       )}
@@ -963,7 +986,10 @@ export function WorkflowForm({
             sourcePicker
           )}
           {source && (
-            <section className="erp-notice" aria-label="Source billing summary">
+            <section
+              className="erp-notice"
+              aria-label={localize("Source billing summary")}
+            >
               <strong>
                 {value(
                   source as WorkflowRow,
@@ -972,7 +998,7 @@ export function WorkflowForm({
                 )}
               </strong>
               <p>
-                Order total:{" "}
+                <Localized>{" Order total:"}</Localized>{" "}
                 {money(
                   value(detail || (source as WorkflowRow), "amount", "0"),
                   value(detail || (source as WorkflowRow), "currency", "IDR"),
@@ -981,19 +1007,21 @@ export function WorkflowForm({
               {sourceEntity === "fin_orders" && (
                 <>
                   <p>
-                    Terms:{" "}
-                    {humanLabel(value(sourceTerms, "mode", "Not configured"))} ·{" "}
-                    {value(sourceTerms, "state", "Not configured")}
+                    <Localized>{" Terms:"}</Localized>{" "}
+                    <Localized>
+                      {humanLabel(value(sourceTerms, "mode", "Not configured"))}
+                    </Localized>{" "}
+                    · {value(sourceTerms, "state", "Not configured")}
                   </p>
                   <p>
-                    Deposit:{" "}
-                    {displayNumber(value(sourceTerms, "deposit_percent", "0"))}%
-                    · Requested:{" "}
+                    <Localized>{" Deposit:"}</Localized>{" "}
+                    {displayNumber(value(sourceTerms, "deposit_percent", "0"))}
+                    <Localized>{"% · Requested:"}</Localized>{" "}
                     {money(
                       value(billing, "requested", "0"),
                       value(source as WorkflowRow, "currency", "IDR"),
                     )}{" "}
-                    · Verified allocated:{" "}
+                    <Localized>{" · Verified allocated:"}</Localized>{" "}
                     {money(
                       value(billing, "paid", "0"),
                       value(source as WorkflowRow, "currency", "IDR"),
@@ -1001,23 +1029,36 @@ export function WorkflowForm({
                   </p>
                   {value(sourceTerms, "state") !== "approved" && (
                     <p role="alert">
-                      Approve payment terms in Finance → Sales orders before
-                      saving billing.
+                      <Localized>
+                        {
+                          " Approve payment terms in Finance → Sales orders before saving billing. "
+                        }
+                      </Localized>
                     </p>
                   )}
                   {form.kind === "invoice" && (
                     <p>
-                      {humanLabel(billingEvent)}.{" "}
-                      {needsDelivery
-                        ? "Choose a posted delivery below. For payment before shipment, choose Payment request / advance."
-                        : "An invoice can be created before shipment."}
+                      <Localized>{humanLabel(billingEvent)}</Localized>.{" "}
+                      {needsDelivery ? (
+                        <Localized>
+                          {
+                            "Choose a posted delivery below. For payment before shipment, choose Payment request / advance."
+                          }
+                        </Localized>
+                      ) : (
+                        <Localized>
+                          {"An invoice can be created before shipment."}
+                        </Localized>
+                      )}
                     </p>
                   )}
                   {!details.loading && billing.requested == null && (
                     <p role="status">
-                      Automatic billing suggestions need a database update.
-                      Review existing payment requests before entering a manual
-                      amount.
+                      <Localized>
+                        {
+                          " Automatic billing suggestions need a database update. Review existing payment requests before entering a manual amount. "
+                        }
+                      </Localized>
                     </p>
                   )}
                   {rows(billing, "requests").map((r) => (
@@ -1033,7 +1074,8 @@ export function WorkflowForm({
                       >
                         {value(r, "number")}
                       </a>{" "}
-                      · {humanLabel(value(r, "state"))} · Remaining{" "}
+                      · <Localized>{humanLabel(value(r, "state"))}</Localized>{" "}
+                      <Localized>{" · Remaining"}</Localized>{" "}
                       {money(
                         value(r, "outstanding", "0"),
                         value(source as WorkflowRow, "currency", "IDR"),
@@ -1056,10 +1098,18 @@ export function WorkflowForm({
                   set("amount", "");
                 }}
               >
-                <option value="auto">Follow approved payment terms</option>
-                <option value="deposit">Down payment (DP)</option>
-                <option value="balance">Remaining order balance</option>
-                <option value="custom">Custom amount</option>
+                <option value="auto">
+                  <Localized>{"Follow approved payment terms"}</Localized>
+                </option>
+                <option value="deposit">
+                  <Localized>{"Down payment (DP)"}</Localized>
+                </option>
+                <option value="balance">
+                  <Localized>{"Remaining order balance"}</Localized>
+                </option>
+                <option value="custom">
+                  <Localized>{"Custom amount"}</Localized>
+                </option>
               </select>
             </ERPField>
           )}
@@ -1102,18 +1152,22 @@ export function WorkflowForm({
                     )
                   }
                 >
-                  Use all remaining quantities
+                  <Localized>{" Use all remaining quantities "}</Localized>
                 </button>
               )}
               {details.loading && source ? (
-                <p role="status">Loading billing lines…</p>
+                <p role="status">
+                  <Localized>{"Loading billing lines…"}</Localized>
+                </p>
               ) : (
                 mappedLines
               )}
               <p className="erp-notice">
-                Enter only quantities being billed. Prices, tax and freight for
-                sales invoices come from the agreed SO. Supplier price
-                differences require explicit approval.
+                <Localized>
+                  {
+                    " Enter only quantities being billed. Prices, tax and freight for sales invoices come from the agreed SO. Supplier price differences require explicit approval. "
+                  }
+                </Localized>
               </p>
             </>
           )}
@@ -1167,8 +1221,11 @@ export function WorkflowForm({
           )}
           {field("notes", "Notes")}
           <p className="erp-notice">
-            Recording a payment does not verify it or execute a bank transfer.
-            An authorized approver must verify actual funds.
+            <Localized>
+              {
+                " Recording a payment does not verify it or execute a bank transfer. An authorized approver must verify actual funds. "
+              }
+            </Localized>
           </p>
         </>
       )}
@@ -1209,20 +1266,24 @@ export function WorkflowForm({
           <p className="erp-notice">{fieldHelp.allocation}</p>
           {payment && allocationDocument && (
             <p className="erp-notice">
-              Suggested allocation:{" "}
+              <Localized>{" Suggested allocation:"}</Localized>{" "}
               <strong>
                 {money(
                   suggestedAllocation,
                   value(payment as WorkflowRow, "currency", "IDR"),
                 )}
               </strong>
-              . This is limited to the available payment and document balance.{" "}
+              <Localized>
+                {
+                  " . This is limited to the available payment and document balance."
+                }
+              </Localized>{" "}
               <button
                 type="button"
                 className="underline"
                 onClick={() => set("amount", "")}
               >
-                Use suggested amount
+                <Localized>{" Use suggested amount "}</Localized>
               </button>
             </p>
           )}
@@ -1238,8 +1299,11 @@ export function WorkflowForm({
           />
           {field("amount", "Amount to move", "text", true)}
           <p className="erp-notice">
-            Move all or part of a paid advance to the final invoice. The
-            remaining amount stays linked to the original document.
+            <Localized>
+              {
+                " Move all or part of a paid advance to the final invoice. The remaining amount stays linked to the original document. "
+              }
+            </Localized>
           </p>
         </>
       )}

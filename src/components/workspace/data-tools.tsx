@@ -1,4 +1,6 @@
 "use client";
+import { Localized } from "@/components/i18n/locale-provider";
+
 import { useFileDownload } from "./use-file-download";
 import { useEffect, useEffectEvent, useState } from "react";
 import {
@@ -9,7 +11,7 @@ import {
   Loader2,
   RotateCcw,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/i18n/toast";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useMobile } from "@/hooks/use-mobile";
@@ -55,7 +57,7 @@ export function CopyValue({
     return (
       <DropdownMenuItem onClick={() => void copy()}>
         <Copy className="size-3.5" />
-        {label}
+        <Localized>{label}</Localized>
       </DropdownMenuItem>
     );
   return (
@@ -179,13 +181,13 @@ export function DataTools({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button variant="ghost" size="sm" aria-expanded={open} onClick={toggle}>
           <SlidersHorizontal className="size-3.5" />
-          Advanced filters
+          <Localized>{" Advanced filters "}</Localized>
           {count > 0 && <span className="filter-count">{count}</span>}
         </Button>
         {!tableControlled && (
           <div className="flex items-center gap-2">
             <span className="hidden text-[11px] text-muted sm:inline">
-              Export filtered results
+              <Localized>{" Export filtered results "}</Localized>
             </span>
             {(["csv", "xlsx"] as const).map((format) => (
               <Button
@@ -201,11 +203,13 @@ export function DataTools({
                 ) : (
                   <Download className="size-3.5" />
                 )}
-                {exporting === format
-                  ? "Preparing…"
-                  : format === "xlsx"
-                    ? "Excel"
-                    : "CSV"}
+                {exporting === format ? (
+                  <Localized>{"Preparing…"}</Localized>
+                ) : format === "xlsx" ? (
+                  <Localized>{"Excel"}</Localized>
+                ) : (
+                  <Localized>{"CSV"}</Localized>
+                )}
               </Button>
             ))}
           </div>
@@ -226,7 +230,7 @@ export function DataTools({
             onClick={() => onFilters({ ...emptyFilters })}
           >
             <RotateCcw className="size-3.5" />
-            Clear filters
+            <Localized>{" Clear filters "}</Localized>
           </Button>
         </div>
       )}
@@ -235,7 +239,9 @@ export function DataTools({
           <div className="sheet-grip" aria-hidden="true" />
           <SheetHeader>
             <SheetTitle>{filterTitles[module]}</SheetTitle>
-            <SheetDescription>Filters also apply to exports.</SheetDescription>
+            <SheetDescription>
+              <Localized>{"Filters also apply to exports."}</Localized>
+            </SheetDescription>
           </SheetHeader>
           <form
             onSubmit={(e) => {
@@ -255,7 +261,9 @@ export function DataTools({
               />
               {invalidRange && (
                 <p role="alert" className="mt-3 text-xs text-danger">
-                  End date must not be before start date.
+                  <Localized>
+                    {" End date must not be before start date. "}
+                  </Localized>
                 </p>
               )}
             </div>
@@ -269,10 +277,10 @@ export function DataTools({
                 }}
               >
                 <RotateCcw className="size-3.5" />
-                Clear
+                <Localized>{" Clear "}</Localized>
               </Button>
               <Button type="submit" disabled={invalidRange}>
-                Apply filters
+                <Localized>{" Apply filters "}</Localized>
               </Button>
             </div>
           </form>

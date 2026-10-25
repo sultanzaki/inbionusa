@@ -1,4 +1,6 @@
 "use client";
+import { Localized } from "@/components/i18n/locale-provider";
+
 import type { ReactNode } from "react";
 export function RecordSkeleton({
   label = "Loading record details…",
@@ -13,7 +15,9 @@ export function RecordSkeleton({
       role="status"
       aria-label={label}
     >
-      <span className="sr-only">{label}</span>
+      <span className="sr-only">
+        <Localized>{label}</Localized>
+      </span>
       <div aria-hidden="true">
         <div className="record-skeleton-heading" />
         <div className="record-skeleton-fields">

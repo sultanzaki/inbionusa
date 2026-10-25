@@ -1,3 +1,4 @@
+import { Localized } from "@/components/i18n/locale-provider";
 import { Copyright } from "@/components/brand/copyright";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -33,12 +34,18 @@ export default function LoginPage() {
             priority
           />
           <div>
-            <p className="text-sm font-semibold tracking-tight">INBIONUSA</p>
-            <p className="login-brand-caption">OPERATIONS WORKSPACE</p>
+            <p className="text-sm font-semibold tracking-tight">
+              <Localized>{"INBIONUSA"}</Localized>
+            </p>
+            <p className="login-brand-caption">
+              <Localized>{"OPERATIONS WORKSPACE"}</Localized>
+            </p>
           </div>
         </div>
         <div className="login-story-content">
-          <h2>Operations</h2>
+          <h2>
+            <Localized>{"Operations"}</Localized>
+          </h2>
           <div className="login-modules">
             {modules.map(({ name, note, icon: Icon }) => (
               <div className="login-module" key={name}>

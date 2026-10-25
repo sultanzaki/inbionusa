@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, ShieldAlert, CheckCheck, Inbox } from "lucide-react";
@@ -40,6 +42,8 @@ export function ReturnForm({
 }: {
   onDone: (id?: string, entity?: string) => void;
 }) {
+  const { t: localize } = useLocale();
+
   const [delivery, setDelivery] = useState<ERPRow | null>(null),
     [lot, setLot] = useState<ERPRow | null>(null),
     [location, setLocation] = useState<ERPRow | null>(null),
@@ -66,8 +70,11 @@ export function ReturnForm({
       onDone={onDone}
     >
       <p className="erp-notice">
-        Returned goods enter a separate held lot. Receipt does not make them
-        available to sell. Quantities use the product base stock unit.
+        <Localized>
+          {
+            " Returned goods enter a separate held lot. Receipt does not make them available to sell. Quantities use the product base stock unit. "
+          }
+        </Localized>
       </p>
       <ERPPicker
         entity="posted_deliveries"
@@ -80,12 +87,14 @@ export function ReturnForm({
       />
       <ERPField label="Shipped lot">
         <select
-          aria-label="Shipped lot"
+          aria-label={localize("Shipped lot")}
           required
           value={lot?.id || ""}
           onChange={(e) => setLot({ id: e.target.value })}
         >
-          <option value="">Select a shipped lot…</option>
+          <option value="">
+            <Localized>{"Select a shipped lot…"}</Localized>
+          </option>
           {details.data.rows[0]?.lines?.map((l) => (
             <option key={l.lot_id} value={l.lot_id}>
               {l.product} · {l.lot} · {decimal(l.base_quantity)} {l.base_unit}
@@ -130,12 +139,22 @@ export function ReturnDetail({
       <p>
         {row.product} · {row.lot_number}
       </p>
-      <p>Original delivery: {row.delivery}</p>
       <p>
-        Quantity: {decimal(row.quantity)} {row.unit || "(base unit)"}
+        <Localized>{"Original delivery: "}</Localized>
+        {row.delivery}
+      </p>
+      <p>
+        <Localized>{" Quantity: "}</Localized>
+        {decimal(row.quantity)}{" "}
+        {row.unit || <Localized>{"(base unit)"}</Localized>}
       </p>
       <p>{row.reason}</p>
-      {row.decision_reason && <p>Decision: {row.decision_reason}</p>}
+      {row.decision_reason && (
+        <p>
+          <Localized>{"Decision: "}</Localized>
+          {row.decision_reason}
+        </p>
+      )}
       <div className="erp-actions">
         {erp.can("warehouse", "write") && row.state === "requested" && (
           <>
@@ -145,7 +164,7 @@ export function ReturnDetail({
               reason
               onDone={onDone}
             >
-              Receive into quarantine
+              <Localized>{" Receive into quarantine "}</Localized>
             </ERPActionButton>
             <ERPActionButton
               action="cancel_return"
@@ -154,13 +173,14 @@ export function ReturnDetail({
               destructive
               onDone={onDone}
             >
-              Cancel request
+              <Localized>{" Cancel request "}</Localized>
             </ERPActionButton>
           </>
         )}
         {row.lot_id && (
           <Link href={"/dashboard/quality/inspections?lot=" + row.lot_id}>
-            Inspect returned lot <ArrowUpRight className="inline size-4" />
+            <Localized>{" Inspect returned lot "}</Localized>
+            <ArrowUpRight className="inline size-4" />
           </Link>
         )}
         {erp.can("warehouse", "approve") && row.state === "received" && (
@@ -171,7 +191,7 @@ export function ReturnDetail({
               reason
               onDone={onDone}
             >
-              Release after PASS
+              <Localized>{" Release after PASS "}</Localized>
             </ERPActionButton>
             <ERPActionButton
               action="dispose_return"
@@ -180,7 +200,7 @@ export function ReturnDetail({
               destructive
               onDone={onDone}
             >
-              Approve disposal
+              <Localized>{" Approve disposal "}</Localized>
             </ERPActionButton>
           </>
         )}
@@ -224,12 +244,16 @@ export function LotTrace({
         <strong>{row.number}</strong>
         <span>{row.product}</span>
         <span>
-          Manufactured {row.mfg_date || "—"} · Expires {row.expiry_date || "—"}
+          <Localized>{" Manufactured "}</Localized>
+          {row.mfg_date || "—"} <Localized>{" · Expires "}</Localized>
+          {row.expiry_date || "—"}
         </span>
         {row.held && (
           <p role="status">
-            <ShieldAlert className="inline size-4" /> Lot on hold. Reservations
-            and shipment are blocked.
+            <ShieldAlert className="inline size-4" />{" "}
+            <Localized>
+              {" Lot on hold. Reservations and shipment are blocked. "}
+            </Localized>
           </p>
         )}
       </div>
@@ -240,7 +264,7 @@ export function LotTrace({
             size="sm"
             onClick={() => onDone(row.source_lot_id, "lots")}
           >
-            Source lot
+            <Localized>{" Source lot "}</Localized>
           </Button>
         )}
         {erp.can("quality", "write") && (
@@ -252,7 +276,11 @@ export function LotTrace({
                 : "/dashboard/quality/inspections?lot=" + row.id
             }
           >
-            {row.inspection_id ? "View inspection" : "Create inspection"}{" "}
+            {row.inspection_id ? (
+              <Localized>{"View inspection"}</Localized>
+            ) : (
+              <Localized>{"Create inspection"}</Localized>
+            )}{" "}
             <ArrowUpRight className="inline size-4" />
           </Link>
         )}
@@ -267,36 +295,53 @@ export function LotTrace({
               trace.refresh();
             }}
           >
-            {row.held ? "Remove hold" : "Hold lot"}
+            {row.held ? (
+              <Localized>{"Remove hold"}</Localized>
+            ) : (
+              <Localized>{"Hold lot"}</Localized>
+            )}
           </ERPActionButton>
         )}
       </div>
-      {trace.error && <p role="alert">{trace.error}</p>}
+      {trace.error && (
+        <p role="alert">
+          <Localized>{trace.error}</Localized>
+        </p>
+      )}
       {extra.stock?.map((s) => (
         <article key={s.id} className="trace-event">
           <strong>{s.location}</strong>
           <p>
-            On hand {decimal(s.on_hand)} · Reserved {decimal(s.reserved)} ·
-            Available {decimal(s.available)} {s.unit}
+            <Localized>{" On hand "}</Localized>
+            {decimal(s.on_hand)} <Localized>{" · Reserved "}</Localized>
+            {decimal(s.reserved)} <Localized>{" · Available "}</Localized>
+            {decimal(s.available)} {s.unit}
           </p>
         </article>
       ))}
       {extra.inspection && (
         <article className="trace-event">
-          <strong>Quality · {extra.inspection.status}</strong>
+          <strong>
+            <Localized>{"Quality · "}</Localized>
+            {extra.inspection.status}
+          </strong>
           <p>
             {extra.inspection.date} · {extra.inspection.inspector}
           </p>
           {extra.inspection.failure_reason && (
             <p>{extra.inspection.failure_reason}</p>
           )}
-          <p>COA: {extra.inspection.coa || "Not issued"}</p>
+          <p>
+            <Localized>{"COA: "}</Localized>
+            {extra.inspection.coa || <Localized>{"Not issued"}</Localized>}
+          </p>
         </article>
       )}
       {extra.returns?.map((ret) => (
         <article key={ret.id} className="trace-event">
           <strong>
-            Return {ret.number} · {ret.state}
+            <Localized>{" Return "}</Localized>
+            {ret.number} · {ret.state}
           </strong>
           <p>
             {decimal(ret.quantity)} {row.unit}
@@ -307,17 +352,27 @@ export function LotTrace({
               size="sm"
               onClick={() => onDone(ret.lot_id, "lots")}
             >
-              Trace returned lot
+              <Localized>{" Trace returned lot "}</Localized>
             </Button>
           )}
         </article>
       ))}
-      <h3>Movement history</h3>
-      {events.error && <p role="alert">{events.error}</p>}
+      <h3>
+        <Localized>{"Movement history"}</Localized>
+      </h3>
+      {events.error && (
+        <p role="alert">
+          <Localized>{events.error}</Localized>
+        </p>
+      )}
       {events.loading ? (
-        <p role="status">Loading history…</p>
+        <p role="status">
+          <Localized>{"Loading history…"}</Localized>
+        </p>
       ) : events.data.rows.length === 0 ? (
-        <p>No posted movements.</p>
+        <p>
+          <Localized>{"No posted movements."}</Localized>
+        </p>
       ) : (
         events.data.rows.map((e) => (
           <article key={e.id} className="trace-event">
@@ -330,7 +385,7 @@ export function LotTrace({
             <p>{e.reason}</p>
             {Boolean(e.snapshot?.customer) && (
               <p>
-                Customer:{" "}
+                <Localized>{" Customer:"}</Localized>{" "}
                 {String(
                   (e.snapshot?.customer as { name?: string })?.name || "—",
                 )}
@@ -351,6 +406,8 @@ export function LotTrace({
   );
 }
 export function WorkInbox({ compact = false }: { compact?: boolean }) {
+  const { t: localize } = useLocale();
+
   const erp = useERP(),
     [page, setPage] = useState(1),
     [filter, setFilter] = useState(""),
@@ -361,24 +418,37 @@ export function WorkInbox({ compact = false }: { compact?: boolean }) {
       <div className="release-section-heading">
         <div>
           <p className="micro-label">
-            {compact ? "NEEDS ATTENTION" : "YOUR WORKSPACE"}
+            {compact ? (
+              <Localized>{"NEEDS ATTENTION"}</Localized>
+            ) : (
+              <Localized>{"YOUR WORKSPACE"}</Localized>
+            )}
           </p>
-          <h2>{compact ? "Next actions" : "Work inbox"}</h2>
+          <h2>
+            {compact ? (
+              <Localized>{"Next actions"}</Localized>
+            ) : (
+              <Localized>{"Work inbox"}</Localized>
+            )}
+          </h2>
         </div>
         {compact ? (
           <Link href="/dashboard/inbox">
-            View all <ArrowUpRight className="inline size-4" />
+            <Localized>{" View all "}</Localized>
+            <ArrowUpRight className="inline size-4" />
           </Link>
         ) : (
           <select
-            aria-label="Filter inbox module"
+            aria-label={localize("Filter inbox module")}
             value={filter}
             onChange={(e) => {
               setFilter(e.target.value);
               setPage(1);
             }}
           >
-            <option value="">All work</option>
+            <option value="">
+              <Localized>{"All work"}</Localized>
+            </option>
             {erp.data?.modules
               .filter((m) => erp.can(m.key))
               .map((m) => (
@@ -390,13 +460,21 @@ export function WorkInbox({ compact = false }: { compact?: boolean }) {
         )}
       </div>
       {r.error ? (
-        <p role="alert">{r.error}</p>
+        <p role="alert">
+          <Localized>{r.error}</Localized>
+        </p>
       ) : r.loading ? (
-        <p role="status">Loading work…</p>
+        <p role="status">
+          <Localized>{"Loading work…"}</Localized>
+        </p>
       ) : r.data.total === 0 ? (
         <div className="inbox-clear">
           <CheckCheck />
-          <p>You are up to date. No work awaiting action.</p>
+          <p>
+            <Localized>
+              {"You are up to date. No work awaiting action."}
+            </Localized>
+          </p>
         </div>
       ) : (
         <div className="inbox-list">
@@ -407,7 +485,7 @@ export function WorkInbox({ compact = false }: { compact?: boolean }) {
                 <strong>{task.title}</strong>
                 <span>{task.description}</span>
                 <small>
-                  {task.assignee || "Unassigned"}
+                  {task.assignee || <Localized>{"Unassigned"}</Localized>}
                   {task.due_date ? " · Due " + task.due_date : ""}
                 </small>
               </Link>
@@ -417,7 +495,7 @@ export function WorkInbox({ compact = false }: { compact?: boolean }) {
                   size="sm"
                   onClick={() => setAssignment(task)}
                 >
-                  Assign
+                  <Localized>{" Assign "}</Localized>
                 </Button>
               )}
               <ArrowUpRight className="size-4" />
@@ -437,12 +515,16 @@ export function WorkInbox({ compact = false }: { compact?: boolean }) {
       )}
       {!compact && (
         <p className="inbox-note">
-          Tasks resolve automatically when the underlying work is completed.
+          <Localized>
+            {
+              " Tasks resolve automatically when the underlying work is completed. "
+            }
+          </Localized>
         </p>
       )}
       {assignment && (
         <ERPModal
-          title="Assign work"
+          title={localize("Assign work")}
           description={
             assignment.title || "Assign an owner and optional due date."
           }
@@ -478,7 +560,7 @@ function TaskAssignment({ row, onDone }: { row: ERPRow; onDone: () => void }) {
         onChange={setOwner}
       />
       <Button variant="ghost" onClick={() => setOwner(null)}>
-        Unassign
+        <Localized>{" Unassign "}</Localized>
       </Button>
       <ERPField label="Due date (optional)">
         <Input

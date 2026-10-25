@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { RecordLoadingBoundary } from "@/components/workspace/record-loading";
 import { useTableState } from "@/components/tables/use-table-state";
 import { AdvancedRecordsTable } from "@/components/tables/advanced-records-table";
@@ -32,7 +34,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/app/(dashboard)/user-context";
 import { canAction } from "@/lib/types";
 import type { MasterProduk, SpesifikasiItem, UserRole } from "@/lib/types";
-import { toast } from "sonner";
+import { toast } from "@/components/i18n/toast";
 import {
   saveProdukAction,
   deleteProdukAction,
@@ -130,8 +132,17 @@ const emptyForm: ProdukForm = {
 
 // Status is always a dot-chip: emerald tint for Halal, danger tint otherwise.
 function statusHalalBadge(val: string) {
-  if (val === "Halal") return <Badge>Halal</Badge>;
-  return <Badge variant="destructive">Non-Halal</Badge>;
+  if (val === "Halal")
+    return (
+      <Badge>
+        <Localized>{"Halal"}</Localized>
+      </Badge>
+    );
+  return (
+    <Badge variant="destructive">
+      <Localized>{"Non-Halal"}</Localized>
+    </Badge>
+  );
 }
 
 // Native select styled to match the Input kit (hairline border, 36px, 6px
@@ -140,6 +151,8 @@ const selectClass =
   "h-9 w-full rounded-md border border-input bg-surface px-2.5 text-sm transition-colors duration-150 outline-none";
 
 export default function ProdukPage() {
+  const { t: localize } = useLocale();
+
   const confirm = useConfirm();
   const erp = useERP();
   const [filter, setFilter] = useState("all");
@@ -433,7 +446,7 @@ export default function ProdukPage() {
     <div className="page-stack">
       <PageHeader
         eyebrow="Master data"
-        title="Products"
+        title={localize("Products")}
         description="Product catalog and test specifications."
       >
         <DomainDialog
@@ -449,7 +462,8 @@ export default function ProdukPage() {
             <DialogTrigger
               render={
                 <Button>
-                  <Plus className="size-4" /> New product
+                  <Plus className="size-4" />{" "}
+                  <Localized>{" New product "}</Localized>
                 </Button>
               }
             />
@@ -457,12 +471,20 @@ export default function ProdukPage() {
 
           <DialogContent className="flex max-h-[90svh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
             <DialogHeader className="gap-1 border-b border-border-soft px-6 py-4 pr-14">
-              <p className="micro-label">MASTER DATA</p>
+              <p className="micro-label">
+                <Localized>{"MASTER DATA"}</Localized>
+              </p>
               <DialogTitle className="text-2xl font-semibold tracking-tight">
-                {editingId ? "Edit product" : "New product"}
+                {editingId ? (
+                  <Localized>{"Edit product"}</Localized>
+                ) : (
+                  <Localized>{"New product"}</Localized>
+                )}
               </DialogTitle>
               <DialogDescription className="mt-2 text-xs leading-relaxed">
-                Set the product details and inspection specifications.
+                <Localized>
+                  {" Set the product details and inspection specifications. "}
+                </Localized>
               </DialogDescription>
             </DialogHeader>
             <DomainForm
@@ -481,7 +503,7 @@ export default function ProdukPage() {
                         onChange={(e) =>
                           setForm({ ...form, kode_produk: e.target.value })
                         }
-                        placeholder="PRD-001"
+                        placeholder={localize("PRD-001")}
                       />
                     </Field>
                     <Field label="Product name *" name="nama_produk" required>
@@ -490,7 +512,7 @@ export default function ProdukPage() {
                         onChange={(e) =>
                           setForm({ ...form, nama_produk: e.target.value })
                         }
-                        placeholder="Product name"
+                        placeholder={localize("Product name")}
                       />
                     </Field>
                     <Field
@@ -525,7 +547,9 @@ export default function ProdukPage() {
                           setForm({ ...form, kategori: e.target.value })
                         }
                       >
-                        <option value="">Select…</option>
+                        <option value="">
+                          <Localized>{"Select…"}</Localized>
+                        </option>
                         {kategoriList.map((k) => (
                           <option key={k} value={k}>
                             {k}
@@ -541,7 +565,9 @@ export default function ProdukPage() {
                           setForm({ ...form, satuan: e.target.value })
                         }
                       >
-                        <option value="">Select…</option>
+                        <option value="">
+                          <Localized>{"Select…"}</Localized>
+                        </option>
                         {satuanList.map((s) => (
                           <option key={s} value={s}>
                             {s}
@@ -557,8 +583,12 @@ export default function ProdukPage() {
                           setForm({ ...form, status_halal: e.target.value })
                         }
                       >
-                        <option value="Halal">Halal</option>
-                        <option value="Non-Halal">Non-Halal</option>
+                        <option value="Halal">
+                          <Localized>{"Halal"}</Localized>
+                        </option>
+                        <option value="Non-Halal">
+                          <Localized>{"Non-Halal"}</Localized>
+                        </option>
                       </select>
                     </Field>
                     <Field label="Packaging type" name="tipe_kemasan">
@@ -569,7 +599,9 @@ export default function ProdukPage() {
                           setForm({ ...form, tipe_kemasan: e.target.value })
                         }
                       >
-                        <option value="">Select…</option>
+                        <option value="">
+                          <Localized>{"Select…"}</Localized>
+                        </option>
                         {kemasanList.map((k) => (
                           <option key={k} value={k}>
                             {k}
@@ -586,27 +618,33 @@ export default function ProdukPage() {
                         onChange={(e) =>
                           setForm({ ...form, revision_note: e.target.value })
                         }
-                        placeholder="Reason for this revision"
+                        placeholder={localize("Reason for this revision")}
                       />
                     </Field>
                   )}
                   {/* Spesifikasi section */}
                   <div className="border-t border-border pt-5">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                      <span className="micro-label">Test specifications</span>
+                      <span className="micro-label">
+                        <Localized>{"Test specifications"}</Localized>
+                      </span>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={addSpesifikasiRow}
                       >
-                        <Plus className="size-3.5" /> Add parameter
+                        <Plus className="size-3.5" />{" "}
+                        <Localized>{" Add parameter "}</Localized>
                       </Button>
                     </div>
 
                     {spesifikasi.length === 0 && (
                       <p className="text-[13px] text-muted">
-                        No parameters yet. Select &ldquo;Add parameter&rdquo; to
-                        begin.
+                        <Localized>
+                          {
+                            " No parameters yet. Select &ldquo;Add parameter&rdquo; to begin. "
+                          }
+                        </Localized>
                       </p>
                     )}
 
@@ -631,7 +669,7 @@ export default function ProdukPage() {
                                     e.target.value,
                                   )
                                 }
-                                placeholder="Parameter"
+                                placeholder={localize("Parameter")}
                               />
                             </Field>
                             <Field
@@ -649,10 +687,18 @@ export default function ProdukPage() {
                                   )
                                 }
                               >
-                                <option value="RANGE">RANGE</option>
-                                <option value="MIN">MIN</option>
-                                <option value="MAX">MAX</option>
-                                <option value="TEXT">TEXT</option>
+                                <option value="RANGE">
+                                  <Localized>{"RANGE"}</Localized>
+                                </option>
+                                <option value="MIN">
+                                  <Localized>{"MIN"}</Localized>
+                                </option>
+                                <option value="MAX">
+                                  <Localized>{"MAX"}</Localized>
+                                </option>
+                                <option value="TEXT">
+                                  <Localized>{"TEXT"}</Localized>
+                                </option>
                               </select>
                             </Field>
                             <Field
@@ -674,7 +720,7 @@ export default function ProdukPage() {
                                     e.target.value,
                                   )
                                 }
-                                placeholder="Min"
+                                placeholder={localize("Min")}
                               />
                             </Field>
                             <Field
@@ -696,7 +742,7 @@ export default function ProdukPage() {
                                     e.target.value,
                                   )
                                 }
-                                placeholder="Max"
+                                placeholder={localize("Max")}
                               />
                             </Field>
                             <Field
@@ -712,7 +758,7 @@ export default function ProdukPage() {
                                     e.target.value,
                                   )
                                 }
-                                placeholder="Unit"
+                                placeholder={localize("Unit")}
                               />
                             </Field>
                             <Field
@@ -767,7 +813,7 @@ export default function ProdukPage() {
                             className="row-action mt-6 shrink-0"
                             data-tone="danger"
                             onClick={() => removeSpesifikasi(idx)}
-                            title="Delete"
+                            title={localize("Delete")}
                           >
                             <Trash2 className="size-3.5" />
                           </button>
@@ -780,10 +826,20 @@ export default function ProdukPage() {
 
               <DialogFooter className="m-0 flex-row items-center justify-between gap-2 rounded-b-lg px-6 py-4 sm:justify-between">
                 <DialogClose
-                  render={<Button variant="outline">Cancel</Button>}
+                  render={
+                    <Button variant="outline">
+                      <Localized>{"Cancel"}</Localized>
+                    </Button>
+                  }
                 />
                 <Button type="submit" loading={saving} disabled={saving}>
-                  {saving ? "Saving…" : editingId ? "Save" : "Add"}
+                  {saving ? (
+                    <Localized>{"Saving…"}</Localized>
+                  ) : editingId ? (
+                    <Localized>{"Save"}</Localized>
+                  ) : (
+                    <Localized>{"Add"}</Localized>
+                  )}
                 </Button>
               </DialogFooter>
             </DomainForm>
@@ -805,7 +861,7 @@ export default function ProdukPage() {
         <DataToolbar
           search={searchInput}
           onSearch={onSearchChange}
-          placeholder="Search products…"
+          placeholder={localize("Search products…")}
           total={totalCount}
           loading={loading}
           onRefresh={() => void fetchData()}
@@ -862,12 +918,24 @@ export default function ProdukPage() {
           <Table data-actions>
             <TableHeader>
               <TableRow className="hover:bg-surface-alt">
-                <TableHead className="pl-4">Products</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Unit</TableHead>
-                <TableHead>Halal</TableHead>
-                <TableHead>Packaging</TableHead>
-                <TableHead className="pr-4">Actions</TableHead>
+                <TableHead className="pl-4">
+                  <Localized>{"Products"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Category"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Unit"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Halal"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Packaging"}</Localized>
+                </TableHead>
+                <TableHead className="pr-4">
+                  <Localized>{"Actions"}</Localized>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -877,7 +945,7 @@ export default function ProdukPage() {
                   <TableCell colSpan={6} className="!p-0">
                     <EmptyState
                       error
-                      title="Could not load data"
+                      title={localize("Could not load data")}
                       description="Check your connection and reload."
                     >
                       <Button
@@ -885,7 +953,7 @@ export default function ProdukPage() {
                         size="sm"
                         onClick={() => fetchData()}
                       >
-                        Retry
+                        <Localized>{" Retry "}</Localized>
                       </Button>
                     </EmptyState>
                   </TableCell>
@@ -901,16 +969,24 @@ export default function ProdukPage() {
                       <p className="text-base font-semibold tracking-tight">
                         {search ||
                         filter !== "all" ||
-                        Object.values(advanced).some(Boolean)
-                          ? "No matching results"
-                          : "No products yet"}
+                        Object.values(advanced).some(Boolean) ? (
+                          <Localized>{"No matching results"}</Localized>
+                        ) : (
+                          <Localized>{"No products yet"}</Localized>
+                        )}
                       </p>
                       <p className="text-xs text-muted">
                         {search ||
                         filter !== "all" ||
-                        Object.values(advanced).some(Boolean)
-                          ? "Try another keyword or clear your filters."
-                          : "Add your first record to get started."}
+                        Object.values(advanced).some(Boolean) ? (
+                          <Localized>
+                            {"Try another keyword or clear your filters."}
+                          </Localized>
+                        ) : (
+                          <Localized>
+                            {"Add your first record to get started."}
+                          </Localized>
+                        )}
                       </p>
                       {!search &&
                         filter === "all" &&
@@ -921,7 +997,8 @@ export default function ProdukPage() {
                             size="sm"
                             onClick={() => setDialogOpen(true)}
                           >
-                            <Plus className="size-3.5" /> New product
+                            <Plus className="size-3.5" />{" "}
+                            <Localized>{" New product "}</Localized>
                           </Button>
                         )}
                       {(search ||
@@ -936,7 +1013,7 @@ export default function ProdukPage() {
                             setAdvanced({ ...emptyFilters });
                           }}
                         >
-                          Clear filters
+                          <Localized>{" Clear filters "}</Localized>
                         </Button>
                       )}
                     </div>
@@ -974,7 +1051,7 @@ export default function ProdukPage() {
                           type="button"
                           className="row-action"
                           onClick={() => void openDetail(p)}
-                          title="Product details"
+                          title={localize("Product details")}
                         >
                           <Eye className="size-3.5" />
                         </button>
@@ -983,7 +1060,7 @@ export default function ProdukPage() {
                             type="button"
                             className="row-action"
                             onClick={() => openEdit(p)}
-                            title="Edit"
+                            title={localize("Edit")}
                           >
                             <Pencil className="size-3.5" />
                           </button>
@@ -994,7 +1071,7 @@ export default function ProdukPage() {
                             className="row-action"
                             data-tone="danger"
                             onClick={() => handleDelete(p.id)}
-                            title="Delete"
+                            title={localize("Delete")}
                           >
                             <Trash2 className="size-3.5" />
                           </button>
@@ -1019,11 +1096,14 @@ export default function ProdukPage() {
       >
         <DialogContent className="product-detail-dialog max-h-[90svh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <p className="micro-label">Product specifications</p>
+            <p className="micro-label">
+              <Localized>{"Product specifications"}</Localized>
+            </p>
             <DialogTitle>{detail?.nama_produk}</DialogTitle>
             <DialogDescription>
-              {detail?.kode_produk} · Version {detail?.spec_version || 1} ·
-              Current test specifications.
+              {detail?.kode_produk} <Localized>{" · Version "}</Localized>
+              {detail?.spec_version || 1}{" "}
+              <Localized>{" · Current test specifications. "}</Localized>
             </DialogDescription>
           </DialogHeader>
           {detail && (
@@ -1036,7 +1116,9 @@ export default function ProdukPage() {
                   ["Packaging", detail.tipe_kemasan],
                 ].map(([label, value]) => (
                   <div key={label}>
-                    <dt className="micro-label">{label}</dt>
+                    <dt className="micro-label">
+                      <Localized>{label}</Localized>
+                    </dt>
                     <dd className="mt-2 text-sm font-medium">{value || "—"}</dd>
                   </div>
                 ))}
@@ -1046,33 +1128,37 @@ export default function ProdukPage() {
                   className="erp-document-link mb-5"
                   href={`/dashboard/product-documents?product=${detail.id}`}
                 >
-                  View product documents
+                  <Localized>{" View product documents "}</Localized>
                 </Link>
               )}
-              <h3 className="mb-3 text-sm font-semibold">Test parameters</h3>
+              <h3 className="mb-3 text-sm font-semibold">
+                <Localized>{"Test parameters"}</Localized>
+              </h3>
               {detailLoading ? (
                 <p
                   role="status"
                   className="py-8 text-center text-sm text-muted"
                 >
-                  Loading specifications…
+                  <Localized>{" Loading specifications… "}</Localized>
                 </p>
               ) : detailError ? (
                 <EmptyState
                   error
-                  title="Could not load specifications"
+                  title={localize("Could not load specifications")}
                   description="Reload to view this product's specifications."
                 >
                   <Button
                     variant="outline"
                     onClick={() => void openDetail(detail)}
                   >
-                    Retry
+                    <Localized>{" Retry "}</Localized>
                   </Button>
                 </EmptyState>
               ) : detailSpecs.length === 0 ? (
                 <p className="rounded-xl bg-surface-alt p-5 text-sm text-muted">
-                  This product has no test parameters.
+                  <Localized>
+                    {" This product has no test parameters. "}
+                  </Localized>
                 </p>
               ) : (
                 <SpecificationParameters items={detailSpecs} />
@@ -1085,7 +1171,13 @@ export default function ProdukPage() {
             </RecordLoadingBoundary>
           )}
           <DialogFooter className="mt-6">
-            <DialogClose render={<Button variant="outline">Close</Button>} />
+            <DialogClose
+              render={
+                <Button variant="outline">
+                  <Localized>{"Close"}</Localized>
+                </Button>
+              }
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>

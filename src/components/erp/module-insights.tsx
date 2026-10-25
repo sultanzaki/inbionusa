@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Activity, ArrowUpRight, ChevronDown } from "lucide-react";
@@ -18,6 +20,8 @@ export function ModuleInsights({
 }: {
   module: Exclude<ModuleKey, "quality">;
 }) {
+  const { t: localize } = useLocale();
+
   const erp = useERP(),
     [open, setOpen] = useState(false),
     [days, setDays] = useState("30"),
@@ -60,46 +64,62 @@ export function ModuleInsights({
       >
         <Activity aria-hidden="true" />
         <span>
-          <strong>Operational insights</strong>
+          <strong>
+            <Localized>{"Operational insights"}</Localized>
+          </strong>
         </span>
         <ChevronDown aria-hidden="true" />
       </button>
       {open && (
         <div className="module-insights-body">
           <div className="module-insights-period">
-            <span>Daily activity</span>
+            <span>
+              <Localized>{"Daily activity"}</Localized>
+            </span>
             <label>
-              Period
+              <Localized>{" Period "}</Localized>
               <select
-                aria-label="Insights period"
+                aria-label={localize("Insights period")}
                 value={days}
                 onChange={(e) => setDays(e.target.value)}
               >
-                <option value="7">Last 7 days</option>
-                <option value="30">Last 30 days</option>
-                <option value="90">Last 90 days</option>
+                <option value="7">
+                  <Localized>{"Last 7 days"}</Localized>
+                </option>
+                <option value="30">
+                  <Localized>{"Last 30 days"}</Localized>
+                </option>
+                <option value="90">
+                  <Localized>{"Last 90 days"}</Localized>
+                </option>
               </select>
             </label>
           </div>
           {current?.error ? (
             <div role="alert">
-              <p>{current.error}</p>
+              <p>
+                <Localized>{current.error}</Localized>
+              </p>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setRetry((v) => v + 1)}
               >
-                Retry insights
+                <Localized>{" Retry insights "}</Localized>
               </Button>
             </div>
           ) : !data ? (
-            <p role="status">Loading insights…</p>
+            <p role="status">
+              <Localized>{"Loading insights…"}</Localized>
+            </p>
           ) : (
             <>
               <div className="module-insights-metrics">
                 {data.metrics.map((m) => (
                   <article key={m.label}>
-                    <span>{m.label}</span>
+                    <span>
+                      <Localized>{m.label}</Localized>
+                    </span>
                     <strong>{m.value.toLocaleString("en-GB")}</strong>
                   </article>
                 ))}
@@ -107,7 +127,9 @@ export function ModuleInsights({
               <details className="module-insights-trend">
                 <summary>
                   {data.chart_label}
-                  <span>{days} days</span>
+                  <span>
+                    {days} <Localized>{" days"}</Localized>
+                  </span>
                 </summary>
                 <div
                   className="insights-bars"
@@ -128,13 +150,17 @@ export function ModuleInsights({
                   className="insights-table"
                   tabIndex={0}
                   role="region"
-                  aria-label="Daily activity data"
+                  aria-label={localize("Daily activity data")}
                 >
                   <table>
                     <thead>
                       <tr>
-                        <th>Date</th>
-                        <th>Records</th>
+                        <th>
+                          <Localized>{"Date"}</Localized>
+                        </th>
+                        <th>
+                          <Localized>{"Records"}</Localized>
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -156,21 +182,30 @@ export function ModuleInsights({
                       {a.currency} {decimal(a.amount)}
                     </strong>
                   ))}
-                  <small>Current open records, grouped by currency.</small>
+                  <small>
+                    <Localized>
+                      {"Current open records, grouped by currency."}
+                    </Localized>
+                  </small>
                 </div>
               )}
               <div className="insights-attention">
                 {data.attention.map((a) => (
                   <Link key={a.label} href={a.href}>
-                    <span>{a.label}</span>
+                    <span>
+                      <Localized>{a.label}</Localized>
+                    </span>
                     <strong>{a.value.toLocaleString("en-GB")}</strong>
                     <ArrowUpRight aria-hidden="true" />
                   </Link>
                 ))}
               </div>
               <p className="module-insights-note">
-                Activity trends and counts use the selected period. Workload,
-                alerts and open values show current status.
+                <Localized>
+                  {
+                    " Activity trends and counts use the selected period. Workload, alerts and open values show current status. "
+                  }
+                </Localized>
               </p>
             </>
           )}

@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { useId, useState, useEffect } from "react";
 import { ChevronsUpDown, Check, Search } from "lucide-react";
 import {
@@ -33,6 +35,7 @@ export function ReferencePicker({
   invalid?: boolean;
   onResolve?: (value: string, unit: string) => void;
 }) {
+  const { t: localize } = useLocale();
   const [open, setOpen] = useState(false),
     [q, setQ] = useState(""),
     [search, setSearch] = useState(""),
@@ -135,24 +138,32 @@ export function ReferencePicker({
             aria-controls={generated + "-options"}
             aria-invalid={invalid || undefined}
             className="work-reference"
-            aria-label={field.label}
+            aria-label={localize(field.label)}
           />
         }
       >
         <span>
-          {record
-            ? label(record)
-            : value
-              ? selected.loading
-                ? "Loading selection…"
-                : selected.error
-                  ? "Could not load selection. Choose again."
-                  : "Selection unavailable. Choose again."
-              : "Choose " + field.label.toLowerCase()}
+          {record ? (
+            label(record)
+          ) : value ? (
+            selected.loading ? (
+              <Localized>{"Loading selection…"}</Localized>
+            ) : selected.error ? (
+              <Localized>{"Could not load selection. Choose again."}</Localized>
+            ) : (
+              <Localized>{"Selection unavailable. Choose again."}</Localized>
+            )
+          ) : (
+            localize("Choose " + field.label.toLowerCase())
+          )}
         </span>
         <ChevronsUpDown className="size-3.5 shrink-0" />
       </PopoverTrigger>
-      <PopoverContent align="start" className="work-picker" label={field.label}>
+      <PopoverContent
+        align="start"
+        className="work-picker"
+        label={localize(field.label)}
+      >
         <div
           className="work-picker-body"
           onKeyDown={(event) => {
@@ -200,9 +211,9 @@ export function ReferencePicker({
             <RecordSkeleton compact label="Loading choices…" />
           ) : result.error ? (
             <div role="alert">
-              {result.error}
+              <Localized>{result.error}</Localized>
               <Button variant="outline" size="sm" onClick={result.refresh}>
-                Retry
+                <Localized>{" Retry "}</Localized>
               </Button>
             </div>
           ) : (
@@ -210,9 +221,13 @@ export function ReferencePicker({
               id={generated + "-options"}
               className="work-picker-options"
               role="listbox"
-              aria-label={field.label}
+              aria-label={localize(field.label)}
             >
-              {!rows.length && <p>No matching records.</p>}
+              {!rows.length && (
+                <p>
+                  <Localized>{"No matching records."}</Localized>
+                </p>
+              )}
               {rows.map((row) => (
                 <button
                   type="button"
@@ -260,7 +275,7 @@ export function ReferencePicker({
                 setOpen(false);
               }}
             >
-              Clear
+              <Localized>{" Clear "}</Localized>
             </Button>
             {!field.local && (
               <>
@@ -270,7 +285,7 @@ export function ReferencePicker({
                   disabled={page === 1 || searching}
                   onClick={() => setPage((p) => p - 1)}
                 >
-                  Previous
+                  <Localized>{" Previous "}</Localized>
                 </Button>
                 <span>{page}</span>
                 <Button
@@ -282,7 +297,7 @@ export function ReferencePicker({
                   }
                   onClick={() => setPage((p) => p + 1)}
                 >
-                  Next
+                  <Localized>{" Next "}</Localized>
                 </Button>
               </>
             )}

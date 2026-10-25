@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import {
   useImperativeHandle,
   useRef,
@@ -15,6 +17,8 @@ export function FormJourney({
   sections: { title: string; content: ReactNode }[];
   ref?: Ref<JourneyHandle>;
 }) {
+  const { t: localize } = useLocale();
+
   const [step, setStep] = useState(0);
   const [all, setAll] = useState(() => {
     try {
@@ -56,11 +60,13 @@ export function FormJourney({
         <>
           <div className="form-journey-heading">
             <strong>
-              {all
-                ? "All fields"
-                : step === sections.length
-                  ? "Review"
-                  : `Step ${step + 1} of ${sections.length + 1}`}
+              <Localized>
+                {all
+                  ? "All fields"
+                  : step === sections.length
+                    ? "Review"
+                    : `Step ${step + 1} of ${sections.length + 1}`}
+              </Localized>
             </strong>
             <Button
               size="sm"
@@ -77,11 +83,15 @@ export function FormJourney({
               }}
             >
               {" "}
-              {all ? "Use guided form" : "Show all fields"}
+              {all ? (
+                <Localized>{"Use guided form"}</Localized>
+              ) : (
+                <Localized>{"Show all fields"}</Localized>
+              )}
             </Button>
           </div>
           {!all && (
-            <nav aria-label="Form steps" className="form-step-nav">
+            <nav aria-label={localize("Form steps")} className="form-step-nav">
               {[...sections.map((s) => s.title), "Review"].map((title, i) => (
                 <button
                   key={title}
@@ -89,7 +99,7 @@ export function FormJourney({
                   aria-current={step === i ? "step" : undefined}
                   onClick={() => move(i)}
                 >
-                  {i + 1}. {title}
+                  {i + 1}. <Localized>{title}</Localized>
                 </button>
               ))}
             </nav>
@@ -102,9 +112,13 @@ export function FormJourney({
           hidden={!review && step !== i}
           data-step-active={review || step === i}
           className="form-step-content"
-          aria-label={section.title}
+          aria-label={localize(section.title)}
         >
-          {guided && review && <h3>{section.title}</h3>}
+          {guided && review && (
+            <h3>
+              <Localized>{section.title}</Localized>
+            </h3>
+          )}
           {section.content}
         </section>
       ))}
@@ -115,11 +129,15 @@ export function FormJourney({
             disabled={step === 0}
             onClick={() => move(step - 1)}
           >
-            Previous step
+            <Localized>{" Previous step "}</Localized>
           </Button>
           {!review && (
             <Button onClick={() => move(step + 1)}>
-              {step === sections.length - 1 ? "Review information" : "Continue"}
+              {step === sections.length - 1 ? (
+                <Localized>{"Review information"}</Localized>
+              ) : (
+                <Localized>{"Continue"}</Localized>
+              )}
             </Button>
           )}
         </div>

@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -246,21 +248,34 @@ export function useWorkspaceGroups() {
   ];
 }
 export function WorkspaceDirectory() {
+  const { t: localize } = useLocale();
+
   const groups = useWorkspaceGroups();
   return (
     <div className="page-stack work-directory">
       <div>
-        <p className="micro-label">WORKSPACE</p>
-        <h1>All workspaces</h1>
+        <p className="micro-label">
+          <Localized>{"WORKSPACE"}</Localized>
+        </p>
+        <h1>
+          <Localized>{"All workspaces"}</Localized>
+        </h1>
       </div>
-      <nav className="workspace-launcher" aria-label="All workspaces">
+      <nav
+        className="workspace-launcher"
+        aria-label={localize("All workspaces")}
+      >
         {groups.map(({ name, description, icon: Icon, links }) => (
           <Link key={name} href={links[0][1]} className="workspace-tile">
             <span className="workspace-tile-icon">
               <Icon aria-hidden="true" />
             </span>
-            <strong>{name}</strong>
-            <span className="workspace-tile-description">{description}</span>
+            <strong>
+              <Localized>{name}</Localized>
+            </strong>
+            <span className="workspace-tile-description">
+              <Localized>{description}</Localized>
+            </span>
             <ArrowRight className="workspace-tile-arrow" aria-hidden="true" />
           </Link>
         ))}
@@ -269,6 +284,8 @@ export function WorkspaceDirectory() {
   );
 }
 export function WorkspaceSidebar({ collapsed }: { collapsed: boolean }) {
+  const { t: localize } = useLocale();
+
   const groups = useWorkspaceGroups(),
     path = usePathname(),
     params = useSearchParams();
@@ -284,11 +301,16 @@ export function WorkspaceSidebar({ collapsed }: { collapsed: boolean }) {
   if (collapsed)
     return (
       <nav
-        aria-label="Main navigation"
+        aria-label={localize("Main navigation")}
         className="workspace-sidebar-nav collapsed-navigation"
       >
         {groups.map(({ name, icon: Icon, links }) => (
-          <Link href={links[0][1]} key={name} title={name} aria-label={name}>
+          <Link
+            href={links[0][1]}
+            key={name}
+            title={localize(name)}
+            aria-label={localize(name)}
+          >
             <Icon className="size-5" />
           </Link>
         ))}
@@ -299,40 +321,51 @@ export function WorkspaceSidebar({ collapsed }: { collapsed: boolean }) {
     group.links.some(([, href]) => active(href)),
   )?.name;
   const openModule = expanded?.route === route ? expanded.name : activeModule;
+  const matches = (label: string) =>
+    [label, localize(label)].some((value) =>
+      value.toLowerCase().includes(query),
+    );
   const filtered = groups
     .map((group) => ({
       ...group,
       links:
-        query && !group.name.toLowerCase().includes(query)
-          ? group.links.filter(([label]) => label.toLowerCase().includes(query))
+        query && !matches(group.name)
+          ? group.links.filter(([label]) => matches(label))
           : group.links,
     }))
     .filter((group) => group.links.length);
   return (
-    <nav aria-label="Main navigation" className="workspace-sidebar-nav">
+    <nav
+      aria-label={localize("Main navigation")}
+      className="workspace-sidebar-nav"
+    >
       <div className="sidebar-page-search">
         <Input
           type="search"
-          aria-label="Find a page"
-          placeholder="Find a page…"
+          aria-label={localize("Find a page")}
+          placeholder={localize("Find a page…")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
       {!filtered.length && (
-        <p className="sidebar-no-results">No matching pages.</p>
+        <p className="sidebar-no-results">
+          <Localized>{"No matching pages."}</Localized>
+        </p>
       )}
       {filtered.map(({ name, icon: Icon, links }) => (
         <details key={name} open={Boolean(query) || openModule === name}>
           <summary
-            title={name}
+            title={localize(name)}
             onClick={(event) => {
               event.preventDefault();
               setExpanded({ route, name: openModule === name ? null : name });
             }}
           >
             <Icon className="size-4" />
-            <span>{name}</span>
+            <span>
+              <Localized>{name}</Localized>
+            </span>
             <ChevronDown className="sidebar-chevron" aria-hidden="true" />
           </summary>
           <div>
@@ -345,7 +378,7 @@ export function WorkspaceSidebar({ collapsed }: { collapsed: boolean }) {
                   aria-current={active(href) ? "page" : undefined}
                   onClick={() => setSearch("")}
                 >
-                  {label}
+                  <Localized>{label}</Localized>
                 </Link>
               ));
               return section.name ? (
@@ -359,7 +392,7 @@ export function WorkspaceSidebar({ collapsed }: { collapsed: boolean }) {
                   }
                 >
                   <summary>
-                    {section.name}
+                    <Localized>{section.name}</Localized>
                     <ChevronDown
                       className="sidebar-chevron"
                       aria-hidden="true"
@@ -378,11 +411,15 @@ export function WorkspaceSidebar({ collapsed }: { collapsed: boolean }) {
       ))}
       <Link className="sidebar-inbox" href="/dashboard/workspaces">
         <LayoutDashboard className="size-4" />
-        <span>All workspaces</span>
+        <span>
+          <Localized>{"All workspaces"}</Localized>
+        </span>
       </Link>
       <Link className="sidebar-inbox" href="/dashboard/inbox">
         <Inbox className="size-4" />
-        <span>Work inbox</span>
+        <span>
+          <Localized>{"Work inbox"}</Localized>
+        </span>
       </Link>
     </nav>
   );

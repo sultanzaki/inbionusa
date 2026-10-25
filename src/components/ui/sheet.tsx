@@ -1,4 +1,5 @@
 "use client";
+import { Localized } from "@/components/i18n/locale-provider";
 
 import * as React from "react";
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
@@ -58,7 +59,7 @@ function SheetContent({
         )}
         {...props}
       >
-        {children}
+        <Localized>{children}</Localized>
         {showCloseButton && (
           <SheetPrimitive.Close
             data-slot="sheet-close"
@@ -71,7 +72,9 @@ function SheetContent({
             }
           >
             <XIcon />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">
+              <Localized>{"Close"}</Localized>
+            </span>
           </SheetPrimitive.Close>
         )}
       </SheetPrimitive.Popup>

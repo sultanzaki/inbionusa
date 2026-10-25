@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { RecordSkeleton } from "@/components/workspace/record-loading";
 import { useERPPage } from "./data";
 import { humanLabel, money } from "@/lib/erp/ux";
@@ -12,21 +14,30 @@ const routes: Record<string, string> = {
   fin_payments: "/dashboard/finance?view=payments",
 };
 export function DocumentFlow({ entity, id }: { entity: string; id: string }) {
+  const { t: localize } = useLocale();
+
   const result = useERPPage("flow/" + entity, "", "", 1, id);
   return (
-    <section className="erp-document-flow" aria-label="Document flow">
-      <h3 className="text-sm font-semibold">Document journey</h3>
+    <section
+      className="erp-document-flow"
+      aria-label={localize("Document flow")}
+    >
+      <h3 className="text-sm font-semibold">
+        <Localized>{"Document journey"}</Localized>
+      </h3>
       {result.loading ? (
         <RecordSkeleton compact label="Loading linked documents…" />
       ) : result.error ? (
         <p className="text-xs text-muted">
-          {result.error}{" "}
+          <Localized>{result.error}</Localized>{" "}
           <button type="button" className="underline" onClick={result.refresh}>
-            Retry
+            <Localized>{" Retry "}</Localized>
           </button>
         </p>
       ) : result.data.rows.length === 0 ? (
-        <p className="text-xs text-muted">No linked documents yet.</p>
+        <p className="text-xs text-muted">
+          <Localized>{"No linked documents yet."}</Localized>
+        </p>
       ) : (
         <div className="document-journey">
           <ol className="document-journey-stages">
@@ -61,7 +72,9 @@ export function DocumentFlow({ entity, id }: { entity: string; id: string }) {
                 >
                   <div className="document-stage-heading">
                     <span>{String(index + 1).padStart(2, "0")}</span>
-                    <h4>{label}</h4>
+                    <h4>
+                      <Localized>{label}</Localized>
+                    </h4>
                     <small>{documents.length}</small>
                   </div>
                   <div className="document-stage-records">
@@ -87,7 +100,9 @@ export function DocumentFlow({ entity, id }: { entity: string; id: string }) {
                           }
                         >
                           <strong>{r.number}</strong>
-                          <span>{humanLabel(r.state)}</span>
+                          <span>
+                            <Localized>{humanLabel(r.state)}</Localized>
+                          </span>
                           <small>
                             {r.date}
                             {r.amount && r.currency
@@ -97,7 +112,9 @@ export function DocumentFlow({ entity, id }: { entity: string; id: string }) {
                         </a>
                       ))
                     ) : (
-                      <p className="document-stage-empty">No linked record</p>
+                      <p className="document-stage-empty">
+                        <Localized>{"No linked record"}</Localized>
+                      </p>
                     )}
                   </div>
                 </li>
@@ -116,6 +133,8 @@ export function DispatchReadiness({
   orderId: string;
   movementId?: string;
 }) {
+  const { t: localize } = useLocale();
+
   const erp = useERP();
   const result = useERPPage(
     movementId ? "delivery-readiness" : "dispatch_status",
@@ -130,9 +149,13 @@ export function DispatchReadiness({
     ? (record?.finance as Record<string, unknown> | undefined)
     : record;
   return (
-    <section className="erp-notice" aria-label="Delivery readiness">
+    <section className="erp-notice" aria-label={localize("Delivery readiness")}>
       <strong>
-        {movementId ? "Delivery readiness" : "Financial readiness"}
+        {movementId ? (
+          <Localized>{"Delivery readiness"}</Localized>
+        ) : (
+          <Localized>{"Financial readiness"}</Localized>
+        )}
       </strong>
       {result.loading ? (
         <RecordSkeleton
@@ -141,9 +164,9 @@ export function DispatchReadiness({
         />
       ) : result.error ? (
         <p role="alert">
-          {result.error}{" "}
+          <Localized>{result.error}</Localized>{" "}
           <button type="button" className="underline" onClick={result.refresh}>
-            Retry
+            <Localized>{" Retry "}</Localized>
           </button>
         </p>
       ) : (
@@ -154,7 +177,12 @@ export function DispatchReadiness({
                 record.checks as { id: string; label: string; ready: boolean }[]
               ).map((c) => (
                 <li key={c.id}>
-                  {c.ready ? "Ready" : "Action needed"} · {c.label}
+                  {c.ready ? (
+                    <Localized>{"Ready"}</Localized>
+                  ) : (
+                    <Localized>{"Action needed"}</Localized>
+                  )}{" "}
+                  · <Localized>{c.label}</Localized>
                 </li>
               ))}
             </ul>
@@ -166,9 +194,9 @@ export function DispatchReadiness({
           </p>
           {status?.required != null && (
             <p>
-              Required:{" "}
+              <Localized>{" Required:"}</Localized>{" "}
               {money(String(status.required), String(status.currency || "IDR"))}{" "}
-              · Verified allocated:{" "}
+              <Localized>{" · Verified allocated:"}</Localized>{" "}
               {money(String(status.paid), String(status.currency || "IDR"))}
             </p>
           )}
@@ -179,15 +207,18 @@ export function DispatchReadiness({
               target="_blank"
               rel="noopener noreferrer"
             >
-              Review payment terms and allocation
+              <Localized>{" Review payment terms and allocation "}</Localized>
             </a>
           )}
           <button type="button" className="underline" onClick={result.refresh}>
-            Recheck readiness
+            <Localized>{" Recheck readiness "}</Localized>
           </button>
           <p className="text-xs">
-            Posting also rechecks stock, lot release, expiry and certificate
-            requirements. Financial approval alone does not confirm payment.
+            <Localized>
+              {
+                " Posting also rechecks stock, lot release, expiry and certificate requirements. Financial approval alone does not confirm payment. "
+              }
+            </Localized>
           </p>
         </>
       )}

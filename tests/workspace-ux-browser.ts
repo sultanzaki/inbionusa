@@ -66,7 +66,7 @@ export async function exerciseWorkspaceUX(
       .getByRole("link", { name: "Incoming inspections", exact: true })
       .click(),
   ]);
-  await page.locator(".work-context-strip").waitFor();
+  await page.locator(".work-list-tools").waitFor();
   assert.equal(
     await nav
       .getByRole("link", { name: "Incoming inspections", exact: true })
@@ -78,7 +78,7 @@ export async function exerciseWorkspaceUX(
     page.waitForURL("**/dashboard/warehouse/pallets"),
     nav.getByRole("link", { name: "Pallet tracking", exact: true }).click(),
   ]);
-  await page.locator(".work-context-strip").waitFor();
+  await page.locator(".work-list-tools").waitFor();
   assert.match(page.url(), /warehouse\/pallets/);
   assert.equal(await nav.getByRole("searchbox").inputValue(), "");
   assert.equal(await nav.locator(":scope > details[open]").count(), 1);

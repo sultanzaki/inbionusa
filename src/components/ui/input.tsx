@@ -1,4 +1,5 @@
 "use client";
+import { useLocale } from "@/components/i18n/locale-provider";
 import * as React from "react";
 import { Input as InputPrimitive } from "@base-ui/react/input";
 import { cn } from "cn";
@@ -20,6 +21,7 @@ function Input({
   prefix?: string;
   suffix?: string;
 }) {
+  const { t } = useLocale();
   const affixId = React.useId();
   // Keep fast typing from being discarded before controlled handlers attach.
   const hydrated = React.useSyncExternalStore(
@@ -43,6 +45,8 @@ function Input({
         className,
       )}
       {...props}
+      placeholder={props.placeholder ? t(props.placeholder) : undefined}
+      aria-label={props["aria-label"] ? t(props["aria-label"]) : undefined}
       readOnly={props.readOnly || !hydrated}
       aria-describedby={
         [props["aria-describedby"], decorated ? affixId : undefined]

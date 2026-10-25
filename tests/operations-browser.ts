@@ -214,7 +214,9 @@ export async function exerciseOperations(
     );
     assert.equal(saveRequests, 1);
     releaseSave();
-    await page.getByRole("dialog", { name: "Enter inspection results", exact: true }).waitFor({ state: "hidden" });
+    await page
+      .getByRole("dialog", { name: "Enter inspection results", exact: true })
+      .waitFor({ state: "hidden" });
   } finally {
     releaseSave();
     await page.unroute("**/api/operations/save_incoming_results");
@@ -243,14 +245,14 @@ export async function exerciseOperations(
   assert.equal(
     finalPdf.status(),
     200,
-    "final inspection PDF loads audit-backed approval",
+    "final inspection PDF downloads without a stamp",
   );
   const finalDocument = await PDFDocument.load(await finalPdf.body());
   assert.ok(finalDocument.getPageCount() >= 1);
-  assert.match(
+  assert.doesNotMatch(
     finalDocument.getKeywords() || "",
-    /WORK-\d+/,
-    "final PDF contains real audit approval evidence",
+    /Internal approval|WORK-\d+/,
+    "final PDF omits the internal stamp",
   );
   assert.doesNotMatch(
     pdfDocument.getKeywords() || "",
@@ -273,7 +275,7 @@ export async function exerciseOperations(
   ]) {
     await page.goto(origin + "/dashboard/" + route);
     await page
-      .locator(".work-context-strip")
+      .locator(".work-list-tools")
       .waitFor()
       .catch(async (error) => {
         await page.screenshot({
@@ -344,7 +346,7 @@ export async function exerciseOperations(
   await page.goto(origin + "/dashboard/production/orders");
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(origin + "/dashboard/production/orders");
-  await page.locator(".work-context-strip").waitFor();
+  await page.locator(".work-list-tools").waitFor();
   await capture("operations-orders-desktop");
   const wasDark = await page.evaluate(() =>
     document.documentElement.classList.contains("dark"),

@@ -1,3 +1,4 @@
+import { Localized } from "@/components/i18n/locale-provider";
 import { cacheLife } from "next/cache";
 
 export async function Copyright() {
@@ -7,5 +8,10 @@ export async function Copyright() {
     year: "numeric",
     timeZone: "Asia/Jakarta",
   }).format(new Date());
-  return <span>Copyright {year} PT Inovasi Biokem Nusantara.</span>;
+  return (
+    <span>
+      <Localized>{"Copyright "}</Localized>
+      {year} <Localized>{" PT Inovasi Biokem Nusantara."}</Localized>
+    </span>
+  );
 }

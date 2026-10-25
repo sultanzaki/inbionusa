@@ -1,4 +1,6 @@
 "use client";
+import { Localized } from "@/components/i18n/locale-provider";
+
 import { ContextSummary } from "@/components/workspace/record-overview";
 import { SaveStatus } from "@/components/workspace/save-status";
 import { saveRequest, SaveRequestError } from "@/lib/save-request";
@@ -15,7 +17,7 @@ import {
 } from "@/components/workspace/form-recovery";
 import { useRef, useState, useId, type FormEvent } from "react";
 import { Plus, Trash2, ArrowRight, Info } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/i18n/toast";
 import {
   workCommands,
   type WorkField,
@@ -300,8 +302,14 @@ function CommandFormContent({
         <section className="work-lines" key={path}>
           <div className="work-section-heading">
             <div>
-              <h3>{field.label}</h3>
-              <p>Review each item and its quantity before saving.</p>
+              <h3>
+                <Localized>{field.label}</Localized>
+              </h3>
+              <p>
+                <Localized>
+                  {"Review each item and its quantity before saving."}
+                </Localized>
+              </p>
             </div>
             <Button
               type="button"
@@ -318,13 +326,16 @@ function CommandFormContent({
               }
             >
               <Plus className="size-3.5" />
-              Add line
+              <Localized>{" Add line "}</Localized>
             </Button>
           </div>
           {rows.map((line, index) => (
             <div key={index} className="work-line-card">
               <div className="work-line-number">
-                <span>Line {index + 1}</span>
+                <span>
+                  <Localized>{"Line "}</Localized>
+                  {index + 1}
+                </span>
                 <Button
                   type="button"
                   variant="ghost"
@@ -369,10 +380,14 @@ function CommandFormContent({
               </div>
             </div>
           ))}
-          {!rows.length && <p className="work-quiet">No lines added.</p>}
+          {!rows.length && (
+            <p className="work-quiet">
+              <Localized>{"No lines added."}</Localized>
+            </p>
+          )}
           {error && (
             <p className="work-field-error" role="alert">
-              {error.message}
+              <Localized>{error.message}</Localized>
             </p>
           )}
         </section>
@@ -381,7 +396,9 @@ function CommandFormContent({
     if (field.kind === "results")
       return (
         <section className="work-lines" key={path}>
-          <h3>{field.label}</h3>
+          <h3>
+            <Localized>{field.label}</Localized>
+          </h3>
           {((val as { name: string; value: string }[]) || []).map(
             (result, index) => {
               const parameter = ((
@@ -426,7 +443,7 @@ function CommandFormContent({
                       className="work-field-error"
                       role="alert"
                     >
-                      {resultError.message}
+                      <Localized>{resultError.message}</Localized>
                     </small>
                   )}
                 </label>
@@ -444,9 +461,11 @@ function CommandFormContent({
         data-field-path={path}
       >
         <label htmlFor={id}>
-          {field.label}
+          <Localized>{field.label}</Localized>
           {!field.required && field.kind !== "boolean" && (
-            <small>Optional</small>
+            <small>
+              <Localized>{"Optional"}</Localized>
+            </small>
           )}
         </label>
         {field.kind === "ref" ? (
@@ -476,7 +495,13 @@ function CommandFormContent({
               disabled={busy}
               onChange={(e) => set(field.key, e.target.checked)}
             />
-            <span>{Boolean(val) ? "Enabled" : "Disabled"}</span>
+            <span>
+              {Boolean(val) ? (
+                <Localized>{"Enabled"}</Localized>
+              ) : (
+                <Localized>{"Disabled"}</Localized>
+              )}
+            </span>
           </label>
         ) : field.kind === "select" ? (
           <select
@@ -487,11 +512,12 @@ function CommandFormContent({
             onChange={(e) => set(field.key, e.target.value)}
           >
             <option value="" disabled={field.required}>
-              Choose {field.label.toLowerCase()}…
+              <Localized>{" Choose "}</Localized>
+              {field.label.toLowerCase()}…
             </option>
             {field.options?.map((value) => (
               <option value={value} key={value}>
-                {humanLabel(value)}
+                <Localized>{humanLabel(value)}</Localized>
               </option>
             ))}
           </select>
@@ -529,7 +555,7 @@ function CommandFormContent({
         </small>
         {error && (
           <small className="work-field-error" role="alert">
-            {error.message}
+            <Localized>{error.message}</Localized>
           </small>
         )}
       </div>
@@ -564,7 +590,9 @@ function CommandFormContent({
             />
             {busy && (
               <p role="status" className="save-status">
-                Saving changes… Keep this form open.
+                <Localized>
+                  {" Saving changes… Keep this form open. "}
+                </Localized>
               </p>
             )}
             {command.help && (
@@ -574,9 +602,11 @@ function CommandFormContent({
               >
                 <summary>
                   <Info className="size-4 shrink-0" />
-                  Requirements
+                  <Localized>{" Requirements "}</Localized>
                 </summary>
-                <p>{command.help}</p>
+                <p>
+                  <Localized>{command.help}</Localized>
+                </p>
               </details>
             )}
             <FormJourney
@@ -621,7 +651,7 @@ function CommandFormContent({
             />
             {failure && (
               <div className="work-form-error" role="alert">
-                {failure}
+                <Localized>{failure}</Localized>
               </div>
             )}
           </div>
@@ -644,7 +674,7 @@ function CommandFormContent({
               }
             }}
           >
-            Cancel
+            <Localized>{" Cancel "}</Localized>
           </Button>
           {command.confirm ? (
             <SlideConfirm
@@ -659,7 +689,11 @@ function CommandFormContent({
             />
           ) : (
             <Button type="submit" loading={busy} disabled={uncertain}>
-              {busy ? "Saving…" : "Save"}
+              {busy ? (
+                <Localized>{"Saving…"}</Localized>
+              ) : (
+                <Localized>{"Save"}</Localized>
+              )}
               <ArrowRight className="size-3.5" />
             </Button>
           )}

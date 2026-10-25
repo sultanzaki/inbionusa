@@ -1,4 +1,6 @@
 "use client";
+import { Localized } from "@/components/i18n/locale-provider";
+
 import { useId, useRef, useState } from "react";
 import { ArrowRight, Check, LoaderCircle } from "lucide-react";
 
@@ -56,11 +58,13 @@ function SlideConfirmControl({
       >
         <span className="slide-confirm-fill" aria-hidden="true" />
         <span className="slide-confirm-label" aria-hidden="true">
-          {busy
-            ? "Processing…"
-            : progress >= 98
-              ? "Release to confirm"
-              : `Slide to ${label.toLowerCase()}`}
+          {busy ? (
+            <Localized>{"Processing…"}</Localized>
+          ) : progress >= 98 ? (
+            <Localized>{"Release to confirm"}</Localized>
+          ) : (
+            `Slide to ${label.toLowerCase()}`
+          )}
         </span>
         <div
           role="slider"
@@ -149,7 +153,11 @@ function SlideConfirmControl({
         </div>
       </div>
       <p id={hint} className="slide-confirm-hint">
-        Drag the handle to the end and release. Keyboard: End, then Enter.
+        <Localized>
+          {
+            " Drag the handle to the end and release. Keyboard: End, then Enter. "
+          }
+        </Localized>
       </p>
     </div>
   );

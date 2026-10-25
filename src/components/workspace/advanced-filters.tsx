@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { useId } from "react";
 import { CalendarDays } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -28,20 +30,22 @@ export function AdvancedFilterFields({
   products: FilterProduct[];
   productError: boolean;
 }) {
+  const { t: localize } = useLocale();
+
   const id = useId();
   return (
     <div className="advanced-filter-fields">
       <fieldset className="filter-date-range">
         <legend>
           <CalendarDays className="size-3.5" />
-          Date range
+          <Localized>{" Date range "}</Localized>
         </legend>
         <div>
           <label htmlFor={id + "from"}>
-            From
+            <Localized>{" From "}</Localized>
             <Input
               id={id + "from"}
-              aria-label="From date"
+              aria-label={localize("From date")}
               type="date"
               value={value.from}
               max={value.to || undefined}
@@ -49,10 +53,10 @@ export function AdvancedFilterFields({
             />
           </label>
           <label htmlFor={id + "to"}>
-            To
+            <Localized>{" To "}</Localized>
             <Input
               id={id + "to"}
-              aria-label="To date"
+              aria-label={localize("To date")}
               type="date"
               value={value.to}
               min={value.from || undefined}
@@ -63,14 +67,16 @@ export function AdvancedFilterFields({
       </fieldset>
       {["inspeksi", "coa"].includes(module) && (
         <label htmlFor={id + "product"}>
-          Product
+          <Localized>{" Product "}</Localized>
           <select
             id={id + "product"}
-            aria-label="Filter products"
+            aria-label={localize("Filter products")}
             value={value.product}
             onChange={(e) => onChange({ ...value, product: e.target.value })}
           >
-            <option value="">All products</option>
+            <option value="">
+              <Localized>{"All products"}</Localized>
+            </option>
             {products.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.kode_produk} · {p.nama_produk}
@@ -79,14 +85,20 @@ export function AdvancedFilterFields({
           </select>
           {productError && (
             <span role="alert" className="text-danger">
-              Could not load products. Reopen the filters to retry.
+              <Localized>
+                {" Could not load products. Reopen the filters to retry. "}
+              </Localized>
             </span>
           )}
         </label>
       )}
       {["inspeksi", "audit"].includes(module) && (
         <label htmlFor={id + "person"}>
-          {module === "audit" ? "Actor" : "Inspector"}
+          {module === "audit" ? (
+            <Localized>{"Actor"}</Localized>
+          ) : (
+            <Localized>{"Inspector"}</Localized>
+          )}
           <Input
             id={id + "person"}
             aria-label={
@@ -101,7 +113,11 @@ export function AdvancedFilterFields({
       )}
       {["produk", "arsip", "audit"].includes(module) && (
         <label htmlFor={id + "category"}>
-          {module === "audit" ? "Action" : "Category"}
+          {module === "audit" ? (
+            <Localized>{"Action"}</Localized>
+          ) : (
+            <Localized>{"Category"}</Localized>
+          )}
           <Input
             id={id + "category"}
             aria-label={

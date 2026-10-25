@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { RecordSkeleton } from "@/components/workspace/record-loading";
 import { useState } from "react";
 import { useERPPage } from "./data";
@@ -99,16 +101,23 @@ function QuantityReview({ lines }: { lines: Line[] }) {
         <article key={line.id}>
           <strong>{line.product}</strong>
           <p>
-            Ordered {displayNumber(line.ordered)} ·{" "}
-            {"received" in line ? "Actual" : "Completed"}{" "}
+            <Localized>{" Ordered "}</Localized>
+            {displayNumber(line.ordered)} ·{" "}
+            {"received" in line ? (
+              <Localized>{"Actual"}</Localized>
+            ) : (
+              <Localized>{"Completed"}</Localized>
+            )}{" "}
             {displayNumber(line.actual)} ·{" "}
             <strong>
-              Closing {displayNumber(line.closing)} {line.unit}
+              <Localized>{" Closing "}</Localized>
+              {displayNumber(line.closing)} {line.unit}
             </strong>
           </p>
           {line.reserved && Number(line.reserved) > 0 && (
             <small>
-              {displayNumber(line.reserved)} reserved units will be released.
+              {displayNumber(line.reserved)}{" "}
+              <Localized>{" reserved units will be released. "}</Localized>
             </small>
           )}
         </article>
@@ -148,6 +157,8 @@ export function TransactionControls({
   version?: number;
   currency?: string;
 }) {
+  const { t: localize } = useLocale();
+
   const erp = useERP(),
     [page, setPage] = useState(1),
     [mode, setMode] = useState<"close" | "variance" | null>(null),
@@ -172,39 +183,56 @@ export function TransactionControls({
   if (result.error)
     return (
       <p className="erp-notice" role="alert">
-        {result.error}{" "}
+        <Localized>{result.error}</Localized>{" "}
         <button type="button" className="underline" onClick={result.refresh}>
-          Retry controls
+          <Localized>{" Retry controls "}</Localized>
         </button>
       </p>
     );
   if (!control) return null;
   const isClosed = Boolean(control.closure);
   return (
-    <section className="transaction-controls" aria-label="Document controls">
+    <section
+      className="transaction-controls"
+      aria-label={localize("Document controls")}
+    >
       {control.closure && (
         <section className="erp-notice">
-          <h3>Remaining quantities closed</h3>
+          <h3>
+            <Localized>{"Remaining quantities closed"}</Localized>
+          </h3>
           <p>{control.closure.reason}</p>
           <p className="text-xs">
-            Approved by {control.closure.approver} ·{" "}
-            {stamp(control.closure.created_at)}
+            <Localized>{" Approved by "}</Localized>
+            {control.closure.approver} · {stamp(control.closure.created_at)}
           </p>
           <QuantityReview lines={control.closure.lines} />
           <p className="text-xs">
-            Original quantities are retained. Posted stock, invoices and
-            payments remain recorded.
+            <Localized>
+              {
+                " Original quantities are retained. Posted stock, invoices and payments remain recorded. "
+              }
+            </Localized>
           </p>
         </section>
       )}
       {preview && !isClosed && canClose && (
         <section className="erp-notice">
-          <h3>Close remaining quantities</h3>
+          <h3>
+            <Localized>{"Close remaining quantities"}</Localized>
+          </h3>
           <p>
-            Stop future{" "}
-            {preview.source_type === "order" ? "deliveries" : "receipts"} for
-            the remaining items. Review completed quantities and linked billing
-            before approval.
+            <Localized>{" Stop future"}</Localized>{" "}
+            {preview.source_type === "order" ? (
+              <Localized>{"deliveries"}</Localized>
+            ) : (
+              <Localized>{"receipts"}</Localized>
+            )}{" "}
+            <Localized>
+              {
+                " for the remaining items. Review completed quantities and linked billing before approval. "
+              }
+            </Localized>
           </p>
           {preview.blockers.length > 0 && (
             <ul className="list-disc pl-4">
@@ -222,45 +250,64 @@ export function TransactionControls({
               setMode("close");
             }}
           >
-            Review closure
+            <Localized>{" Review closure "}</Localized>
           </Button>
         </section>
       )}
       {matching && (
-        <section className="erp-notice" aria-label="Purchase matching review">
-          <h3>PO / receipt / bill matching</h3>
+        <section
+          className="erp-notice"
+          aria-label={localize("Purchase matching review")}
+        >
+          <h3>
+            <Localized>{"PO / receipt / bill matching"}</Localized>
+          </h3>
           <p>{matching.purchase_number}</p>
           <div className="control-lines">
             {matching.lines.map((line) => (
               <article key={line.id}>
                 <strong>{line.product}</strong>
                 <p>
-                  Ordered {displayNumber(line.ordered)} · Received{" "}
-                  {displayNumber(line.received)} · Billed elsewhere{" "}
-                  {displayNumber(line.billed_elsewhere)} · This bill{" "}
+                  <Localized>{" Ordered "}</Localized>
+                  {displayNumber(line.ordered)}{" "}
+                  <Localized>{" · Received"}</Localized>{" "}
+                  {displayNumber(line.received)}{" "}
+                  <Localized>{" · Billed elsewhere"}</Localized>{" "}
+                  {displayNumber(line.billed_elsewhere)}{" "}
+                  <Localized>{" · This bill"}</Localized>{" "}
                   {displayNumber(line.bill_quantity)} {line.unit}
                 </p>
                 <p>
-                  PO price {money(line.agreed_price, currency)} · Bill price{" "}
+                  <Localized>{" PO price "}</Localized>
+                  {money(line.agreed_price, currency)}{" "}
+                  <Localized>{" · Bill price"}</Localized>{" "}
                   {money(line.bill_price, currency)}
                 </p>
                 <p>
-                  {line.quantity_valid
-                    ? "Quantity matches receipts"
-                    : "Quantity exceeds available receipts"}{" "}
-                  · Price variance {money(line.price_variance, currency)}
+                  {line.quantity_valid ? (
+                    <Localized>{"Quantity matches receipts"}</Localized>
+                  ) : (
+                    <Localized>
+                      {"Quantity exceeds available receipts"}
+                    </Localized>
+                  )}{" "}
+                  <Localized>{" · Price variance "}</Localized>
+                  {money(line.price_variance, currency)}
                 </p>
               </article>
             ))}
           </div>
           {control.variance_review && (
             <p>
-              Reviewed by {control.variance_review.reviewer} ·{" "}
+              <Localized>{" Reviewed by "}</Localized>
+              {control.variance_review.reviewer} ·{" "}
               {stamp(control.variance_review.created_at)} —{" "}
               {control.variance_review.reason}
-              {!control.variance_review.current
-                ? " · Details changed; review again."
-                : ""}
+              {!control.variance_review.current ? (
+                <Localized>{" · Details changed; review again."}</Localized>
+              ) : (
+                ""
+              )}
             </p>
           )}
           {erp.can("finance", "approve") && version != null && (
@@ -276,7 +323,7 @@ export function TransactionControls({
                     setMode("variance");
                   }}
                 >
-                  Review price variance
+                  <Localized>{" Review price variance "}</Localized>
                 </Button>
               )}
               <ERPActionButton
@@ -289,56 +336,71 @@ export function TransactionControls({
                   (matching.has_variance && !control.variance_review?.current)
                 }
               >
-                Approve and issue
+                <Localized>{" Approve and issue "}</Localized>
               </ERPActionButton>
             </div>
           )}
           <p className="text-xs">
-            Price differences require an explicit review. Quantities cannot
-            exceed actual receipts; no automatic tolerance or write-off is
-            applied.
+            <Localized>
+              {
+                " Price differences require an explicit review. Quantities cannot exceed actual receipts; no automatic tolerance or write-off is applied. "
+              }
+            </Localized>
           </p>
         </section>
       )}
       <section
-        aria-label="Correction guidance"
+        aria-label={localize("Correction guidance")}
         className="text-xs text-muted leading-relaxed"
       >
-        <h3 className="font-semibold text-foreground">Corrections</h3>
+        <h3 className="font-semibold text-foreground">
+          <Localized>{"Corrections"}</Localized>
+        </h3>
         {control.kind === "billing" ? (
           <p>
-            Void drafts before replacing them. Correct issued invoices with a
-            linked credit note and apply the credit. For an issued advance
-            request, reverse or move active allocations before cancellation.
-            Cancelling a request does not refund money.
+            <Localized>
+              {
+                " Void drafts before replacing them. Correct issued invoices with a linked credit note and apply the credit. For an issued advance request, reverse or move active allocations before cancellation. Cancelling a request does not refund money. "
+              }
+            </Localized>
           </p>
         ) : control.kind === "payment" ? (
           <p>
-            Reverse or move allocations to correct a matching mistake. A
-            verified payment can be voided only after active allocations are
-            reversed. Record actual refunds separately.
+            <Localized>
+              {
+                " Reverse or move allocations to correct a matching mistake. A verified payment can be voided only after active allocations are reversed. Record actual refunds separately. "
+              }
+            </Localized>
           </p>
         ) : control.kind === "movement" ? (
           <p>
-            Cancel an unposted draft. Posted stock needs an authorized reversal
-            when allowed. Use a claim/return after customer receipt or order
-            closure; do not edit posted quantities.
+            <Localized>
+              {
+                " Cancel an unposted draft. Posted stock needs an authorized reversal when allowed. Use a claim/return after customer receipt or order closure; do not edit posted quantities. "
+              }
+            </Localized>
           </p>
         ) : (
           <p>
-            Keep completed receipts and deliveries. Use an approved change
-            request for agreed quantity changes; use a claim, credit or return
-            for corrections after billing or receipt. Closing remaining
-            quantities does not settle an outstanding balance.
+            <Localized>
+              {
+                " Keep completed receipts and deliveries. Use an approved change request for agreed quantity changes; use a claim, credit or return for corrections after billing or receipt. Closing remaining quantities does not settle an outstanding balance. "
+              }
+            </Localized>
           </p>
         )}
       </section>
-      <section aria-label="Document history">
-        <h3 className="text-sm font-semibold">Document history</h3>
+      <section aria-label={localize("Document history")}>
+        <h3 className="text-sm font-semibold">
+          <Localized>{"Document history"}</Localized>
+        </h3>
         {control.history.length === 0 ? (
           <p className="text-xs text-muted">
-            No events captured since transaction controls were enabled. Earlier
-            records remain available in the audit log.
+            <Localized>
+              {
+                " No events captured since transaction controls were enabled. Earlier records remain available in the audit log. "
+              }
+            </Localized>
           </p>
         ) : (
           <ol className="control-history">
@@ -346,11 +408,15 @@ export function TransactionControls({
               <li key={event.id} id={"audit-ERP-" + event.id}>
                 <strong>{eventTitle(event.action)}</strong>
                 <p>
-                  {event.actor} · {stamp(event.created_at)} · ERP-{event.id}
+                  {event.actor} · {stamp(event.created_at)}{" "}
+                  <Localized>{" · ERP-"}</Localized>
+                  {event.id}
                 </p>
                 {event.reason && <p>{event.reason}</p>}
                 <details>
-                  <summary>View changes</summary>
+                  <summary>
+                    <Localized>{"View changes"}</Localized>
+                  </summary>
                   {event.changes.map((change, i) => {
                     const keys = Array.from(
                       new Set([
@@ -384,23 +450,43 @@ export function TransactionControls({
                           " changes"
                         }
                       >
-                        <h4>{humanLabel(change.table.replace(/^erp_/, ""))}</h4>
+                        <h4>
+                          <Localized>
+                            {humanLabel(change.table.replace(/^erp_/, ""))}
+                          </Localized>
+                        </h4>
                         <div
                           className="history-change-heading"
                           aria-hidden="true"
                         >
-                          <span>Field</span>
-                          {!created && <span>Before</span>}
-                          <span>{created ? "Initial value" : "After"}</span>
+                          <span>
+                            <Localized>{"Field"}</Localized>
+                          </span>
+                          {!created && (
+                            <span>
+                              <Localized>{"Before"}</Localized>
+                            </span>
+                          )}
+                          <span>
+                            {created ? (
+                              <Localized>{"Initial value"}</Localized>
+                            ) : (
+                              <Localized>{"After"}</Localized>
+                            )}
+                          </span>
                         </div>
                         <dl className="control-diff">
                           {keys.map((key) => (
                             <div key={key}>
-                              <dt>{humanLabel(key)}</dt>
+                              <dt>
+                                <Localized>{humanLabel(key)}</Localized>
+                              </dt>
                               <dd>
                                 {!created && (
                                   <span className="history-value history-value-before">
-                                    <span className="sr-only">Before: </span>
+                                    <span className="sr-only">
+                                      <Localized>{"Before: "}</Localized>
+                                    </span>
                                     {shown(change.before[key], key)}
                                   </span>
                                 )}
@@ -411,7 +497,11 @@ export function TransactionControls({
                                   }
                                 >
                                   <span className="sr-only">
-                                    {created ? "Initial value: " : "After: "}
+                                    {created ? (
+                                      <Localized>{"Initial value: "}</Localized>
+                                    ) : (
+                                      <Localized>{"After: "}</Localized>
+                                    )}
                                   </span>
                                   {shown(change.after[key], key)}
                                 </span>
@@ -435,22 +525,26 @@ export function TransactionControls({
               disabled={page === 1}
               onClick={() => setPage((p) => p - 1)}
             >
-              Previous history
+              <Localized>{" Previous history "}</Localized>
             </Button>
-            <span className="text-xs">Page {page}</span>
+            <span className="text-xs">
+              <Localized>{"Page "}</Localized>
+              {page}
+            </span>
             <Button
               size="sm"
               variant="outline"
               disabled={page * 20 >= result.data.total}
               onClick={() => setPage((p) => p + 1)}
             >
-              Next history
+              <Localized>{" Next history "}</Localized>
             </Button>
           </div>
         )}
         {control.amendments.map((a) => (
           <p key={a.id} className="erp-notice text-xs">
-            Approved amendment · {a.actor} · {stamp(a.created_at)} — {a.reason}
+            <Localized>{" Approved amendment · "}</Localized>
+            {a.actor} · {stamp(a.created_at)} — {a.reason}
           </p>
         ))}
       </section>
@@ -484,17 +578,18 @@ export function TransactionControls({
               <QuantityReview lines={preview.lines} />
               {preview.financial && (
                 <p className="erp-notice">
-                  Delivered / received value:{" "}
-                  {money(preview.financial.actual_value, currency)} · Advance
-                  requests:{" "}
+                  <Localized>{" Delivered / received value:"}</Localized>{" "}
+                  {money(preview.financial.actual_value, currency)}{" "}
+                  <Localized>{" · Advance requests:"}</Localized>{" "}
                   {money(preview.financial.advance_requested, currency)}
                 </p>
               )}
               <p className="erp-notice">
-                Remaining quantities will be closed and active sales
-                reservations released. Existing stock and financial documents
-                remain unchanged. Final billing for completed quantities remains
-                available. Closure cannot be reopened from this form.
+                <Localized>
+                  {
+                    " Remaining quantities will be closed and active sales reservations released. Existing stock and financial documents remain unchanged. Final billing for completed quantities remains available. Closure cannot be reopened from this form. "
+                  }
+                </Localized>
               </p>
               <ERPField name="reason" label="Closure reason">
                 <textarea
@@ -527,10 +622,15 @@ export function TransactionControls({
                       <article key={l.id}>
                         <strong>{l.product}</strong>
                         <p>
-                          PO price {money(l.agreed_price, currency)} → Bill
-                          price {money(l.bill_price, currency)}
+                          <Localized>{" PO price "}</Localized>
+                          {money(l.agreed_price, currency)}{" "}
+                          <Localized>{" → Bill price "}</Localized>
+                          {money(l.bill_price, currency)}
                         </p>
-                        <p>Variance: {money(l.price_variance, currency)}</p>
+                        <p>
+                          <Localized>{"Variance: "}</Localized>
+                          {money(l.price_variance, currency)}
+                        </p>
                       </article>
                     ))}
                 </div>
@@ -550,9 +650,11 @@ export function TransactionControls({
                       checked={ack}
                       onChange={(e) => setAck(e.target.checked)}
                     />
-                    I reviewed the price difference and supporting supplier
-                    evidence. This does not authorize excess receiving
-                    quantities.
+                    <Localized>
+                      {
+                        " I reviewed the price difference and supporting supplier evidence. This does not authorize excess receiving quantities. "
+                      }
+                    </Localized>
                   </label>
                 </ERPField>
               </ERPForm>

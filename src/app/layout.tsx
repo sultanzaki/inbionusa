@@ -1,3 +1,4 @@
+import { LocaleProvider } from "@/components/i18n/locale-provider";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
@@ -63,10 +64,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={dmSans.variable}>
       <body className="min-h-screen font-sans">
-        <ThemeProvider>
-          <ConfirmProvider>{children}</ConfirmProvider>
-          <Toaster position="top-right" richColors closeButton />
-        </ThemeProvider>
+        <LocaleProvider>
+          <ThemeProvider>
+            <ConfirmProvider>{children}</ConfirmProvider>
+            <Toaster position="top-right" richColors closeButton />
+          </ThemeProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

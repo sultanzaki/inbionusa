@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { useRef, type ReactNode } from "react";
 import {
   Search,
@@ -26,11 +28,23 @@ export function PageHeader({
   return (
     <div className="page-header">
       <div>
-        <p className="page-eyebrow">{eyebrow}</p>
-        <h1 className="page-title">{title}</h1>
-        {description && <p className="page-description">{description}</p>}
+        <p className="page-eyebrow">
+          <Localized>{eyebrow}</Localized>
+        </p>
+        <h1 className="page-title">
+          <Localized>{title}</Localized>
+        </h1>
+        {description && (
+          <p className="page-description">
+            <Localized>{description}</Localized>
+          </p>
+        )}
       </div>
-      {children && <div className="page-actions">{children}</div>}
+      {children && (
+        <div className="page-actions">
+          <Localized>{children}</Localized>
+        </div>
+      )}
     </div>
   );
 }
@@ -55,6 +69,8 @@ export function DataToolbar({
   order?: string;
   onOrder?: (value: string) => void;
 }) {
+  const { t: localize } = useLocale();
+
   const ref = useRef<HTMLInputElement>(null);
   return (
     <div className="data-toolbar">
@@ -72,7 +88,7 @@ export function DataToolbar({
           <button
             className="search-clear"
             type="button"
-            aria-label="Clear search"
+            aria-label={localize("Clear search")}
             onClick={() => {
               onSearch("");
               ref.current?.focus();
@@ -89,27 +105,37 @@ export function DataToolbar({
       <div className="data-toolbar-meta">
         {filter}
         <span className="sr-only sm:not-sr-only" aria-live="polite">
-          {loading ? "Loading…" : `${total.toLocaleString("en-GB")} records`}
+          {loading ? (
+            <Localized>{"Loading…"}</Localized>
+          ) : (
+            localize(`${total.toLocaleString("en-GB")} records`)
+          )}
         </span>
         {onOrder && (
           <label className="relative flex items-center gap-1.5">
             <ArrowDownUp className="pointer-events-none absolute left-3 size-3.5 text-muted" />
             <select
-              aria-label="Sort records"
+              aria-label={localize("Sort records")}
               value={order}
               onChange={(e) => onOrder(e.target.value)}
               className="!min-h-9 !py-1.5 !pl-8 !pr-2 !text-xs"
             >
-              <option value="default">Default order</option>
-              <option value="newest">Newest</option>
-              <option value="oldest">Oldest</option>
+              <option value="default">
+                <Localized>{"Default order"}</Localized>
+              </option>
+              <option value="newest">
+                <Localized>{"Newest"}</Localized>
+              </option>
+              <option value="oldest">
+                <Localized>{"Oldest"}</Localized>
+              </option>
             </select>
           </label>
         )}
         <Button
           variant="outline"
           size="icon-sm"
-          aria-label="Refresh data"
+          aria-label={localize("Refresh data")}
           onClick={onRefresh}
           disabled={loading}
         >
@@ -139,7 +165,7 @@ export function FilterTabs({
           aria-pressed={value === item.value}
           onClick={() => onChange(item.value)}
         >
-          {item.label}
+          <Localized>{item.label}</Localized>
         </button>
       ))}
     </div>
@@ -171,9 +197,17 @@ export function EmptyState({
       >
         <FolderSearch className="size-6" />
       </span>
-      <h3>{title}</h3>
-      <p>{description}</p>
-      {children && <div className="mt-2">{children}</div>}
+      <h3>
+        <Localized>{title}</Localized>
+      </h3>
+      <p>
+        <Localized>{description}</Localized>
+      </p>
+      {children && (
+        <div className="mt-2">
+          <Localized>{children}</Localized>
+        </div>
+      )}
     </div>
   );
 }
@@ -192,6 +226,8 @@ export function DataPagination({
   loading: boolean;
   onPageChange: (page: number) => void;
 }) {
+  const { t: localize } = useLocale();
+
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const first = total === 0 ? 0 : (page - 1) * pageSize + 1,
     last = Math.min(total, (page - 1) * pageSize + count);
@@ -201,25 +237,28 @@ export function DataPagination({
   return (
     <nav
       className="data-footer"
-      aria-label="Table pagination"
+      aria-label={localize("Table pagination")}
       aria-busy={loading}
     >
       <span className="data-counter" aria-live="polite">
-        {first.toLocaleString("en-GB")}–{last.toLocaleString("en-GB")} of{" "}
+        {first.toLocaleString("en-GB")}–{last.toLocaleString("en-GB")}{" "}
+        <Localized>{" of"}</Localized>{" "}
         <strong>{total.toLocaleString("en-GB")}</strong>
       </span>
       <div className="pagination-controls">
         <Button
           variant="outline"
           size="icon-sm"
-          aria-label="Previous page"
+          aria-label={localize("Previous page")}
           disabled={loading || page <= 1}
           onClick={() => onPageChange(page - 1)}
         >
           <ChevronLeft className="size-4" />
         </Button>
         <span className="pagination-mobile">
-          Page {page} of {pages}
+          <Localized>{" Page "}</Localized>
+          {page} <Localized>{" of "}</Localized>
+          {pages}
         </span>
         <div className="pagination-numbers">
           {numbers.map((n, index) => (
@@ -245,7 +284,7 @@ export function DataPagination({
         <Button
           variant="outline"
           size="icon-sm"
-          aria-label="Next page"
+          aria-label={localize("Next page")}
           disabled={loading || page >= pages}
           onClick={() => onPageChange(page + 1)}
         >
