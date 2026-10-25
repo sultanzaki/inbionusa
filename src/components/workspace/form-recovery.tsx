@@ -1,4 +1,6 @@
 "use client";
+import { Localized } from "@/components/i18n/locale-provider";
+
 import {
   createContext,
   useContext,
@@ -159,11 +161,15 @@ function RecoverySession({
   const notice = candidate ? (
     <aside className="draft-recovery" role="status">
       <div>
-        <strong>Resume your draft?</strong>
+        <strong>
+          <Localized>{"Resume your draft?"}</Localized>
+        </strong>
         <p>
-          Saved on this device{" "}
-          {new Date(candidate.savedAt).toLocaleString("en-GB")}. Review current
-          stock, prices and dates before saving.
+          <Localized>{" Saved on this device"}</Localized>{" "}
+          {new Date(candidate.savedAt).toLocaleString("en-GB")}
+          <Localized>
+            {". Review current stock, prices and dates before saving. "}
+          </Localized>
         </p>
       </div>
       <Button
@@ -175,7 +181,7 @@ function RecoverySession({
           setCandidate(null);
         }}
       >
-        Restore draft
+        <Localized>{" Restore draft "}</Localized>
       </Button>
       <Button
         size="sm"
@@ -188,12 +194,12 @@ function RecoverySession({
           setCandidate(null);
         }}
       >
-        Discard draft
+        <Localized>{" Discard draft "}</Localized>
       </Button>
     </aside>
   ) : status ? (
     <p className="draft-status" role="status">
-      {status}
+      <Localized>{status}</Localized>
     </p>
   ) : null;
   return (

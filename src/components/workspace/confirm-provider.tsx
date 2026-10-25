@@ -1,4 +1,6 @@
 "use client";
+import { Localized } from "@/components/i18n/locale-provider";
+
 import {
   createContext,
   useContext,
@@ -66,7 +68,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           </DialogHeader>
           <DialogFooter className="mt-6">
             <Button variant="outline" autoFocus onClick={() => finish(false)}>
-              Back
+              <Localized>{" Back "}</Localized>
             </Button>
             {options && (
               <SlideConfirm

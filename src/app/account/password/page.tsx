@@ -1,3 +1,4 @@
+import { Localized } from "@/components/i18n/locale-provider";
 import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: { absolute: "Change password | INBIONUSA" },
@@ -22,7 +23,7 @@ export default function PasswordPage() {
     <Suspense
       fallback={
         <main className="password-page" role="status">
-          Loading account…
+          <Localized>{" Loading account… "}</Localized>
         </main>
       }
     >

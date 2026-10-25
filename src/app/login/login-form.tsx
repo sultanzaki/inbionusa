@@ -1,4 +1,7 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
+import { LanguageControl } from "@/components/i18n/locale-provider";
 import { ThemeControl } from "@/components/theme/theme-control";
 import Image from "next/image";
 import { useActionState, useState } from "react";
@@ -17,12 +20,20 @@ function SubmitButton() {
       loading={pending}
       className="h-12 w-full justify-between px-4"
     >
-      <span>{pending ? "Opening workspace…" : "Sign in"}</span>
+      <span>
+        {pending ? (
+          <Localized>{"Opening workspace…"}</Localized>
+        ) : (
+          <Localized>{"Sign in"}</Localized>
+        )}
+      </span>
       {!pending && <ArrowRight className="size-4" />}
     </Button>
   );
 }
 export function LoginForm() {
+  const { t: localize } = useLocale();
+
   const [state, action] = useActionState(loginAction, initial);
   const [show, setShow] = useState(false);
   return (
@@ -36,31 +47,38 @@ export function LoginForm() {
           priority
         />
         <span className="text-sm font-bold tracking-tight text-primary-deep">
-          INBIONUSA
+          <Localized>{" INBIONUSA "}</Localized>
         </span>
       </div>
-      <p className="mb-3 text-xs font-medium text-muted">INBIONUSA account</p>
-      <h1>Sign in</h1>
+      <p className="mb-3 text-xs font-medium text-muted">
+        <Localized>{"INBIONUSA account"}</Localized>
+      </p>
+      <h1>
+        <Localized>{"Sign in"}</Localized>
+      </h1>
       <form action={action} className="mt-8 space-y-5">
         <div className="space-y-2">
           <label htmlFor="username" className="text-xs font-semibold">
-            Username
+            <Localized>{" Username "}</Localized>
           </label>
           <div className="relative">
             <Input
               id="username"
               name="username"
               autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               required
               maxLength={100}
-              placeholder="Enter your username"
+              placeholder={localize("Enter your username")}
               className="h-12 px-3.5"
             />
           </div>
         </div>
         <div className="space-y-2">
           <label htmlFor="password" className="text-xs font-semibold">
-            Password
+            <Localized>{" Password "}</Localized>
           </label>
           <div className="relative">
             <Input
@@ -70,7 +88,7 @@ export function LoginForm() {
               autoComplete="current-password"
               required
               maxLength={1024}
-              placeholder="Enter your password"
+              placeholder={localize("Enter your password")}
               className="h-12 pl-3.5 pr-12"
             />
             <button
@@ -90,15 +108,22 @@ export function LoginForm() {
         </div>
         {state.error && (
           <Alert variant="destructive">
-            <AlertDescription id="login-error">{state.error}</AlertDescription>
+            <AlertDescription id="login-error">
+              <Localized>{state.error}</Localized>
+            </AlertDescription>
           </Alert>
         )}
         <div className="pt-1">
           <SubmitButton />
         </div>
       </form>
-      <ThemeControl />
-      <p className="login-footer">Need access? Contact your administrator.</p>
+      <div className="login-preferences">
+        <LanguageControl />
+        <ThemeControl />
+      </div>
+      <p className="login-footer">
+        <Localized>{"Need access? Contact your administrator."}</Localized>
+      </p>
     </div>
   );
 }

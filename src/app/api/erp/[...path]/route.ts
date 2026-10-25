@@ -1,4 +1,3 @@
-import { loadDocumentApproval } from "@/lib/pdf/approval-server";
 import {
   parseTableQuery,
   entityColumns,
@@ -368,19 +367,6 @@ async function readERP(
       if (!actor) return privateJson({ message: "Session expired." }, 401);
       await logAudit(actor.user.nama_lengkap, "DOWNLOAD_ERP", row.number);
     }
-    const evidence =
-      path.length === 3
-        ? await loadDocumentApproval(
-            path[1],
-            row.id,
-            String(row.document_state || row.state),
-          )
-        : { approval: null };
-    if (evidence.error)
-      return privateJson(
-        { message: "Could not verify document approval. Retry." },
-        503,
-      );
     if (path[1] === "fin_documents" && path.length === 3) {
       const snapshot = row.snapshot || {};
       const bytes = await (
@@ -403,7 +389,6 @@ async function readERP(
           totals: snapshot.totals,
         },
         "finance",
-        evidence.approval,
       );
       return pdf(bytes, row.number, p.has("download"));
     }
@@ -426,7 +411,6 @@ async function readERP(
           totals: { subtotal: row.total, total: row.total },
         },
         "purchase",
-        evidence.approval,
       );
       return pdf(bytes, row.number, p.has("download"));
     }
@@ -467,11 +451,7 @@ async function readERP(
     try {
       const bytes = await (
         await import("@/lib/erp/pdf")
-      ).renderERPDocument(
-        row,
-        path[1] === "quotes" ? "quotation" : "movement",
-        evidence.approval,
-      );
+      ).renderERPDocument(row, path[1] === "quotes" ? "quotation" : "movement");
       return pdf(bytes, row.number, p.has("download"));
     } catch {
       return privateJson({ message: "Could not render this document." }, 422);

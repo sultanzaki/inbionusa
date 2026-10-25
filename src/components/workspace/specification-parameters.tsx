@@ -1,3 +1,4 @@
+import { Localized } from "@/components/i18n/locale-provider";
 import type { SpesifikasiItem } from "@/lib/types";
 import {
   Table,
@@ -27,9 +28,15 @@ export function SpecificationParameters({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Parameter</TableHead>
-              <TableHead>Standard</TableHead>
-              <TableHead>Unit</TableHead>
+              <TableHead>
+                <Localized>{"Parameter"}</Localized>
+              </TableHead>
+              <TableHead>
+                <Localized>{"Standard"}</Localized>
+              </TableHead>
+              <TableHead>
+                <Localized>{"Unit"}</Localized>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -53,7 +60,9 @@ export function SpecificationParameters({
               <span>{s.parameter_uji}</span>
             </dt>
             <dd>
-              <span className="parameter-card-caption">Standard</span>
+              <span className="parameter-card-caption">
+                <Localized>{"Standard"}</Localized>
+              </span>
               <p>{specificationLabel(s)}</p>
               {s.satuan && (
                 <span className="parameter-card-unit">{s.satuan}</span>

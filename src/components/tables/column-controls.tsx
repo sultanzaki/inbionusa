@@ -1,4 +1,6 @@
 "use client";
+import { Localized } from "@/components/i18n/locale-provider";
+
 import { useRef } from "react";
 import { MoreHorizontal } from "lucide-react";
 import {
@@ -36,7 +38,7 @@ export function ColumnMenu({
             })
           }
         >
-          Sort ascending
+          <Localized>{" Sort ascending "}</Localized>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() =>
@@ -46,7 +48,7 @@ export function ColumnMenu({
             })
           }
         >
-          Sort descending
+          <Localized>{" Sort descending "}</Localized>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() =>
@@ -56,10 +58,10 @@ export function ColumnMenu({
             })
           }
         >
-          Clear column sort
+          <Localized>{" Clear column sort "}</Localized>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onFilter}>
-          Filter this column
+          <Localized>{" Filter this column "}</Localized>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() =>
@@ -69,7 +71,11 @@ export function ColumnMenu({
             }))
           }
         >
-          {layout.pinned.includes(column.key) ? "Unpin column" : "Pin column"}
+          {layout.pinned.includes(column.key) ? (
+            <Localized>{"Unpin column"}</Localized>
+          ) : (
+            <Localized>{"Pin column"}</Localized>
+          )}
         </DropdownMenuItem>
         <DropdownMenuItem
           disabled={column.key === state.columns[0].key}
@@ -80,7 +86,7 @@ export function ColumnMenu({
             }))
           }
         >
-          Hide column
+          <Localized>{" Hide column "}</Localized>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

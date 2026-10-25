@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { useId, useRef, type CSSProperties } from "react";
 import Link from "next/link";
 import {
@@ -48,6 +50,8 @@ export function MobileNavigation({
   onOpenChange: (open: boolean) => void;
   onSearch: () => void;
 }) {
+  const { t: localize } = useLocale();
+
   const current = items.find((n) => n.href === pathname) || items[0],
     id = useId(),
     trigger = useRef<HTMLButtonElement>(null),
@@ -60,7 +64,7 @@ export function MobileNavigation({
         ref={trigger}
         className="mobile-space-switcher"
         type="button"
-        aria-label="Open navigation menu"
+        aria-label={localize("Open navigation menu")}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={id}
@@ -69,7 +73,7 @@ export function MobileNavigation({
         <span className="space-switcher-icon">
           <CurrentIcon className="size-4" />
         </span>
-        <span>{current?.label || "Workspace"}</span>
+        <span>{current?.label || <Localized>{"Workspace"}</Localized>}</span>
         <ChevronDown className="space-switcher-chevron size-3.5" />
       </button>
       <Sheet
@@ -98,11 +102,15 @@ export function MobileNavigation({
                 <i />
                 <i />
               </span>
-              INBIONUSA / QC
+              <Localized>{" INBIONUSA / QC "}</Localized>
             </div>
-            <SheetTitle>Your workspace</SheetTitle>
+            <SheetTitle>
+              <Localized>{"Your workspace"}</Localized>
+            </SheetTitle>
             <SheetDescription>
-              Choose a workspace or jump to a record.
+              <Localized>
+                {" Choose a workspace or jump to a record. "}
+              </Localized>
             </SheetDescription>
           </SheetHeader>
           <button
@@ -114,10 +122,15 @@ export function MobileNavigation({
             }}
           >
             <Search className="size-4" />
-            <span>Find a lot, product, or COA</span>
+            <span>
+              <Localized>{"Find a lot, product, or COA"}</Localized>
+            </span>
             <ArrowUpRight className="size-4" />
           </button>
-          <nav aria-label="Main navigation" className="launcher-grid">
+          <nav
+            aria-label={localize("Main navigation")}
+            className="launcher-grid"
+          >
             {items.map(({ icon: Icon, ...n }, index) => {
               const active = pathname === n.href,
                 wide =
@@ -142,7 +155,9 @@ export function MobileNavigation({
                     <Icon className="size-5" />
                   </span>
                   <span className="launcher-tile-copy">
-                    <span className="launcher-tile-label">{n.label}</span>
+                    <span className="launcher-tile-label">
+                      <Localized>{n.label}</Localized>
+                    </span>
                     <span className="launcher-tile-description">
                       {descriptions[n.label]}
                     </span>
@@ -161,7 +176,8 @@ export function MobileNavigation({
           <div className="launcher-footer">
             <span className="launcher-location-dot" />
             <span>
-              Currently in <strong>{current?.label}</strong>
+              <Localized>{" Currently in "}</Localized>
+              <strong>{current?.label}</strong>
             </span>
             <span className="launcher-footer-mark" aria-hidden="true">
               ↗

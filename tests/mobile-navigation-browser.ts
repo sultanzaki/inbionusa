@@ -68,6 +68,10 @@ export async function exerciseMobileNavigation(
     await capture("61-mobile-pages-" + width);
     await accessible();
     assert.equal(await pages.locator('[aria-current="page"]').count(), 1);
+    await pages
+      .locator("summary")
+      .filter({ hasText: /^Operations$/ })
+      .click();
     await pages.getByRole("link", { name: "Returns", exact: true }).click();
     await page.waitForURL("**/dashboard/warehouse?view=returns");
     await page

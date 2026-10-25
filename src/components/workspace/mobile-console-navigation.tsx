@@ -1,4 +1,5 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
 
 import { useState, type ReactNode } from "react";
 import Image from "next/image";
@@ -17,6 +18,10 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
+import {
+  navigationSections,
+  workspaceLinkActive,
+} from "@/lib/workspace/navigation";
 import { useWorkspaceGroups } from "./workspace-navigation";
 
 type Destination = string[];
@@ -28,6 +33,8 @@ export function MobileConsoleNavigation({
   onSearch: () => void;
   account: ReactNode;
 }) {
+  const { t: localize } = useLocale();
+
   const groups = useWorkspaceGroups(),
     path = usePathname(),
     params = useSearchParams();
@@ -47,8 +54,7 @@ export function MobileConsoleNavigation({
               ? "material_stock"
               : "modules");
   function active(href: string) {
-    const [p, q] = href.split("?");
-    return p === path && (!q || new URLSearchParams(q).get("view") === view);
+    return workspaceLinkActive(href, path, params.get("view"));
   }
   const current =
     groups.find((g) => g.links.some(([, href]) => active(href))) ||
@@ -68,12 +74,15 @@ export function MobileConsoleNavigation({
     pages.find(([, href]) => active(href))?.[0] ||
     (path.endsWith("/work") ? "Workspaces" : "Workspace");
   return (
-    <nav className="mobile-console-header" aria-label="Mobile navigation">
+    <nav
+      className="mobile-console-header"
+      aria-label={localize("Mobile navigation")}
+    >
       <div className="mobile-console-bar">
         <Link
           href="/dashboard"
           className="mobile-console-brand"
-          aria-label="INBIONUSA home"
+          aria-label={localize("INBIONUSA home")}
         >
           <Image src="/logo.png" alt="" width={28} height={28} priority />
         </Link>
@@ -86,11 +95,13 @@ export function MobileConsoleNavigation({
               <button
                 type="button"
                 className="mobile-workspace-trigger"
-                aria-label="Switch workspace"
+                aria-label={localize("Switch workspace")}
               />
             }
           >
-            <span>{current.name}</span>
+            <span>
+              <Localized>{current.name}</Localized>
+            </span>
             <ChevronsUpDown aria-hidden="true" />
           </PopoverTrigger>
           <PopoverContent
@@ -98,7 +109,9 @@ export function MobileConsoleNavigation({
             label="Workspaces"
             className="mobile-console-menu mobile-workspace-menu"
           >
-            <p className="mobile-menu-caption">WORKSPACES</p>
+            <p className="mobile-menu-caption">
+              <Localized>{"WORKSPACES"}</Localized>
+            </p>
             <div className="mobile-menu-scroll">
               {groups.map(({ name, icon: Icon, links }) => (
                 <Link
@@ -111,7 +124,9 @@ export function MobileConsoleNavigation({
                   <span className="mobile-workspace-icon">
                     <Icon aria-hidden="true" />
                   </span>
-                  <span>{name}</span>
+                  <span>
+                    <Localized>{name}</Localized>
+                  </span>
                   {name === current.name && (
                     <Check className="mobile-menu-check" aria-hidden="true" />
                   )}
@@ -123,7 +138,7 @@ export function MobileConsoleNavigation({
               href="/dashboard/workspaces"
               onClick={() => setWorkspaceOpen(false)}
             >
-              All workspaces
+              <Localized>{" All workspaces "}</Localized>
               <ArrowUpRight aria-hidden="true" />
             </Link>
           </PopoverContent>
@@ -132,7 +147,7 @@ export function MobileConsoleNavigation({
           <button
             type="button"
             className="mobile-console-icon"
-            aria-label="Search"
+            aria-label={localize("Search")}
             onClick={onSearch}
           >
             <Search aria-hidden="true" />
@@ -147,12 +162,14 @@ export function MobileConsoleNavigation({
               <button
                 type="button"
                 className="mobile-page-trigger"
-                aria-label="Choose page"
+                aria-label={localize("Choose page")}
               />
             }
           >
             <Menu aria-hidden="true" />
-            <span>{page}</span>
+            <span>
+              <Localized>{page}</Localized>
+            </span>
             <ChevronDown aria-hidden="true" />
           </PopoverTrigger>
           <PopoverContent
@@ -160,21 +177,65 @@ export function MobileConsoleNavigation({
             label="Workspace pages"
             className="mobile-console-menu mobile-page-menu"
           >
-            <p className="mobile-menu-caption">{current.name}</p>
+            <p className="mobile-menu-caption">
+              <Localized>{current.name}</Localized>
+            </p>
             <div className="mobile-menu-scroll">
-              {pages.map(([label, href]) => (
-                <Link
-                  href={href}
-                  key={href}
-                  aria-current={active(href) ? "page" : undefined}
-                  onClick={() => setPagesOpen(false)}
-                >
-                  <span>{label}</span>
-                  {active(href) && (
-                    <Check className="mobile-menu-check" aria-hidden="true" />
-                  )}
-                </Link>
-              ))}
+              {navigationSections(current.name, pages).map((section) =>
+                section.name ? (
+                  <details
+                    className="mobile-page-group"
+                    key={section.name}
+                    open={section.links.some(([, href]) => active(href))}
+                  >
+                    <summary>
+                      <Localized>{section.name}</Localized>
+                      <ChevronDown aria-hidden="true" />
+                    </summary>
+                    <div>
+                      {section.links.map(([label, href]) => (
+                        <Link
+                          href={href}
+                          key={href}
+                          aria-current={active(href) ? "page" : undefined}
+                          onClick={() => setPagesOpen(false)}
+                        >
+                          <span>
+                            <Localized>{label}</Localized>
+                          </span>
+                          {active(href) && (
+                            <Check
+                              className="mobile-menu-check"
+                              aria-hidden="true"
+                            />
+                          )}
+                        </Link>
+                      ))}
+                    </div>
+                  </details>
+                ) : (
+                  <div key="pages">
+                    {section.links.map(([label, href]) => (
+                      <Link
+                        href={href}
+                        key={href}
+                        aria-current={active(href) ? "page" : undefined}
+                        onClick={() => setPagesOpen(false)}
+                      >
+                        <span>
+                          <Localized>{label}</Localized>
+                        </span>
+                        {active(href) && (
+                          <Check
+                            className="mobile-menu-check"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                ),
+              )}
             </div>
           </PopoverContent>
         </Popover>

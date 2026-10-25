@@ -1,4 +1,6 @@
 "use client";
+import { Localized } from "@/components/i18n/locale-provider";
+
 import {
   Children,
   cloneElement,
@@ -75,7 +77,11 @@ export function RowActions({
                     : {})}
                 >
                   {p.children}
-                  <span>{p["aria-label"] || p.title || "Open"}</span>
+                  <span>
+                    {p["aria-label"] || p.title || (
+                      <Localized>{"Open"}</Localized>
+                    )}
+                  </span>
                 </DropdownMenuItem>
               );
             })}

@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { RecordOverview } from "@/components/workspace/record-overview";
 import { useWorkPosition } from "@/components/workspace/use-work-position";
 import { CaseGuide } from "@/components/operations/case-guide";
@@ -92,6 +94,8 @@ function Detail({
   onClose: () => void;
   onChange: () => void;
 }) {
+  const { t: localize } = useLocale();
+
   const result = useERPPage(entity, "", "", 1, id),
     r = result.data.rows[0] as WorkflowRow | undefined,
     erp = useERP();
@@ -127,7 +131,7 @@ function Detail({
       variant="outline"
       onClick={() => edit(a, row)}
     >
-      {label}
+      <Localized>{label}</Localized>
     </Button>
   );
   const transition = (
@@ -144,7 +148,7 @@ function Detail({
         reason
         onDone={done}
       >
-        {label}
+        <Localized>{label}</Localized>
       </ERPActionButton>
     );
   if (nextRecord)
@@ -170,21 +174,31 @@ function Detail({
         onClose={onClose}
       >
         {result.error ? (
-          <p role="alert">{result.error}</p>
+          <p role="alert">
+            <Localized>{result.error}</Localized>
+          </p>
         ) : result.loading ? (
-          <p role="status">Loading details…</p>
+          <p role="status">
+            <Localized>{"Loading details…"}</Localized>
+          </p>
         ) : !r ? (
-          <p>Record not found.</p>
+          <p>
+            <Localized>{"Record not found."}</Localized>
+          </p>
         ) : (
           <>
             <RecordOverview row={r} entity={entity} />
             <div className="workflow-record-meta">
               <Badge variant="secondary">{human(value(r, "state"))}</Badge>
               {Boolean(r.kind) && (
-                <span>{value(r, "kind").replaceAll("_", " ")}</span>
+                <span>
+                  <Localized>{value(r, "kind").replaceAll("_", " ")}</Localized>
+                </span>
               )}
               {Boolean(r.disputed) && (
-                <Badge variant="destructive">Disputed</Badge>
+                <Badge variant="destructive">
+                  <Localized>{"Disputed"}</Localized>
+                </Badge>
               )}
             </div>
             {entity === "ops_cases" && (
@@ -192,7 +206,9 @@ function Detail({
                 <CaseGuide id={id} version={Number(r.version)} />
                 <p className="text-sm">{value(r, "description")}</p>
                 <dl className="workflow-key-values">
-                  <dt>Source</dt>
+                  <dt>
+                    <Localized>{"Source"}</Localized>
+                  </dt>
                   <dd>
                     <a
                       className="text-primary underline"
@@ -209,26 +225,40 @@ function Detail({
                       )}
                     </a>
                   </dd>
-                  <dt>Assigned to</dt>
+                  <dt>
+                    <Localized>{"Assigned to"}</Localized>
+                  </dt>
                   <dd>{value(r, "assignee", "Unassigned")}</dd>
-                  <dt>Due</dt>
+                  <dt>
+                    <Localized>{"Due"}</Localized>
+                  </dt>
                   <dd>{value(r, "due_date", "—")}</dd>
-                  <dt>Resolution</dt>
+                  <dt>
+                    <Localized>{"Resolution"}</Localized>
+                  </dt>
                   <dd>{value(r, "resolution", "Pending decision")}</dd>
-                  <dt>Approved quantity</dt>
+                  <dt>
+                    <Localized>{"Approved quantity"}</Localized>
+                  </dt>
                   <dd>{value(r, "quantity", "—")}</dd>
                   {r.settlement_amount != null && (
                     <>
-                      <dt>Approved settlement</dt>
+                      <dt>
+                        <Localized>{"Approved settlement"}</Localized>
+                      </dt>
                       <dd>
                         {value(r, "currency")}{" "}
                         {decimal(value(r, "settlement_amount", "0"))}
                       </dd>
                     </>
                   )}
-                  <dt>Cost responsibility</dt>
+                  <dt>
+                    <Localized>{"Cost responsibility"}</Localized>
+                  </dt>
                   <dd>{value(r, "cost_payer")}</dd>
-                  <dt>Estimated / actual cost</dt>
+                  <dt>
+                    <Localized>{"Estimated / actual cost"}</Localized>
+                  </dt>
                   <dd>
                     {value(r, "currency")}{" "}
                     {decimal(value(r, "estimated_cost", "0"))} /{" "}
@@ -299,7 +329,8 @@ function Detail({
                     rel="noopener noreferrer"
                     className="text-xs text-primary underline"
                   >
-                    Evidence {i + 1}
+                    <Localized>{" Evidence "}</Localized>
+                    {i + 1}
                   </a>
                 ))}
               </>
@@ -333,24 +364,34 @@ function Detail({
             {entity === "fin_orders" && (
               <>
                 <dl className="workflow-key-values">
-                  <dt>Customer</dt>
+                  <dt>
+                    <Localized>{"Customer"}</Localized>
+                  </dt>
                   <dd>{value(r, "name")}</dd>
-                  <dt>Order value</dt>
+                  <dt>
+                    <Localized>{"Order value"}</Localized>
+                  </dt>
                   <dd>
                     {value(r, "currency")} {decimal(value(r, "amount", "0"))}
                   </dd>
-                  <dt>Payment terms</dt>
+                  <dt>
+                    <Localized>{"Payment terms"}</Localized>
+                  </dt>
                   <dd>{value(object(r, "terms"), "mode", "Not configured")}</dd>
-                  <dt>Approval</dt>
+                  <dt>
+                    <Localized>{"Approval"}</Localized>
+                  </dt>
                   <dd>
                     {value(object(r, "terms"), "state", "Not configured")}
                   </dd>
                 </dl>
                 <div className="erp-notice" role="status">
                   <strong>
-                    {object(r, "dispatch").cleared
-                      ? "Cleared for dispatch"
-                      : "Financial hold"}
+                    {object(r, "dispatch").cleared ? (
+                      <Localized>{"Cleared for dispatch"}</Localized>
+                    ) : (
+                      <Localized>{"Financial hold"}</Localized>
+                    )}
                   </strong>
                   <p>{value(object(r, "dispatch"), "reason")}</p>
                 </div>
@@ -384,9 +425,11 @@ function Detail({
             {entity === "fin_purchases" && (
               <>
                 <p>
-                  Three-way matching checks the supplier order, received
-                  quantity and bill. Unreceived quantities use an advance
-                  request.
+                  <Localized>
+                    {
+                      " Three-way matching checks the supplier order, received quantity and bill. Unreceived quantities use an advance request. "
+                    }
+                  </Localized>
                 </p>
                 <p className="text-xs text-muted">
                   {value(r, "name")} · {value(r, "currency")}{" "}
@@ -397,30 +440,45 @@ function Detail({
             {entity === "fin_documents" && (
               <>
                 <dl className="workflow-key-values">
-                  <dt>Counterparty</dt>
+                  <dt>
+                    <Localized>{"Counterparty"}</Localized>
+                  </dt>
                   <dd>{value(r, "party")}</dd>
-                  <dt>Amount</dt>
+                  <dt>
+                    <Localized>{"Amount"}</Localized>
+                  </dt>
                   <dd>
                     {value(r, "currency")} {decimal(value(r, "amount", "0"))}
                   </dd>
-                  <dt>Outstanding / available credit</dt>
+                  <dt>
+                    <Localized>{"Outstanding / available credit"}</Localized>
+                  </dt>
                   <dd>
                     {value(r, "currency")}{" "}
                     {decimal(value(r, "outstanding", "0"))}
                   </dd>
-                  <dt>Date / due date</dt>
+                  <dt>
+                    <Localized>{"Date / due date"}</Localized>
+                  </dt>
                   <dd>
                     {value(r, "date")} / {value(r, "due_date")}
                   </dd>
-                  <dt>Matching</dt>
+                  <dt>
+                    <Localized>{"Matching"}</Localized>
+                  </dt>
                   <dd>{value(r, "match_state")}</dd>
-                  <dt>Supplier reference</dt>
+                  <dt>
+                    <Localized>{"Supplier reference"}</Localized>
+                  </dt>
                   <dd>{value(r, "external_reference", "—")}</dd>
                 </dl>
                 {r.match_state === "variance" && (
                   <p className="erp-notice">
-                    Supplier price differs from the PO. Review the variance
-                    before approving.
+                    <Localized>
+                      {
+                        " Supplier price differs from the PO. Review the variance before approving. "
+                      }
+                    </Localized>
                   </p>
                 )}
                 <div className="erp-actions">
@@ -430,7 +488,8 @@ function Detail({
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Preview PDF <ArrowUpRight className="size-3.5" />
+                    <Localized>{" Preview PDF "}</Localized>
+                    <ArrowUpRight className="size-3.5" />
                   </a>
                   {r.document_state === "draft" ? (
                     <>
@@ -484,29 +543,43 @@ function Detail({
                   )}
                 </div>
                 <p className="text-xs text-muted">
-                  Posted documents are immutable. Correct an issued invoice with
-                  a linked credit note; recording a credit is separate from
-                  refunding money.
+                  <Localized>
+                    {
+                      " Posted documents are immutable. Correct an issued invoice with a linked credit note; recording a credit is separate from refunding money. "
+                    }
+                  </Localized>
                 </p>
               </>
             )}
             {entity === "fin_payments" && (
               <>
                 <dl className="workflow-key-values">
-                  <dt>Counterparty</dt>
+                  <dt>
+                    <Localized>{"Counterparty"}</Localized>
+                  </dt>
                   <dd>{value(r, "name")}</dd>
-                  <dt>Direction</dt>
+                  <dt>
+                    <Localized>{"Direction"}</Localized>
+                  </dt>
                   <dd>{value(r, "direction")}</dd>
-                  <dt>Amount / unallocated</dt>
+                  <dt>
+                    <Localized>{"Amount / unallocated"}</Localized>
+                  </dt>
                   <dd>
                     {value(r, "currency")} {decimal(value(r, "amount", "0"))} /{" "}
                     {decimal(value(r, "available", "0"))}
                   </dd>
-                  <dt>Account</dt>
+                  <dt>
+                    <Localized>{"Account"}</Localized>
+                  </dt>
                   <dd>{value(r, "bank_account")}</dd>
-                  <dt>Transaction reference</dt>
+                  <dt>
+                    <Localized>{"Transaction reference"}</Localized>
+                  </dt>
                   <dd>{value(r, "bank_reference")}</dd>
-                  <dt>Evidence</dt>
+                  <dt>
+                    <Localized>{"Evidence"}</Localized>
+                  </dt>
                   <dd>{value(r, "evidence")}</dd>
                 </dl>
                 <div className="erp-actions">
@@ -557,13 +630,23 @@ function Detail({
             {entity === "fin_credit_policies" && (
               <>
                 <dl className="workflow-key-values">
-                  <dt>Credit limit</dt>
+                  <dt>
+                    <Localized>{"Credit limit"}</Localized>
+                  </dt>
                   <dd>
                     {value(r, "currency")}{" "}
                     {decimal(value(r, "credit_limit", "0"))}
                   </dd>
-                  <dt>Hold overdue</dt>
-                  <dd>{r.hold_overdue ? "Yes" : "No"}</dd>
+                  <dt>
+                    <Localized>{"Hold overdue"}</Localized>
+                  </dt>
+                  <dd>
+                    {r.hold_overdue ? (
+                      <Localized>{"Yes"}</Localized>
+                    ) : (
+                      <Localized>{"No"}</Localized>
+                    )}
+                  </dd>
                 </dl>
                 {approve && button("fin_credit_policy", "Edit credit policy")}
               </>
@@ -578,18 +661,22 @@ function Detail({
                 id: value(r, "lot_id"),
               })}
             {rows(r, "lines").length > 0 && (
-              <section className="workflow-lines" aria-label="Record lines">
+              <section
+                className="workflow-lines"
+                aria-label={localize("Record lines")}
+              >
                 {rows(r, "lines").map((l, i) => (
                   <article className="workflow-line" key={i}>
                     <strong>
                       {value(l, "product", value(l, "name", "Line " + (i + 1)))}
                     </strong>
                     <small>
-                      Quantity{" "}
-                      {value(l, "quantity", value(l, "base_quantity", "—"))} ·
-                      Received / delivered{" "}
-                      {value(l, "received", value(l, "delivered", "—"))} ·
-                      Unbilled {value(l, "unbilled", "—")}
+                      <Localized>{" Quantity"}</Localized>{" "}
+                      {value(l, "quantity", value(l, "base_quantity", "—"))}{" "}
+                      <Localized>{" · Received / delivered"}</Localized>{" "}
+                      {value(l, "received", value(l, "delivered", "—"))}{" "}
+                      <Localized>{" · Unbilled "}</Localized>
+                      {value(l, "unbilled", "—")}
                     </small>
                     {Boolean(l.amount) && (
                       <p>
@@ -604,9 +691,11 @@ function Detail({
             {rows(r, "events").length > 0 && (
               <section
                 className="workflow-timeline"
-                aria-label="Activity timeline"
+                aria-label={localize("Activity timeline")}
               >
-                <h3>Activity</h3>
+                <h3>
+                  <Localized>{"Activity"}</Localized>
+                </h3>
                 {rows(r, "events").map((e, i) => (
                   <article key={value(e, "id", String(i))}>
                     <strong>{eventTitle(e)}</strong>
@@ -620,7 +709,9 @@ function Detail({
             )}
             {rows(r, "executions").length > 0 && (
               <section className="workflow-timeline">
-                <h3>Resolution actions</h3>
+                <h3>
+                  <Localized>{"Resolution actions"}</Localized>
+                </h3>
                 {rows(r, "executions").map((e) => (
                   <article key={value(e, "id")}>
                     <strong>{value(e, "kind")}</strong>
@@ -651,6 +742,8 @@ export function OperationalWorkspace({
 }: {
   area: "finance" | "service";
 }) {
+  const { t: localize } = useLocale();
+
   const erp = useERP(),
     params = useSearchParams(),
     router = useRouter(),
@@ -754,15 +847,17 @@ export function OperationalWorkspace({
           {write && createAction && (
             <Button onClick={() => setAction(createAction)}>
               <Plus className="size-4" />
-              {tab === "cases"
-                ? "New case"
-                : tab === "receipts"
-                  ? "Record customer receipt"
-                  : tab === "payments"
-                    ? "Record payment"
-                    : tab === "credit_policies"
-                      ? "Set credit policy"
-                      : "New billing document"}
+              {tab === "cases" ? (
+                <Localized>{"New case"}</Localized>
+              ) : tab === "receipts" ? (
+                <Localized>{"Record customer receipt"}</Localized>
+              ) : tab === "payments" ? (
+                <Localized>{"Record payment"}</Localized>
+              ) : tab === "credit_policies" ? (
+                <Localized>{"Set credit policy"}</Localized>
+              ) : (
+                <Localized>{"New billing document"}</Localized>
+              )}
             </Button>
           )}
         </PageHeader>
@@ -780,9 +875,11 @@ export function OperationalWorkspace({
         </nav>
         <div className="workflow-toolbar">
           <label className="min-w-0 flex-1">
-            <span className="sr-only">Search records</span>
+            <span className="sr-only">
+              <Localized>{"Search records"}</Localized>
+            </span>
             <Input
-              placeholder="Search records…"
+              placeholder={localize("Search records…")}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -792,45 +889,59 @@ export function OperationalWorkspace({
           </label>
           {filters.length > 0 && (
             <label>
-              <span className="sr-only">Filter status</span>
+              <span className="sr-only">
+                <Localized>{"Filter status"}</Localized>
+              </span>
               <select
-                aria-label="Filter status"
+                aria-label={localize("Filter status")}
                 value={state}
                 onChange={(e) => {
                   setState(e.target.value);
                   setPage(1);
                 }}
               >
-                <option value="">All statuses</option>
+                <option value="">
+                  <Localized>{"All statuses"}</Localized>
+                </option>
                 {filters.map((f) => (
                   <option key={f} value={f}>
-                    {f.replaceAll("_", " ")}
+                    <Localized>{f.replaceAll("_", " ")}</Localized>
                   </option>
                 ))}
               </select>
             </label>
           )}
           <Button size="sm" variant="outline" onClick={result.refresh}>
-            Refresh
+            <Localized>{" Refresh "}</Localized>
           </Button>
         </div>
         {entity === "fin_aging" && (
           <p className="erp-notice">
-            Outstanding customer and supplier documents are grouped separately
-            by currency and days overdue. Disputes remain outstanding until
-            settled; promises do not change due dates.
+            <Localized>
+              {
+                " Outstanding customer and supplier documents are grouped separately by currency and days overdue. Disputes remain outstanding until settled; promises do not change due dates. "
+              }
+            </Localized>
           </p>
         )}
         {result.error ? (
           <div className="erp-empty" role="alert">
-            <p>{result.error}</p>
-            <Button onClick={result.refresh}>Retry</Button>
+            <p>
+              <Localized>{result.error}</Localized>
+            </p>
+            <Button onClick={result.refresh}>
+              <Localized>{"Retry"}</Localized>
+            </Button>
           </div>
         ) : result.loading ? (
-          <p role="status">Loading records…</p>
+          <p role="status">
+            <Localized>{"Loading records…"}</Localized>
+          </p>
         ) : (
           <>
-            <p className="text-xs text-muted">{result.data.total} records</p>
+            <p className="text-xs text-muted">
+              {result.data.total} <Localized>{" records"}</Localized>
+            </p>
             <div className="data-card">
               <AdvancedRecordsTable
                 summary={result.data.summary}
@@ -853,10 +964,18 @@ export function OperationalWorkspace({
                 <Table data-actions="true">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Record</TableHead>
-                      <TableHead>Details</TableHead>
-                      <TableHead>Status / amount</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead>
+                        <Localized>{"Record"}</Localized>
+                      </TableHead>
+                      <TableHead>
+                        <Localized>{"Details"}</Localized>
+                      </TableHead>
+                      <TableHead>
+                        <Localized>{"Status / amount"}</Localized>
+                      </TableHead>
+                      <TableHead>
+                        <Localized>{"Actions"}</Localized>
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -920,15 +1039,17 @@ export function OperationalWorkspace({
                           )}
                           {Boolean(r.outstanding) && (
                             <small>
-                              Outstanding{" "}
+                              <Localized>{" Outstanding"}</Localized>{" "}
                               {decimal(value(r, "outstanding", "0"))}
                             </small>
                           )}
                           {Boolean(r.dispatch) && (
                             <p className="text-xs">
-                              {object(r, "dispatch").cleared
-                                ? "Cleared"
-                                : "Financial hold"}
+                              {object(r, "dispatch").cleared ? (
+                                <Localized>{"Cleared"}</Localized>
+                              ) : (
+                                <Localized>{"Financial hold"}</Localized>
+                              )}
                             </p>
                           )}
                         </TableCell>
@@ -940,7 +1061,7 @@ export function OperationalWorkspace({
                                 variant="ghost"
                                 onClick={() => setSelected(r.id)}
                               >
-                                Open details
+                                <Localized>{" Open details "}</Localized>
                               </Button>
                             </RowActions>
                           )}
@@ -951,7 +1072,9 @@ export function OperationalWorkspace({
                       <TableRow>
                         <TableCell colSpan={4}>
                           <p className="erp-empty">
-                            No records match these filters.
+                            <Localized>
+                              {" No records match these filters. "}
+                            </Localized>
                           </p>
                         </TableCell>
                       </TableRow>

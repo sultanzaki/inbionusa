@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { useOperatorState } from "@/components/workspace/form-recovery";
 import { useSearchParams } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
@@ -51,17 +53,22 @@ function UnitInput({
   return (
     <ERPField name={name} label="Unit">
       <select required value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value="">Select…</option>
+        <option value="">
+          <Localized>{"Select…"}</Localized>
+        </option>
         {product?.units?.map((u) => (
           <option key={u.id} value={u.id}>
             {u.code}
-            {u.is_base ? " · base" : ""} (× {decimal(u.factor)})
+            {u.is_base ? <Localized>{" · base"}</Localized> : ""} (×{" "}
+            {decimal(u.factor)})
           </option>
         ))}
       </select>
       {product && product.units?.length === 0 && (
         <small role="alert">
-          Configure this product in Settings → Product units.
+          <Localized>
+            {" Configure this product in Settings → Product units. "}
+          </Localized>
         </small>
       )}
     </ERPField>
@@ -250,9 +257,15 @@ export function MoveForm({
                 setTo(null);
               }}
             >
-              <option value="receipt">Receipt</option>
-              <option value="transfer">Transfer</option>
-              <option value="issue">Internal issue / sample / damage</option>
+              <option value="receipt">
+                <Localized>{"Receipt"}</Localized>
+              </option>
+              <option value="transfer">
+                <Localized>{"Transfer"}</Localized>
+              </option>
+              <option value="issue">
+                <Localized>{"Internal issue / sample / damage"}</Localized>
+              </option>
             </select>
           </ERPField>
         )}
@@ -276,19 +289,29 @@ export function MoveForm({
       </div>
       {!inbound && (
         <p className="erp-notice">
-          Select stock at its source location. Reserved quantities cannot be
-          moved.
+          <Localized>
+            {
+              " Select stock at its source location. Reserved quantities cannot be moved. "
+            }
+          </Localized>
         </p>
       )}
       {production && (
         <p className="erp-notice">
-          One batch per line. Configure the product series before posting.
+          <Localized>
+            {
+              " One batch per line. Configure the product series before posting. "
+            }
+          </Localized>
         </p>
       )}
       {lines.map((line, i) => (
         <div key={i} className="erp-line-editor">
           <div className="erp-line-title">
-            <strong>Line {i + 1}</strong>
+            <strong>
+              <Localized>{"Line "}</Localized>
+              {i + 1}
+            </strong>
             {lines.length > 1 && (
               <Button
                 variant="ghost"
@@ -400,7 +423,7 @@ export function MoveForm({
           variant="outline"
           onClick={() => setLines((v) => [...v, emptyMove()])}
         >
-          <Plus /> Add product line
+          <Plus /> <Localized>{" Add product line "}</Localized>
         </Button>
       )}
       <ERPField label="Reference / reason">
@@ -412,10 +435,16 @@ export function MoveForm({
         />
       </ERPField>
       <p className="erp-notice">
-        Saving a draft does not change stock. Post it after review.
-        {inbound
-          ? " Received goods remain unavailable for sales until released."
-          : ""}
+        <Localized>
+          {" Saving a draft does not change stock. Post it after review. "}
+        </Localized>
+        {inbound ? (
+          <Localized>
+            {" Received goods remain unavailable for sales until released."}
+          </Localized>
+        ) : (
+          ""
+        )}
       </p>
     </ERPForm>
   );
@@ -537,13 +566,13 @@ export function QuoteForm({ row, onDone }: { row?: ERPRow; onDone: Done }) {
       />
       {opportunity && (
         <p className="erp-notice">
-          Linked to the originating CRM opportunity.{" "}
+          <Localized>{" Linked to the originating CRM opportunity."}</Localized>{" "}
           <button
             type="button"
             className="underline"
             onClick={() => setOpportunity("")}
           >
-            Remove link
+            <Localized>{" Remove link "}</Localized>
           </button>
         </p>
       )}
@@ -584,7 +613,10 @@ export function QuoteForm({ row, onDone }: { row?: ERPRow; onDone: Done }) {
       {lines.map((line, i) => (
         <div key={i} className="erp-line-editor">
           <div className="erp-line-title">
-            <strong>Item {i + 1}</strong>
+            <strong>
+              <Localized>{"Item "}</Localized>
+              {i + 1}
+            </strong>
             {lines.length > 1 && (
               <Button
                 variant="ghost"
@@ -662,7 +694,7 @@ export function QuoteForm({ row, onDone }: { row?: ERPRow; onDone: Done }) {
             ])
           }
         >
-          <Plus /> Add item
+          <Plus /> <Localized>{" Add item "}</Localized>
         </Button>
       )}
       <div className="erp-form-grid">
@@ -711,8 +743,11 @@ export function QuoteForm({ row, onDone }: { row?: ERPRow; onDone: Done }) {
         currency={value.currency}
       />
       <p className="erp-notice">
-        Discounts above 10% require approval. Revise issued quotations to make
-        changes.
+        <Localized>
+          {
+            " Discounts above 10% require approval. Revise issued quotations to make changes. "
+          }
+        </Localized>
       </p>
     </ERPForm>
   );
@@ -749,7 +784,9 @@ export function CountForm({ onDone }: { onDone: Done }) {
           checked={blind}
           onChange={(e) => setBlind(e.target.checked)}
         />
-        Blind count: hide system quantities on the count sheet
+        <Localized>
+          {" Blind count: hide system quantities on the count sheet "}
+        </Localized>
       </label>
       <ERPField label="Reference">
         <textarea
@@ -759,8 +796,11 @@ export function CountForm({ onDone }: { onDone: Done }) {
         />
       </ERPField>
       <p className="erp-notice">
-        The location freezes only when the count is started. All counts,
-        including zero, must be entered before submission.
+        <Localized>
+          {
+            " The location freezes only when the count is started. All counts, including zero, must be entered before submission. "
+          }
+        </Localized>
       </p>
     </ERPForm>
   );
@@ -833,7 +873,11 @@ export function CountAddForm({ id, onDone }: { id: string; onDone: Done }) {
         />
       </ERPField>
       <p className="erp-notice">
-        Unlisted goods are added to this count. New lots remain in quarantine.
+        <Localized>
+          {
+            " Unlisted goods are added to this count. New lots remain in quarantine. "
+          }
+        </Localized>
       </p>
     </ERPForm>
   );
@@ -865,7 +909,8 @@ export function ReserveForm({
       onDone={onDone}
     >
       <p>
-        {line.product} · {decimal(line.unreserved)} {line.unit} unreserved
+        {line.product} · {decimal(line.unreserved)} {line.unit}{" "}
+        <Localized>{" unreserved "}</Localized>
       </p>
       <ERPPicker
         entity="stock"
@@ -876,8 +921,10 @@ export function ReserveForm({
       />
       {stock && (
         <p className="erp-notice">
-          {stock.qc_status} · Expiry {stock.expiry_date || "not recorded"} ·
-          Available {decimal(stock.available)} {stock.unit}
+          {stock.qc_status} <Localized>{" · Expiry "}</Localized>
+          {stock.expiry_date || <Localized>{"not recorded"}</Localized>}{" "}
+          <Localized>{" · Available "}</Localized>
+          {decimal(stock.available)} {stock.unit}
         </p>
       )}
       <ERPField label={"Reserve quantity (" + line.unit + ")"}>
@@ -956,9 +1003,11 @@ export function DeliveryForm({ row, onDone }: { row: ERPRow; onDone: Done }) {
         />
       </ERPField>
       <p className="erp-notice">
-        Post the draft after picking. Lots must still be released and unexpired
-        at posting. If Quality is enabled, matching COAs are attached to the
-        shipment.
+        <Localized>
+          {
+            " Post the draft after picking. Lots must still be released and unexpired at posting. If Quality is enabled, matching COAs are attached to the shipment. "
+          }
+        </Localized>
       </p>
     </ERPForm>
   );
@@ -1040,12 +1089,14 @@ export function ConfigurationForm({
                 })
               }
             />
-            Set as base unit (factor 1)
+            <Localized>{" Set as base unit (factor 1) "}</Localized>
           </label>
           <p className="erp-notice">
-            Example: one bag = 25 kg. A base unit cannot change once
-            transactions reference the product. Changing a conversion affects
-            future transactions only.
+            <Localized>
+              {
+                " Example: one bag = 25 kg. A base unit cannot change once transactions reference the product. Changing a conversion affects future transactions only. "
+              }
+            </Localized>
           </p>
         </>
       ) : action === "set_access" ? (
@@ -1061,13 +1112,27 @@ export function ConfigurationForm({
               value={value.module}
               onChange={(e) => setValue({ ...value, module: e.target.value })}
             >
-              <option value="warehouse">Warehouse</option>
-              <option value="production">Production</option>
-              <option value="sales">Sales</option>
-              <option value="quality">Quality</option>
-              <option value="purchase">Purchase</option>
-              <option value="crm">CRM</option>
-              <option value="documents">Documents</option>
+              <option value="warehouse">
+                <Localized>{"Warehouse"}</Localized>
+              </option>
+              <option value="production">
+                <Localized>{"Production"}</Localized>
+              </option>
+              <option value="sales">
+                <Localized>{"Sales"}</Localized>
+              </option>
+              <option value="quality">
+                <Localized>{"Quality"}</Localized>
+              </option>
+              <option value="purchase">
+                <Localized>{"Purchase"}</Localized>
+              </option>
+              <option value="crm">
+                <Localized>{"CRM"}</Localized>
+              </option>
+              <option value="documents">
+                <Localized>{"Documents"}</Localized>
+              </option>
             </select>
           </ERPField>
           {(["read", "write", "approve"] as const).map((v) => (
@@ -1081,9 +1146,11 @@ export function ConfigurationForm({
             </label>
           ))}
           <p className="erp-notice">
-            Explicit exceptions replace role defaults and sign the user out.
-            Administrators retain full access. Restore a role default from the
-            user’s access preview.
+            <Localized>
+              {
+                " Explicit exceptions replace role defaults and sign the user out. Administrators retain full access. Restore a role default from the user’s access preview. "
+              }
+            </Localized>
           </p>
         </>
       ) : (
@@ -1142,6 +1209,8 @@ function QuoteTotals({
   freight: string;
   currency: string;
 }) {
+  const { t: localize } = useLocale();
+
   const scale = BigInt(1000000),
     hundred = BigInt(100000000);
   const subtotal = lines.reduce((sum, line) => {
@@ -1157,18 +1226,27 @@ function QuoteTotals({
   }, BigInt(0));
   const taxAmount = (subtotal * units(tax) + hundred / BigInt(2)) / hundred;
   return (
-    <section className="erp-notice" aria-label="Estimated quotation totals">
-      <strong>Estimated totals</strong>
+    <section
+      className="erp-notice"
+      aria-label={localize("Estimated quotation totals")}
+    >
+      <strong>
+        <Localized>{"Estimated totals"}</Localized>
+      </strong>
       <p>
-        Subtotal: {money(decimalUnits(subtotal), currency)} · Tax:{" "}
-        {money(decimalUnits(taxAmount), currency)} · Freight:{" "}
-        {money(freight || "0", currency)}
+        <Localized>{" Subtotal: "}</Localized>
+        {money(decimalUnits(subtotal), currency)}{" "}
+        <Localized>{" · Tax:"}</Localized>{" "}
+        {money(decimalUnits(taxAmount), currency)}{" "}
+        <Localized>{" · Freight:"}</Localized> {money(freight || "0", currency)}
       </p>
       <p className="font-semibold">
-        Total:{" "}
+        <Localized>{" Total:"}</Localized>{" "}
         {money(decimalUnits(subtotal + taxAmount + units(freight)), currency)}
       </p>
-      <small>Estimated amounts; confirmed on save.</small>
+      <small>
+        <Localized>{"Estimated amounts; confirmed on save."}</Localized>
+      </small>
     </section>
   );
 }
@@ -1180,6 +1258,8 @@ function ProductionPreview({
   product: string;
   date: string;
 }) {
+  const { t: localize } = useLocale();
+
   const result = useERPPage(
     "batch-preview",
     date,
@@ -1190,16 +1270,29 @@ function ProductionPreview({
   );
   const preview = result.data.rows[0];
   return (
-    <div className="erp-notice" aria-label="Production batch preview">
+    <div
+      className="erp-notice"
+      aria-label={localize("Production batch preview")}
+    >
       {result.loading ? (
-        <p role="status">Checking batch identity…</p>
+        <p role="status">
+          <Localized>{"Checking batch identity…"}</Localized>
+        </p>
       ) : result.error ? (
-        <p role="alert">{result.error}</p>
+        <p role="alert"><Localized>{result.error}</Localized></p>
       ) : (
         <>
-          <strong>Expected batch: {preview?.number}</strong>
-          <p>Expiry: {preview?.expiry_date}</p>
-          <small>Final batch number assigned at posting.</small>
+          <strong>
+            <Localized>{"Expected batch: "}</Localized>
+            {preview?.number}
+          </strong>
+          <p>
+            <Localized>{"Expiry: "}</Localized>
+            {preview?.expiry_date}
+          </p>
+          <small>
+            <Localized>{"Final batch number assigned at posting."}</Localized>
+          </small>
         </>
       )}
     </div>

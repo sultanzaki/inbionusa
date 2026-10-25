@@ -1,4 +1,6 @@
 "use client";
+import { Localized } from "@/components/i18n/locale-provider";
+
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -7,7 +9,7 @@ import { changePasswordAction } from "@/lib/actions/user-actions";
 import { useLogout } from "@/hooks/use-logout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
+import { toast } from "@/components/i18n/toast";
 export function PasswordForm({
   forced,
   username,
@@ -30,12 +32,22 @@ export function PasswordForm({
         <Image src="/logo.png" alt="INBIONUSA" width={44} height={44} />
         <p className="mt-7 text-xs text-muted">@{username}</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">
-          {forced ? "Set a new password" : "Change password"}
+          {forced ? (
+            <Localized>{"Set a new password"}</Localized>
+          ) : (
+            <Localized>{"Change password"}</Localized>
+          )}
         </h1>
         <p className="mt-4 text-sm leading-relaxed text-muted">
-          {forced
-            ? "Change your temporary password to continue."
-            : "Use at least 16 characters. Other sessions will end."}
+          {forced ? (
+            <Localized>
+              {"Change your temporary password to continue."}
+            </Localized>
+          ) : (
+            <Localized>
+              {"Use at least 16 characters. Other sessions will end."}
+            </Localized>
+          )}
         </p>
         <form
           className="mt-8 space-y-5"
@@ -72,7 +84,9 @@ export function PasswordForm({
             ] as const
           ).map(([name, label, autocomplete]) => (
             <label key={name} className="block space-y-2 text-xs font-medium">
-              <span>{label}</span>
+              <span>
+                <Localized>{label}</Localized>
+              </span>
               <Input
                 type="password"
                 name={name}
@@ -89,17 +103,17 @@ export function PasswordForm({
           ))}
           {error && (
             <p role="alert" className="text-sm text-danger">
-              {error}
+              <Localized>{error}</Localized>
             </p>
           )}
           <Button type="submit" loading={busy} className="w-full">
-            Save password
+            <Localized>{" Save password "}</Localized>
           </Button>
         </form>
         <div className="mt-6 flex justify-between text-xs">
           {!forced && (
             <Link href="/dashboard" className="text-primary">
-              Back to dashboard
+              <Localized>{" Back to dashboard "}</Localized>
             </Link>
           )}
           <button
@@ -107,7 +121,11 @@ export function PasswordForm({
             onClick={() => void logout()}
             className="text-muted"
           >
-            {loggingOut ? "Signing out…" : "Sign out"}
+            {loggingOut ? (
+              <Localized>{"Signing out…"}</Localized>
+            ) : (
+              <Localized>{"Sign out"}</Localized>
+            )}
           </button>
         </div>
       </div>

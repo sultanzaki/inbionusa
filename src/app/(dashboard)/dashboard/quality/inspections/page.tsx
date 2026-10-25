@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { useTableState } from "@/components/tables/use-table-state";
 import { AdvancedRecordsTable } from "@/components/tables/advanced-records-table";
 import { applyTableQuery } from "@/lib/tables/postgrest";
@@ -48,7 +50,7 @@ import type {
   SpesifikasiItem,
   UserRole,
 } from "@/lib/types";
-import { toast } from "sonner";
+import { toast } from "@/components/i18n/toast";
 import {
   saveInspeksiAction,
   deleteInspeksiAction,
@@ -110,8 +112,17 @@ function escapeOr(value: string): string {
 
 // Status is always a dot-chip: emerald tint for PASS, danger tint otherwise.
 function StatusBadge({ status }: { status: string }) {
-  if (status === "PASS") return <Badge>PASS</Badge>;
-  return <Badge variant="destructive">{status}</Badge>;
+  if (status === "PASS")
+    return (
+      <Badge>
+        <Localized>{"PASS"}</Localized>
+      </Badge>
+    );
+  return (
+    <Badge variant="destructive">
+      <Localized>{status}</Localized>
+    </Badge>
+  );
 }
 
 interface UjiForm {
@@ -143,6 +154,8 @@ const textareaClass =
   "min-h-16 w-full rounded-md border border-input bg-surface px-2.5 py-1.5 text-sm transition-colors duration-150 outline-none";
 
 export default function InspeksiPage() {
+  const { t: localize } = useLocale();
+
   const erp = useERP();
   const qualityWrite = erp.can("quality", "write");
   const productionOn = erp.data?.modules.some(
@@ -631,7 +644,7 @@ export default function InspeksiPage() {
     <div className="page-stack">
       <PageHeader
         eyebrow="Quality control"
-        title="Inspections"
+        title={localize("Inspections")}
         description="Results, parameters, and status by lot."
       >
         <DomainDialog
@@ -651,7 +664,8 @@ export default function InspeksiPage() {
             <DialogTrigger
               render={
                 <Button>
-                  <Plus className="size-4" /> New inspection
+                  <Plus className="size-4" />{" "}
+                  <Localized>{" New inspection "}</Localized>
                 </Button>
               }
             />
@@ -659,13 +673,22 @@ export default function InspeksiPage() {
 
           <DialogContent className="inspection-editor mobile-fullscreen-form flex max-h-[90svh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
             <DialogHeader className="gap-1 border-b border-border-soft px-6 py-4 pr-14">
-              <p className="micro-label">INSPECTIONS</p>
+              <p className="micro-label">
+                <Localized>{"INSPECTIONS"}</Localized>
+              </p>
               <DialogTitle className="text-2xl font-semibold tracking-tight">
-                {editingId ? "Edit inspection" : "New inspection"}
+                {editingId ? (
+                  <Localized>{"Edit inspection"}</Localized>
+                ) : (
+                  <Localized>{"New inspection"}</Localized>
+                )}
               </DialogTitle>
               <DialogDescription className="mt-2 text-xs leading-relaxed">
-                Select a lot, then record its test results. Save a draft to
-                continue later.
+                <Localized>
+                  {
+                    " Select a lot, then record its test results. Save a draft to continue later. "
+                  }
+                </Localized>
               </DialogDescription>
             </DialogHeader>
             <DomainForm
@@ -684,8 +707,11 @@ export default function InspeksiPage() {
                 <div className="space-y-6">
                   {resumedDraft && (
                     <p className="form-notice">
-                      Draft restored. Check the current specifications before
-                      saving.
+                      <Localized>
+                        {
+                          " Draft restored. Check the current specifications before saving. "
+                        }
+                      </Localized>
                     </p>
                   )}
                   {/* Uji fields: two-column grid */}
@@ -700,8 +726,10 @@ export default function InspeksiPage() {
                         />
                         {selectedLot && (
                           <p className="erp-notice">
-                            {selectedLot.product} · Manufactured{" "}
-                            {selectedLot.mfg_date || "—"} · Expires{" "}
+                            {selectedLot.product}{" "}
+                            <Localized>{" · Manufactured"}</Localized>{" "}
+                            {selectedLot.mfg_date || "—"}{" "}
+                            <Localized>{" · Expires"}</Localized>{" "}
                             {selectedLot.expiry_date || "—"}
                           </p>
                         )}
@@ -719,7 +747,9 @@ export default function InspeksiPage() {
                             value={form.id_produk}
                             onChange={(e) => changeProduct(e.target.value)}
                           >
-                            <option value="">Select a product…</option>
+                            <option value="">
+                              <Localized>{"Select a product…"}</Localized>
+                            </option>
                             {produkList.map((p) => (
                               <option key={p.id} value={p.id}>
                                 {p.kode_produk} — {p.nama_produk}
@@ -733,7 +763,7 @@ export default function InspeksiPage() {
                             onChange={(e) =>
                               setForm({ ...form, no_lot: e.target.value })
                             }
-                            placeholder="LOT-001"
+                            placeholder={localize("LOT-001")}
                           />
                         </Field>
                       </>
@@ -744,7 +774,7 @@ export default function InspeksiPage() {
                         onChange={(e) =>
                           setForm({ ...form, inspector: e.target.value })
                         }
-                        placeholder="Inspector name"
+                        placeholder={localize("Inspector name")}
                       />
                     </Field>
                     <Field label="Sampling date" name="tgl_sampling" required>
@@ -774,7 +804,7 @@ export default function InspeksiPage() {
                       onChange={(e) =>
                         setForm({ ...form, catatan: e.target.value })
                       }
-                      placeholder="Notes (optional)"
+                      placeholder={localize("Notes (optional)")}
                     />
                   </Field>
 
@@ -782,7 +812,9 @@ export default function InspeksiPage() {
                   {spesifikasi.length > 0 && (
                     <div className="border-t border-border pt-5">
                       <div className="mb-4 flex items-center justify-between gap-3">
-                        <span className="micro-label">Test results</span>
+                        <span className="micro-label">
+                          <Localized>{"Test results"}</Localized>
+                        </span>
                         <span className="text-xs text-muted">
                           {
                             spesifikasi.filter(
@@ -791,7 +823,8 @@ export default function InspeksiPage() {
                                 "",
                             ).length
                           }{" "}
-                          / {spesifikasi.length} completed
+                          / {spesifikasi.length}{" "}
+                          <Localized>{" completed "}</Localized>
                         </span>
                       </div>
 
@@ -863,7 +896,9 @@ export default function InspeksiPage() {
                               )}
                               {sp.tipe_batas === "TEXT" && (
                                 <label className="inspection-translation">
-                                  Result in English (optional)
+                                  <Localized>
+                                    {" Result in English (optional) "}
+                                  </Localized>
                                   <Input
                                     value={
                                       englishValues[sp.parameter_uji] || ""
@@ -874,7 +909,9 @@ export default function InspeksiPage() {
                                         [sp.parameter_uji]: e.target.value,
                                       }))
                                     }
-                                    placeholder="Uses the original result if empty"
+                                    placeholder={localize(
+                                      "Uses the original result if empty",
+                                    )}
                                     maxLength={1000}
                                   />
                                 </label>
@@ -886,10 +923,12 @@ export default function InspeksiPage() {
 
                       <div className="mt-4 flex items-center gap-2">
                         <span className="text-xs font-medium">
-                          Final status:
+                          <Localized>{" Final status: "}</Localized>
                         </span>
                         {overallStatus === null ? (
-                          <Badge variant="secondary">Not provided</Badge>
+                          <Badge variant="secondary">
+                            <Localized>{"Not provided"}</Localized>
+                          </Badge>
                         ) : (
                           <StatusBadge status={overallStatus} />
                         )}
@@ -914,7 +953,9 @@ export default function InspeksiPage() {
                   )}
                   {form.id_produk && spesifikasi.length === 0 && (
                     <p className="text-[13px] text-muted">
-                      This product has no test specifications.
+                      <Localized>
+                        {" This product has no test specifications. "}
+                      </Localized>
                     </p>
                   )}
                 </div>
@@ -922,7 +963,11 @@ export default function InspeksiPage() {
 
               <DialogFooter className="m-0 flex-row items-center justify-between gap-2 rounded-b-lg px-6 py-4 sm:justify-between">
                 <DialogClose
-                  render={<Button variant="outline">Cancel</Button>}
+                  render={
+                    <Button variant="outline">
+                      <Localized>{"Cancel"}</Localized>
+                    </Button>
+                  }
                 />
                 {!editingId && (
                   <Button
@@ -930,7 +975,7 @@ export default function InspeksiPage() {
                     onClick={() => void handleDraftSave()}
                     disabled={saving || specLoading}
                   >
-                    Save draft
+                    <Localized>{" Save draft "}</Localized>
                   </Button>
                 )}
                 <Button
@@ -943,7 +988,13 @@ export default function InspeksiPage() {
                     spesifikasi.length === 0
                   }
                 >
-                  {saving ? "Saving…" : editingId ? "Save" : "Add"}
+                  {saving ? (
+                    <Localized>{"Saving…"}</Localized>
+                  ) : editingId ? (
+                    <Localized>{"Save"}</Localized>
+                  ) : (
+                    <Localized>{"Add"}</Localized>
+                  )}
                 </Button>
               </DialogFooter>
             </DomainForm>
@@ -968,7 +1019,7 @@ export default function InspeksiPage() {
         <DataToolbar
           search={searchInput}
           onSearch={onSearchChange}
-          placeholder="Search lots or products…"
+          placeholder={localize("Search lots or products…")}
           total={totalCount}
           loading={loading}
           onRefresh={() => void fetchData()}
@@ -1025,13 +1076,27 @@ export default function InspeksiPage() {
           <Table data-actions>
             <TableHeader>
               <TableRow className="hover:bg-surface-alt">
-                <TableHead className="pl-4">Lot number</TableHead>
-                <TableHead>Products</TableHead>
-                <TableHead className="text-right">Sampling date</TableHead>
-                <TableHead className="text-right">Test date</TableHead>
-                <TableHead>Inspector</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="pr-4">Actions</TableHead>
+                <TableHead className="pl-4">
+                  <Localized>{"Lot number"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Products"}</Localized>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Localized>{"Sampling date"}</Localized>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Localized>{"Test date"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Inspector"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Status"}</Localized>
+                </TableHead>
+                <TableHead className="pr-4">
+                  <Localized>{"Actions"}</Localized>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1041,7 +1106,7 @@ export default function InspeksiPage() {
                   <TableCell colSpan={7} className="!p-0">
                     <EmptyState
                       error
-                      title="Could not load data"
+                      title={localize("Could not load data")}
                       description="Check your connection and reload."
                     >
                       <Button
@@ -1049,7 +1114,7 @@ export default function InspeksiPage() {
                         size="sm"
                         onClick={() => fetchData()}
                       >
-                        Retry
+                        <Localized>{" Retry "}</Localized>
                       </Button>
                     </EmptyState>
                   </TableCell>
@@ -1065,16 +1130,24 @@ export default function InspeksiPage() {
                       <p className="text-base font-semibold tracking-tight">
                         {search ||
                         filter !== "all" ||
-                        Object.values(advanced).some(Boolean)
-                          ? "No matching results"
-                          : "NO TEST DATA"}
+                        Object.values(advanced).some(Boolean) ? (
+                          <Localized>{"No matching results"}</Localized>
+                        ) : (
+                          <Localized>{"NO TEST DATA"}</Localized>
+                        )}
                       </p>
                       <p className="text-xs text-muted">
                         {search ||
                         filter !== "all" ||
-                        Object.values(advanced).some(Boolean)
-                          ? "Try another keyword or clear your filters."
-                          : "Add your first record to get started."}
+                        Object.values(advanced).some(Boolean) ? (
+                          <Localized>
+                            {"Try another keyword or clear your filters."}
+                          </Localized>
+                        ) : (
+                          <Localized>
+                            {"Add your first record to get started."}
+                          </Localized>
+                        )}
                       </p>
                       {!search &&
                         filter === "all" &&
@@ -1088,7 +1161,8 @@ export default function InspeksiPage() {
                               setDialogOpen(true);
                             }}
                           >
-                            <Plus className="size-3.5" /> New inspection
+                            <Plus className="size-3.5" />{" "}
+                            <Localized>{" New inspection "}</Localized>
                           </Button>
                         )}
                       {(search ||
@@ -1103,7 +1177,7 @@ export default function InspeksiPage() {
                             setAdvanced({ ...emptyFilters });
                           }}
                         >
-                          Clear filters
+                          <Localized>{" Clear filters "}</Localized>
                         </Button>
                       )}
                     </div>
@@ -1133,7 +1207,9 @@ export default function InspeksiPage() {
                     <TableCell>
                       <StatusBadge status={row.status} />
                       {row.superseded && (
-                        <Badge variant="secondary">Superseded</Badge>
+                        <Badge variant="secondary">
+                          <Localized>{"Superseded"}</Localized>
+                        </Badge>
                       )}
                     </TableCell>
                     <TableCell
@@ -1146,7 +1222,7 @@ export default function InspeksiPage() {
                           type="button"
                           className="row-action"
                           onClick={() => openDetail(row)}
-                          title="Detail"
+                          title={localize("Detail")}
                         >
                           <Eye className="size-3.5" />
                         </button>
@@ -1155,7 +1231,7 @@ export default function InspeksiPage() {
                             type="button"
                             className="row-action"
                             onClick={() => openEdit(row)}
-                            title="Edit"
+                            title={localize("Edit")}
                           >
                             <Pencil className="size-3.5" />
                           </button>
@@ -1166,7 +1242,7 @@ export default function InspeksiPage() {
                             className="row-action"
                             data-tone="danger"
                             onClick={() => handleDelete(row.id)}
-                            title="Delete"
+                            title={localize("Delete")}
                           >
                             <Trash2 className="size-3.5" />
                           </button>
@@ -1195,12 +1271,16 @@ export default function InspeksiPage() {
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="flex max-h-[90svh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
           <DialogHeader className="gap-1 border-b border-border-soft px-6 py-4 pr-14">
-            <p className="micro-label">INSPECTIONS</p>
+            <p className="micro-label">
+              <Localized>{"INSPECTIONS"}</Localized>
+            </p>
             <DialogTitle className="text-2xl font-semibold tracking-tight">
-              Inspection details
+              <Localized>{" Inspection details "}</Localized>
             </DialogTitle>
             <DialogDescription>
-              Record the lot, observations, and test results.
+              <Localized>
+                {" Record the lot, observations, and test results. "}
+              </Localized>
             </DialogDescription>
           </DialogHeader>
 
@@ -1209,35 +1289,49 @@ export default function InspeksiPage() {
               <div className="space-y-5">
                 <div className="detail-metadata grid grid-cols-1 gap-5 rounded-xl border border-border-soft bg-surface-alt p-5 sm:grid-cols-2">
                   <div>
-                    <span className="text-xs text-muted">Lot number</span>
+                    <span className="text-xs text-muted">
+                      <Localized>{"Lot number"}</Localized>
+                    </span>
                     <p className="font-data text-sm">{detailItem.no_lot}</p>
                   </div>
                   <div>
-                    <span className="text-xs text-muted">Products</span>
+                    <span className="text-xs text-muted">
+                      <Localized>{"Products"}</Localized>
+                    </span>
                     <p className="text-sm font-medium">
                       {detailItem.master_produk?.nama_produk || "-"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs text-muted">Sampling date</span>
+                    <span className="text-xs text-muted">
+                      <Localized>{"Sampling date"}</Localized>
+                    </span>
                     <p className="font-data text-sm">
                       {detailItem.tgl_sampling}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs text-muted">Test date</span>
+                    <span className="text-xs text-muted">
+                      <Localized>{"Test date"}</Localized>
+                    </span>
                     <p className="font-data text-sm">{detailItem.tgl_uji}</p>
                   </div>
                   <div>
-                    <span className="text-xs text-muted">Inspector</span>
+                    <span className="text-xs text-muted">
+                      <Localized>{"Inspector"}</Localized>
+                    </span>
                     <p className="text-sm">{detailItem.inspector || "-"}</p>
                   </div>
                   <div>
-                    <span className="text-xs text-muted">Status</span>
+                    <span className="text-xs text-muted">
+                      <Localized>{"Status"}</Localized>
+                    </span>
                     <p>
                       <StatusBadge status={detailItem.status} />
                       {detailItem.superseded && (
-                        <Badge variant="secondary">Superseded inspection</Badge>
+                        <Badge variant="secondary">
+                          <Localized>{"Superseded inspection"}</Localized>
+                        </Badge>
                       )}
                     </p>
                   </div>
@@ -1245,25 +1339,32 @@ export default function InspeksiPage() {
 
                 {detailItem.failure_reason && (
                   <section className="fail-explanation">
-                    <h3>Failure reason</h3>
+                    <h3>
+                      <Localized>{"Failure reason"}</Localized>
+                    </h3>
                     <p>{detailItem.failure_reason}</p>
                   </section>
                 )}
                 {detailItem.spec_version && (
                   <p className="text-xs text-muted">
-                    Specification version {detailItem.spec_version}
+                    <Localized>{" Specification version "}</Localized>
+                    {detailItem.spec_version}
                   </p>
                 )}
                 {detailItem.catatan && (
                   <div className="border-t border-border-soft pt-4">
-                    <span className="text-xs text-muted">Notes</span>
+                    <span className="text-xs text-muted">
+                      <Localized>{"Notes"}</Localized>
+                    </span>
                     <p className="mt-1 text-sm">{detailItem.catatan}</p>
                   </div>
                 )}
 
                 {detailItem.hasil_detail?.length > 0 && (
                   <div className="border-t border-border-soft pt-4">
-                    <p className="micro-label mb-3">Result details</p>
+                    <p className="micro-label mb-3">
+                      <Localized>{"Result details"}</Localized>
+                    </p>
                     <ResultTable items={detailItem.hasil_detail} />
                   </div>
                 )}
@@ -1272,7 +1373,13 @@ export default function InspeksiPage() {
           </div>
 
           <DialogFooter className="m-0 flex-row items-center justify-end gap-2 rounded-b-lg px-6 py-4">
-            <DialogClose render={<Button variant="outline">Close</Button>} />
+            <DialogClose
+              render={
+                <Button variant="outline">
+                  <Localized>{"Close"}</Localized>
+                </Button>
+              }
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>

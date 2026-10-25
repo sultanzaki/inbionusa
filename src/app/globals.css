@@ -4523,7 +4523,7 @@ button[data-slot="button"][class*="ghost"] {
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
 }
-.mobile-menu-scroll > a {
+.mobile-menu-scroll a {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -4533,17 +4533,17 @@ button[data-slot="button"][class*="ghost"] {
   font-size: 13px;
   line-height: 1.4;
 }
-.mobile-menu-scroll > a > span:not(.mobile-workspace-icon) {
+.mobile-menu-scroll a > span:not(.mobile-workspace-icon) {
   flex: 1;
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.mobile-menu-scroll > a[aria-current] {
+.mobile-menu-scroll a[aria-current] {
   background: var(--color-surface-alt);
   font-weight: 600;
 }
-.mobile-menu-scroll > a:hover,
-.mobile-menu-scroll > a:focus-visible {
+.mobile-menu-scroll a:hover,
+.mobile-menu-scroll a:focus-visible {
   background: var(--color-primary-soft);
   outline: 0;
 }
@@ -7124,3 +7124,30 @@ html.dark {
 .advanced-table .warehouse-board { margin-top: 14px; }
 @media (min-width: 1100px) { .erp-dialog:has(.context-summary) { width: min(960px, calc(100vw - 64px)); max-width: min(960px, calc(100vw - 64px)); } }
 @media (min-width: 1100px) { .erp-record-dialog:has(.record-overview) { width: min(1080px, calc(100vw - 64px)); max-width: min(1080px, calc(100vw - 64px)); } }
+
+/* Mobile account entry and grouped module navigation. */
+.mobile-page-group { border-bottom: 1px solid var(--color-border-soft); }
+.mobile-page-group summary { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 12px; font-size: 12px; font-weight: 600; list-style: none; }
+.mobile-page-group summary::-webkit-details-marker { display: none; }
+.mobile-page-group summary svg { width: 15px; height: 15px; transition: transform .18s ease; }
+.mobile-page-group[open] summary svg { transform: rotate(180deg); }
+.mobile-page-group > div { padding: 0 0 8px 12px; border-left: 1px solid var(--color-border); margin-left: 14px; }
+@media (max-width: 1023px) {
+  .login-operations { min-height: 100svh; background: var(--color-page-bg); }
+  .login-operations .login-form-panel { min-height: 100svh; padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)); justify-content: center; gap: 0; background: radial-gradient(ellipse at 15% 0%, color-mix(in srgb, var(--color-primary) 18%, transparent), transparent 58%), var(--color-page-bg); }
+  .login-operations .login-form-card { width: 100%; max-width: 420px; min-width: 0; padding: 26px 22px; border: 1px solid var(--color-border); border-radius: 22px; background: var(--color-surface); box-shadow: 0 16px 48px #0000000d; }
+  .login-mobile-brand { margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--color-border-soft); }
+  .login-operations .login-form-card h1 { font-size: 30px; }
+  .login-form-card input { font-size: 16px; }
+  .login-form-card .theme-control { margin-top: 22px; flex-wrap: wrap; }
+  .login-mobile-copyright { max-width: 420px; margin-top: 20px; padding-inline: 8px; text-align: center; }
+}
+@media (max-width: 375px) { .login-operations .login-form-card { padding: 22px 18px; border-radius: 18px; } }
+@media (max-height: 620px) and (max-width: 1023px) { .login-operations .login-form-panel { justify-content: flex-start; } .login-mobile-brand { margin-bottom: 18px; } }
+.workspace-main > .surface-enter { animation: workspace-arrive .24s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes workspace-arrive { from { opacity: .5; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .workspace-main > .surface-enter { animation: none; } .mobile-page-group summary svg { transition: none; } }
+.language-control { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 10px; font-size: 12px; min-width: 0; }
+.language-control select { max-width: 165px; min-width: 0; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-foreground); background: var(--color-surface); font: inherit; }
+.login-preferences { border-top: 1px solid var(--color-border-soft); margin-top: 22px; padding-top: 6px; }
+.login-preferences .theme-control { margin-top: 4px; }

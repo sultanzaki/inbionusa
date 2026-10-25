@@ -1,11 +1,13 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { useEffect, useRef, useState } from "react";
 import { FilePenLine, Trash2, ArrowRight } from "lucide-react";
 import type { InspectionDraft } from "@/lib/types";
 import { deleteDraftAction } from "@/lib/actions/inspeksi-actions";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "./confirm-provider";
-import { toast } from "sonner";
+import { toast } from "@/components/i18n/toast";
 export function DraftPanel({
   refresh,
   onResume,
@@ -13,6 +15,8 @@ export function DraftPanel({
   refresh: number;
   onResume: (draft: InspectionDraft) => Promise<void>;
 }) {
+  const { t: localize } = useLocale();
+
   const [open, setOpen] = useState(false),
     [data, setData] = useState<InspectionDraft[]>([]),
     [loading, setLoading] = useState(false),
@@ -69,44 +73,54 @@ export function DraftPanel({
         onClick={() => setOpen((v) => !v)}
       >
         <FilePenLine className="size-4" />
-        <span>Inspection drafts</span>
+        <span>
+          <Localized>{"Inspection drafts"}</Localized>
+        </span>
         <span className="ml-1 text-muted">
           {loading ? "…" : error ? "—" : data.length + (more ? "+" : "")}
         </span>
         <span className="ml-auto text-xs text-primary">
-          {open ? "Close" : "View drafts"}
+          {open ? (
+            <Localized>{"Close"}</Localized>
+          ) : (
+            <Localized>{"View drafts"}</Localized>
+          )}
         </span>
       </button>
       {open && (
         <div className="draft-list">
           {error ? (
             <div role="alert" className="text-sm text-danger">
-              Could not load drafts.
+              <Localized>{" Could not load drafts. "}</Localized>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setRetry((v) => v + 1)}
               >
-                Retry
+                <Localized>{" Retry "}</Localized>
               </Button>
             </div>
           ) : loading ? (
             <p role="status" className="text-sm text-muted">
-              Loading drafts…
+              <Localized>{" Loading drafts… "}</Localized>
             </p>
           ) : data.length === 0 ? (
             <p className="text-sm text-muted">
-              No drafts yet. Save an unfinished inspection to continue later.
+              <Localized>
+                {
+                  " No drafts yet. Save an unfinished inspection to continue later. "
+                }
+              </Localized>
             </p>
           ) : (
             data.map((draft) => (
               <div className="draft-row" key={draft.id}>
                 <div>
                   <p className="text-sm font-medium">
-                    {draft.no_lot || "No lot number"}
+                    {draft.no_lot || <Localized>{"No lot number"}</Localized>}
                   </p>
                   <p className="mt-1 text-xs text-muted">
-                    Updated{" "}
+                    <Localized>{" Updated"}</Localized>{" "}
                     {new Intl.DateTimeFormat("en-GB", {
                       dateStyle: "medium",
                       timeStyle: "short",
@@ -142,13 +156,13 @@ export function DraftPanel({
                       }
                     }}
                   >
-                    Continue
+                    <Localized>{" Continue "}</Localized>
                     <ArrowRight className="size-3.5" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    aria-label="Delete draft"
+                    aria-label={localize("Delete draft")}
                     disabled={Boolean(busy)}
                     onClick={async () => {
                       if (
@@ -189,7 +203,7 @@ export function DraftPanel({
                 disabled={page === 0}
                 onClick={() => setPage((v) => v - 1)}
               >
-                Previous
+                <Localized>{" Previous "}</Localized>
               </Button>
               <Button
                 variant="ghost"
@@ -197,7 +211,7 @@ export function DraftPanel({
                 disabled={!more}
                 onClick={() => setPage((v) => v + 1)}
               >
-                Next
+                <Localized>{" Next "}</Localized>
               </Button>
             </div>
           )}

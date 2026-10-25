@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useERP } from "./context";
@@ -24,6 +26,8 @@ type Snapshot = {
   days: number;
 };
 export function OperationsDashboard() {
+  const { t: localize } = useLocale();
+
   const erp = useERP(),
     [area, setArea] = useState("overview"),
     [days, setDays] = useState("30"),
@@ -82,22 +86,31 @@ export function OperationsDashboard() {
     <div className="page-stack release-dashboard">
       <header className="release-home-header">
         <div>
-          <p className="micro-label">INBIONUSA OPERATIONS</p>
-          <h1>Your workspace</h1>
+          <p className="micro-label">
+            <Localized>{"INBIONUSA OPERATIONS"}</Localized>
+          </p>
+          <h1>
+            <Localized>{"Your workspace"}</Localized>
+          </h1>
         </div>
         <Link href="/dashboard/workspaces">
-          Explore workspace <ArrowUpRight className="inline size-4" />
+          <Localized>{" Explore workspace "}</Localized>
+          <ArrowUpRight className="inline size-4" />
         </Link>
       </header>
       <WorkInbox compact />
       <section className="performance-panel">
         <div className="release-section-heading">
           <div>
-            <p className="micro-label">PERFORMANCE</p>
-            <h2>Performance</h2>
+            <p className="micro-label">
+              <Localized>{"PERFORMANCE"}</Localized>
+            </p>
+            <h2>
+              <Localized>{"Performance"}</Localized>
+            </h2>
           </div>
           <select
-            aria-label="Performance period"
+            aria-label={localize("Performance period")}
             value={days}
             onChange={(e) => {
               if (e.target.value === days) return;
@@ -106,12 +119,21 @@ export function OperationsDashboard() {
               localStorage.setItem("inb-performance-days", e.target.value);
             }}
           >
-            <option value="7">Last 7 days</option>
-            <option value="30">Last 30 days</option>
-            <option value="90">Last 90 days</option>
+            <option value="7">
+              <Localized>{"Last 7 days"}</Localized>
+            </option>
+            <option value="30">
+              <Localized>{"Last 30 days"}</Localized>
+            </option>
+            <option value="90">
+              <Localized>{"Last 90 days"}</Localized>
+            </option>
           </select>
         </div>
-        <nav className="performance-areas" aria-label="Performance context">
+        <nav
+          className="performance-areas"
+          aria-label={localize("Performance context")}
+        >
           {areas.map((a) => (
             <button
               key={a}
@@ -124,7 +146,7 @@ export function OperationsDashboard() {
         </nav>
         <select
           className="performance-mobile-select"
-          aria-label="Performance context"
+          aria-label={localize("Performance context")}
           value={area}
           onChange={(e) => select(e.target.value)}
         >
@@ -136,14 +158,16 @@ export function OperationsDashboard() {
         </select>
         {error ? (
           <div role="alert">
-            <p>{error}</p>
+            <p>
+              <Localized>{error}</Localized>
+            </p>
             <Button variant="outline" onClick={() => setRetry((r) => r + 1)}>
-              Retry
+              <Localized>{" Retry "}</Localized>
             </Button>
           </div>
         ) : !value ? (
           <p role="status" className="performance-loading">
-            Loading performance…
+            <Localized>{" Loading performance… "}</Localized>
           </p>
         ) : (
           <>
@@ -159,7 +183,9 @@ export function OperationsDashboard() {
                   <PerformanceChart series={value.series} />
                 </div>
                 <details className="chart-data">
-                  <summary>View chart data</summary>
+                  <summary>
+                    <Localized>{"View chart data"}</Localized>
+                  </summary>
                   <div>
                     {value.series.map((d) => (
                       <p key={d.date}>
@@ -173,15 +199,20 @@ export function OperationsDashboard() {
               <div className="performance-metrics">
                 {value.metrics.map((m) => (
                   <article key={m.label}>
-                    <span>{m.label}</span>
+                    <span>
+                      <Localized>{m.label}</Localized>
+                    </span>
                     <strong>{m.value.toLocaleString("en-GB")}</strong>
                   </article>
                 ))}
               </div>
             </div>
             <p className="performance-note">
-              Daily record counts. Open, draft and held totals show current
-              status.
+              <Localized>
+                {
+                  " Daily record counts. Open, draft and held totals show current status. "
+                }
+              </Localized>
             </p>
             {area !== "overview" && (
               <Link
@@ -192,7 +223,9 @@ export function OperationsDashboard() {
                     : "/dashboard/" + area
                 }
               >
-                Open {area} workspace <ArrowUpRight className="inline size-4" />
+                <Localized>{" Open "}</Localized>
+                {area} <Localized>{" workspace "}</Localized>
+                <ArrowUpRight className="inline size-4" />
               </Link>
             )}
           </>
@@ -201,8 +234,12 @@ export function OperationsDashboard() {
       <section className="recent-activity">
         <div className="release-section-heading">
           <div>
-            <p className="micro-label">RECENT ACTIVITY</p>
-            <h2>Your latest actions</h2>
+            <p className="micro-label">
+              <Localized>{"RECENT ACTIVITY"}</Localized>
+            </p>
+            <h2>
+              <Localized>{"Your latest actions"}</Localized>
+            </h2>
           </div>
         </div>
         {value?.activity.length ? (
@@ -219,7 +256,9 @@ export function OperationsDashboard() {
             </article>
           ))
         ) : (
-          <p>No activity yet.</p>
+          <p>
+            <Localized>{"No activity yet."}</Localized>
+          </p>
         )}
       </section>
     </div>

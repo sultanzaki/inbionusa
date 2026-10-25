@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import {
   RecordOverview,
   WarehouseBoard,
@@ -72,11 +74,18 @@ function DetailRows({
       <div className="work-section-heading">
         <h3>{title}</h3>
         <span>
-          {rows.length} {rows.length === 1 ? "item" : "items"}
+          {rows.length}{" "}
+          {rows.length === 1 ? (
+            <Localized>{"item"}</Localized>
+          ) : (
+            <Localized>{"items"}</Localized>
+          )}
         </span>
       </div>
       {!rows.length ? (
-        <p className="work-quiet">No records yet.</p>
+        <p className="work-quiet">
+          <Localized>{"No records yet."}</Localized>
+        </p>
       ) : (
         <div className="work-detail-rows">
           {rows.map((item, index) => (
@@ -116,7 +125,9 @@ function DetailRows({
                   )
                   .map(([key, value]) => (
                     <div key={key}>
-                      <dt>{humanLabel(key)}</dt>
+                      <dt>
+                        <Localized>{humanLabel(key)}</Localized>
+                      </dt>
                       <dd>{shown(value, key)}</dd>
                     </div>
                   ))}
@@ -133,14 +144,16 @@ function History({ entity, id }: { entity: string; id: string }) {
   const result = useWorkRecords("history", { id, source: entity, page });
   return (
     <section className="work-detail-section">
-      <h3>Change history</h3>
+      <h3>
+        <Localized>{"Change history"}</Localized>
+      </h3>
       {result.loading ? (
         <RecordSkeleton compact label="Loading history…" />
       ) : result.error ? (
         <div role="alert">
-          {result.error}
+          <Localized>{result.error}</Localized>
           <Button variant="outline" size="sm" onClick={result.refresh}>
-            Retry history
+            <Localized>{" Retry history "}</Localized>
           </Button>
         </div>
       ) : (
@@ -150,14 +163,17 @@ function History({ entity, id }: { entity: string; id: string }) {
               <li key={event.id} id={"audit-WORK-" + event.id}>
                 <span className="work-history-dot" />
                 <div>
-                  <strong>{humanLabel(String(event.action))}</strong>
+                  <strong>
+                    <Localized>{humanLabel(String(event.action))}</Localized>
+                  </strong>
                   <p>
                     {String(event.actor)} ·{" "}
                     {new Date(String(event.created_at)).toLocaleString(
                       "en-GB",
                       { timeZone: "Asia/Jakarta" },
                     )}{" "}
-                    WIB · WORK-{event.id}{" "}
+                    <Localized>{" WIB · WORK-"}</Localized>
+                    {event.id}{" "}
                     <CopyValue
                       value={"WORK-" + event.id}
                       label="Copy audit reference"
@@ -165,7 +181,9 @@ function History({ entity, id }: { entity: string; id: string }) {
                   </p>
                   {Boolean(event.reason) && <p>{String(event.reason)}</p>}
                   <details>
-                    <summary>View changes</summary>
+                    <summary>
+                      <Localized>{"View changes"}</Localized>
+                    </summary>
                     <div className="work-change-list">
                       {[
                         ...new Set([
@@ -199,7 +217,9 @@ function History({ entity, id }: { entity: string; id: string }) {
                               : shown(v, key);
                           return (
                             <div key={key}>
-                              <strong>{humanLabel(key)}</strong>
+                              <strong>
+                                <Localized>{humanLabel(key)}</Localized>
+                              </strong>
                               <span>{value(before)}</span>
                               <span aria-hidden>→</span>
                               <span>{value(after)}</span>
@@ -213,7 +233,9 @@ function History({ entity, id }: { entity: string; id: string }) {
             ))}
           </ol>
           {!result.data.total && (
-            <p className="work-quiet">No changes recorded yet.</p>
+            <p className="work-quiet">
+              <Localized>{"No changes recorded yet."}</Localized>
+            </p>
           )}
           {result.data.total > 50 && (
             <DataPagination
@@ -231,14 +253,20 @@ function History({ entity, id }: { entity: string; id: string }) {
   );
 }
 function Genealogy({ lot }: { lot: string }) {
+  const { t: localize } = useLocale();
+
   const result = useWorkRecords("genealogy", { id: lot });
   return (
     <section className="work-detail-section">
-      <h3>Material → production → batch</h3>
+      <h3>
+        <Localized>{"Material → production → batch"}</Localized>
+      </h3>
       {result.loading ? (
         <RecordSkeleton compact label="Loading batch genealogy…" />
       ) : result.error ? (
-        <p role="alert">{result.error}</p>
+        <p role="alert">
+          <Localized>{result.error}</Localized>
+        </p>
       ) : result.data.rows.length ? (
         result.data.rows.map((row) => (
           <div key={row.id}>
@@ -250,23 +278,26 @@ function Genealogy({ lot }: { lot: string }) {
               <ArrowUpRight className="size-3.5" />
             </Link>
             <DetailRows
-              title="Material use"
+              title={localize("Material use")}
               rows={(row.inputs as WorkRow[]) || []}
             />
             <DetailRows
-              title="Finished batches"
+              title={localize("Finished batches")}
               rows={(row.outputs as WorkRow[]) || []}
             />
             <DetailRows
-              title="Customer deliveries"
+              title={localize("Customer deliveries")}
               rows={(row.deliveries as WorkRow[]) || []}
             />
           </div>
         ))
       ) : (
         <p className="work-quiet">
-          No linked manufacturing record. Historical material usage is not
-          reconstructed.
+          <Localized>
+            {
+              " No linked manufacturing record. Historical material usage is not reconstructed. "
+            }
+          </Localized>
         </p>
       )}
     </section>
@@ -299,6 +330,8 @@ const stages: Record<string, string[]> = {
   capas: ["open", "in_progress", "awaiting_review", "verified"],
 };
 export function OperationsWorkspace({ entity }: { entity: string }) {
+  const { t: localize } = useLocale();
+
   const definition = workCollections[entity],
     erp = useERP(),
     router = useRouter(),
@@ -436,20 +469,22 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
               placeholder={"Search " + definition.title.toLowerCase() + "…"}
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              aria-label="Search records"
+              aria-label={localize("Search records")}
             />
           </div>
           <label>
-            Status
+            <Localized>{" Status "}</Localized>
             <select
-              aria-label="Filter status"
+              aria-label={localize("Filter status")}
               value={state}
               onChange={(e) => {
                 setState(e.target.value);
                 setPage(1);
               }}
             >
-              <option value="">All statuses</option>
+              <option value="">
+                <Localized>{"All statuses"}</Localized>
+              </option>
               {[
                 ...new Set([
                   ...(workflow || []),
@@ -474,20 +509,24 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
                 ]),
               ].map((value) => (
                 <option key={value} value={value}>
-                  {humanLabel(value)}
+                  <Localized>{humanLabel(value)}</Localized>
                 </option>
               ))}
             </select>
           </label>
           <span className="work-result-count">
-            {list.loading ? "Loading…" : `${list.data.total} records`}
+            {list.loading ? (
+              <Localized>{"Loading…"}</Localized>
+            ) : (
+              localize(`${list.data.total} records`)
+            )}
           </span>
         </div>
         {["warehouses", "locations", "pallets"].includes(entity) && (
           <div
             className="warehouse-view-switch"
             role="group"
-            aria-label="Warehouse presentation"
+            aria-label={localize("Warehouse presentation")}
           >
             <Button
               size="sm"
@@ -495,7 +534,7 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
               aria-pressed={!visual}
               onClick={() => setVisual(false)}
             >
-              Table view
+              <Localized>{" Table view "}</Localized>
             </Button>
             <Button
               size="sm"
@@ -503,18 +542,18 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
               aria-pressed={visual}
               onClick={() => setVisual(true)}
             >
-              Visual overview
+              <Localized>{" Visual overview "}</Localized>
             </Button>
           </div>
         )}
         {list.error ? (
           <EmptyState
             error
-            title="Could not load this workspace"
+            title={localize("Could not load this workspace")}
             description={list.error}
           >
             <Button variant="outline" onClick={list.refresh}>
-              Retry
+              <Localized>{" Retry "}</Localized>
             </Button>
           </EmptyState>
         ) : (
@@ -547,9 +586,13 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
               <TableHeader>
                 <TableRow>
                   {definition.columns.map((column) => (
-                    <TableHead key={column.key}>{column.label}</TableHead>
+                    <TableHead key={column.key}>
+                      <Localized>{column.label}</Localized>
+                    </TableHead>
                   ))}
-                  <TableHead>Actions</TableHead>
+                  <TableHead>
+                    <Localized>{"Actions"}</Localized>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -563,7 +606,7 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
                   <TableRow>
                     <TableCell colSpan={definition.columns.length + 1}>
                       <EmptyState
-                        title="No records yet"
+                        title={localize("No records yet")}
                         description={
                           q || state
                             ? "Adjust your search or filters."
@@ -596,7 +639,9 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
                                   : "secondary"
                               }
                             >
-                              {humanLabel(String(record.state || "—"))}
+                              <Localized>
+                                {humanLabel(String(record.state || "—"))}
+                              </Localized>
                             </Badge>
                           ) : (
                             shown(record[column.key], column.key)
@@ -608,7 +653,7 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
                           <button
                             type="button"
                             className="row-action"
-                            title="Open record"
+                            title={localize("Open record")}
                             onClick={() => select(record.id)}
                           >
                             <ArrowUpRight className="size-3.5" />
@@ -653,20 +698,24 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
           {detail.error ? (
             <EmptyState
               error
-              title="Could not load record"
+              title={localize("Could not load record")}
               description={detail.error}
             >
               <Button variant="outline" onClick={detail.refresh}>
-                Retry
+                <Localized>{" Retry "}</Localized>
               </Button>
             </EmptyState>
           ) : !row ? (
-            <p>Record not found.</p>
+            <p>
+              <Localized>{"Record not found."}</Localized>
+            </p>
           ) : (
             <>
               <RecordOverview row={row} entity={entity} />
               <div className="work-detail-identity">
-                <Badge>{humanLabel(row.state || "record")}</Badge>
+                <Badge>
+                  <Localized>{humanLabel(row.state || "record")}</Localized>
+                </Badge>
                 <CopyValue value={String(row.number || row.id)} />
                 {entity === "pallets" && (
                   <Link
@@ -675,7 +724,7 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
                     target="_blank"
                   >
                     <Printer className="size-3.5" />
-                    Print pallet label
+                    <Localized>{" Print pallet label "}</Localized>
                   </Link>
                 )}
               </div>
@@ -709,13 +758,16 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
                       }
                     >
                       <Download className="size-3.5" />
-                      {label}
+                      <Localized>{label}</Localized>
                     </Button>
                   ))}
                 </div>
               )}
               {workflow && current >= 0 && (
-                <ol className="work-progress" aria-label="Record progress">
+                <ol
+                  className="work-progress"
+                  aria-label={localize("Record progress")}
+                >
                   {workflow.map((state, index) => (
                     <li key={state} data-complete={index <= current}>
                       <span>
@@ -727,7 +779,7 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
                           index + 1
                         )}
                       </span>
-                      {humanLabel(state)}
+                      <Localized>{humanLabel(state)}</Localized>
                     </li>
                   ))}
                 </ol>
@@ -748,7 +800,9 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
               <dl className="work-facts">
                 {visibleFacts.map(([key, value]) => (
                   <div key={key}>
-                    <dt>{humanLabel(key)}</dt>
+                    <dt>
+                      <Localized>{humanLabel(key)}</Localized>
+                    </dt>
                     <dd>{shown(value, key)}</dd>
                   </div>
                 ))}
@@ -760,41 +814,41 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
                   rel="noopener noreferrer"
                   className="work-record-link"
                 >
-                  Open version-specific document
+                  <Localized>{" Open version-specific document "}</Localized>
                   <ArrowUpRight className="size-3.5" />
                 </a>
               )}
               {entity === "manufacturing_orders" && (
                 <>
                   <DetailRows
-                    title="Formula requirements"
+                    title={localize("Formula requirements")}
                     rows={
                       (row.formula_snapshot as { requirements?: WorkRow[] })
                         ?.requirements || []
                     }
                   />
                   <DetailRows
-                    title="Planned versus net actual use"
+                    title={localize("Planned versus net actual use")}
                     rows={(row.material_usage as WorkRow[]) || []}
                   />
                   <DetailRows
-                    title="Production deviations"
+                    title={localize("Production deviations")}
                     rows={(row.deviations as WorkRow[]) || []}
                   />
                   <DetailRows
-                    title="Material reservations"
+                    title={localize("Material reservations")}
                     rows={(row.reservations as WorkRow[]) || []}
                   />
                   <DetailRows
-                    title="Actual material use & returns"
+                    title={localize("Actual material use & returns")}
                     rows={(row.inputs as WorkRow[]) || []}
                   />
                   <DetailRows
-                    title="Finished batches"
+                    title={localize("Finished batches")}
                     rows={(row.outputs as WorkRow[]) || []}
                   />
                   <DetailRows
-                    title="Customer deliveries"
+                    title={localize("Customer deliveries")}
                     rows={(row.deliveries as WorkRow[]) || []}
                   />
                   {Boolean((row.outputs as WorkRow[])?.[0]?.lot_id) && (
@@ -806,52 +860,52 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
               )}
               {entity === "formulas" && (
                 <DetailRows
-                  title="Formula materials & packaging"
+                  title={localize("Formula materials & packaging")}
                   rows={(row.lines as WorkRow[]) || []}
                 />
               )}{" "}
               {entity === "material_specs" && (
                 <DetailRows
-                  title="Inspection parameters"
+                  title={localize("Inspection parameters")}
                   rows={(row.parameters as WorkRow[]) || []}
                 />
               )}{" "}
               {entity === "incoming_inspections" && (
                 <>
                   <DetailRows
-                    title="Captured specification"
+                    title={localize("Captured specification")}
                     rows={
                       (row.spec_snapshot as { parameters?: WorkRow[] })
                         ?.parameters || []
                     }
                   />
                   <DetailRows
-                    title="Recorded results"
+                    title={localize("Recorded results")}
                     rows={(row.results as WorkRow[]) || []}
                   />
                 </>
               )}{" "}
               {entity === "warehouse_transfers" && (
                 <DetailRows
-                  title="Transfer manifest & receipt"
+                  title={localize("Transfer manifest & receipt")}
                   rows={(row.lines as WorkRow[]) || []}
                 />
               )}{" "}
               {entity === "pallets" && (
                 <DetailRows
-                  title="Packed contents"
+                  title={localize("Packed contents")}
                   rows={(row.contents as WorkRow[]) || []}
                 />
               )}{" "}
               {entity === "warehouse_access" && (
                 <DetailRows
-                  title="Assigned warehouses"
+                  title={localize("Assigned warehouses")}
                   rows={(row.warehouses as WorkRow[]) || []}
                 />
               )}{" "}
               {entity === "document_distributions" && (
                 <DetailRows
-                  title="Document revision sent"
+                  title={localize("Document revision sent")}
                   rows={[row.document_snapshot as WorkRow]}
                 />
               )}{" "}
@@ -860,7 +914,7 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
                   className="work-record-link"
                   href={`/dashboard/sales?view=quotes&record=${row.quote_id}`}
                 >
-                  Open linked quotation
+                  <Localized>{" Open linked quotation "}</Localized>
                   <ArrowUpRight className="size-3.5" />
                 </Link>
               )}{" "}

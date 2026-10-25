@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { useTableState } from "@/components/tables/use-table-state";
 import { AdvancedRecordsTable } from "@/components/tables/advanced-records-table";
 import { BUSINESS_ROLES, roleLabel } from "@/lib/rbac";
@@ -13,7 +15,7 @@ import {
   saveUserAction,
   resetUserPasswordAction,
 } from "@/lib/actions/user-actions";
-import { toast } from "sonner";
+import { toast } from "@/components/i18n/toast";
 import {
   PageHeader,
   DataToolbar,
@@ -51,6 +53,8 @@ const blank = {
   password: "",
 };
 export default function UsersPage() {
+  const { t: localize } = useLocale();
+
   const { user } = useUser(),
     [data, setData] = useState<User[]>([]),
     [search, setSearch] = useState(""),
@@ -139,7 +143,7 @@ export default function UsersPage() {
     return (
       <EmptyState
         error
-        title="Access restricted"
+        title={localize("Access restricted")}
         description="Only administrators and QC admins can manage users."
       />
     );
@@ -147,18 +151,18 @@ export default function UsersPage() {
     <div className="page-stack">
       <PageHeader
         eyebrow="Administration"
-        title="Users"
+        title={localize("Users")}
         description="Manage accounts, roles, and access."
       >
         <Button onClick={() => edit(null)}>
           <Plus className="size-4" />
-          Add user
+          <Localized>{" Add user "}</Localized>
         </Button>
       </PageHeader>
       <DataToolbar
         search={search}
         onSearch={setSearch}
-        placeholder="Search names or usernames…"
+        placeholder={localize("Search names or usernames…")}
         total={total}
         loading={loading}
         onRefresh={() => void load()}
@@ -177,11 +181,21 @@ export default function UsersPage() {
           <Table data-actions>
             <TableHeader>
               <TableRow>
-                <TableHead>Users</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Password</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>
+                  <Localized>{"Users"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Role"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Status"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Password"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Actions"}</Localized>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -192,12 +206,12 @@ export default function UsersPage() {
                   <TableCell colSpan={5}>
                     <EmptyState
                       error
-                      title="Could not load users"
+                      title={localize("Could not load users")}
                       description={error}
                     >
                       <Button onClick={() => void load()} variant="outline">
                         <RefreshCw className="size-4" />
-                        Retry
+                        <Localized>{" Retry "}</Localized>
                       </Button>
                     </EmptyState>
                   </TableCell>
@@ -206,7 +220,7 @@ export default function UsersPage() {
                 <TableRow>
                   <TableCell colSpan={5}>
                     <EmptyState
-                      title="No matching users"
+                      title={localize("No matching users")}
                       description="Try another search."
                     />
                   </TableCell>
@@ -218,7 +232,9 @@ export default function UsersPage() {
                       <p className="font-medium">
                         {u.nama_lengkap}
                         {u.id === user?.id && (
-                          <span className="ml-2 text-xs text-muted">You</span>
+                          <span className="ml-2 text-xs text-muted">
+                            <Localized>{"You"}</Localized>
+                          </span>
                         )}
                       </p>
                       <p className="mt-1 text-xs text-muted">
@@ -229,18 +245,26 @@ export default function UsersPage() {
                     <TableCell>{roleLabel(u.role)}</TableCell>
                     <TableCell>
                       <Badge variant={u.is_active ? "default" : "secondary"}>
-                        {u.is_active ? "Active" : "Inactive"}
+                        {u.is_active ? (
+                          <Localized>{"Active"}</Localized>
+                        ) : (
+                          <Localized>{"Inactive"}</Localized>
+                        )}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-xs text-muted">
-                      {u.must_change_password ? "Change required" : "Set"}
+                      {u.must_change_password ? (
+                        <Localized>{"Change required"}</Localized>
+                      ) : (
+                        <Localized>{"Set"}</Localized>
+                      )}
                     </TableCell>
                     <TableCell>
                       <RowActions>
                         <button
                           type="button"
                           className="row-action"
-                          title="Edit user"
+                          title={localize("Edit user")}
                           onClick={() => edit(u)}
                         >
                           <Pencil className="size-3.5" />
@@ -249,7 +273,7 @@ export default function UsersPage() {
                           <button
                             type="button"
                             className="row-action"
-                            title="Reset password"
+                            title={localize("Reset password")}
                             onClick={() => {
                               setTemporary("");
                               setFormError("");
@@ -290,11 +314,25 @@ export default function UsersPage() {
         <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <Users className="mb-3 size-5 text-muted" />
-            <DialogTitle>{editing ? "Edit user" : "Add user"}</DialogTitle>
+            <DialogTitle>
+              {editing ? (
+                <Localized>{"Edit user"}</Localized>
+              ) : (
+                <Localized>{"Add user"}</Localized>
+              )}
+            </DialogTitle>
             <DialogDescription>
-              {editing
-                ? "Role changes and deactivation end the user's sessions."
-                : "The user must change their temporary password at first sign-in."}
+              {editing ? (
+                <Localized>
+                  {"Role changes and deactivation end the user's sessions."}
+                </Localized>
+              ) : (
+                <Localized>
+                  {
+                    "The user must change their temporary password at first sign-in."
+                  }
+                </Localized>
+              )}
             </DialogDescription>
           </DialogHeader>
           <form
@@ -334,7 +372,7 @@ export default function UsersPage() {
             }}
           >
             <label className="form-label">
-              Full name
+              <Localized>{" Full name "}</Localized>
               <Input
                 value={form.nama_lengkap}
                 onChange={(e) =>
@@ -345,7 +383,7 @@ export default function UsersPage() {
               />
             </label>
             <label className="form-label">
-              Username
+              <Localized>{" Username "}</Localized>
               <Input
                 value={form.username}
                 onChange={(e) =>
@@ -358,7 +396,7 @@ export default function UsersPage() {
               />
             </label>
             <label className="form-label">
-              Role
+              <Localized>{" Role "}</Localized>
               <select
                 value={form.role}
                 disabled={editing?.id === user?.id}
@@ -373,8 +411,11 @@ export default function UsersPage() {
                 ))}
               </select>
               <small className="text-muted">
-                Changing role clears user-specific overrides and signs out
-                existing sessions. Administrators retain full access.
+                <Localized>
+                  {
+                    " Changing role clears user-specific overrides and signs out existing sessions. Administrators retain full access. "
+                  }
+                </Localized>
               </small>
             </label>
             <AccessPreview
@@ -383,7 +424,7 @@ export default function UsersPage() {
             />
             {editing ? (
               <label className="form-label">
-                Access status
+                <Localized>{" Access status "}</Localized>
                 <select
                   value={String(form.is_active)}
                   disabled={editing.id === user?.id}
@@ -394,15 +435,19 @@ export default function UsersPage() {
                     }))
                   }
                 >
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
+                  <option value="true">
+                    <Localized>{"Active"}</Localized>
+                  </option>
+                  <option value="false">
+                    <Localized>{"Inactive"}</Localized>
+                  </option>
                 </select>
               </label>
             ) : (
               <label className="form-label">
-                Temporary password
+                <Localized>{" Temporary password "}</Localized>
                 <Input
-                  aria-label="Temporary password"
+                  aria-label={localize("Temporary password")}
                   type="password"
                   value={form.password}
                   onChange={(e) =>
@@ -414,7 +459,11 @@ export default function UsersPage() {
                   autoComplete="new-password"
                 />
                 <span className="form-hint">
-                  At least 16 characters. Share it securely with the user.
+                  <Localized>
+                    {
+                      " At least 16 characters. Share it securely with the user. "
+                    }
+                  </Localized>
                 </span>
               </label>
             )}
@@ -427,12 +476,12 @@ export default function UsersPage() {
               <DialogClose
                 render={
                   <Button variant="outline" disabled={busy}>
-                    Cancel
+                    <Localized>{" Cancel "}</Localized>
                   </Button>
                 }
               />
               <Button type="submit" loading={busy}>
-                Save user
+                <Localized>{" Save user "}</Localized>
               </Button>
             </DialogFooter>
           </form>
@@ -451,10 +500,13 @@ export default function UsersPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reset password</DialogTitle>
+            <DialogTitle>
+              <Localized>{"Reset password"}</Localized>
+            </DialogTitle>
             <DialogDescription>
-              Set a temporary password for @{resetTarget?.username}. All
-              sessions will end.
+              <Localized>{" Set a temporary password for @"}</Localized>
+              {resetTarget?.username}
+              <Localized>{". All sessions will end. "}</Localized>
             </DialogDescription>
           </DialogHeader>
           <form
@@ -487,9 +539,9 @@ export default function UsersPage() {
             }}
           >
             <label className="form-label">
-              Temporary password
+              <Localized>{" Temporary password "}</Localized>
               <Input
-                aria-label="Temporary password"
+                aria-label={localize("Temporary password")}
                 type="password"
                 autoComplete="new-password"
                 value={temporary}
@@ -508,12 +560,12 @@ export default function UsersPage() {
               <DialogClose
                 render={
                   <Button variant="outline" disabled={busy}>
-                    Cancel
+                    <Localized>{" Cancel "}</Localized>
                   </Button>
                 }
               />
               <Button type="submit" loading={busy}>
-                Reset password
+                <Localized>{" Reset password "}</Localized>
               </Button>
             </DialogFooter>
           </form>

@@ -1,4 +1,6 @@
 "use client";
+import { useLocale } from "@/components/i18n/locale-provider";
+
 import * as React from "react";
 import { numericDisplay, numericEdit } from "@/lib/erp/numeric-edit";
 import { parseNumberInput } from "@/lib/erp/ux";
@@ -14,6 +16,8 @@ export function NumericInput({
   ref,
   ...props
 }: React.ComponentProps<"input">) {
+  const { t: localize } = useLocale();
+
   const input = React.useRef<HTMLInputElement | null>(null);
   const [buffer, setBuffer] = React.useState(() => ({
     source: String(value ?? defaultValue ?? ""),
@@ -62,7 +66,9 @@ export function NumericInput({
       inputMode="decimal"
       value={shown}
       pattern={String.raw`-?(?:\d+|\d{1,3}(?:\.\d{3})+)?(?:,\d*)?`}
-      title="Use dots for thousands and a comma for decimals, for example 1.250,50."
+      title={localize(
+        "Use dots for thousands and a comma for decimals, for example 1.250,50.",
+      )}
       aria-invalid={invalid || props["aria-invalid"] || undefined}
       onFocus={onFocus}
       onChange={(event) => {

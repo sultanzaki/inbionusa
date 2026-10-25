@@ -102,7 +102,13 @@ test("navigation preserves every destination and selects only the current tab", 
     "Storage locations",
   ].map((name, i) => [name, "/" + i]);
   const sections = navigationSections("Warehouse", links);
-  assert.equal(sections.length, 4);
+  assert.equal(sections.length, 5);
+  assert.deepEqual(
+    sections
+      .find((section) => section.name === "Pallets")
+      ?.links.map((link) => link[0]),
+    ["Pallet tracking"],
+  );
   assert.deepEqual(sections.flatMap((s) => s.links).sort(), [...links].sort());
   assert.equal(
     workspaceLinkActive("/dashboard/finance", "/dashboard/finance", "payments"),
@@ -129,69 +135,16 @@ test("navigation preserves every destination and selects only the current tab", 
     false,
   );
 });
-test("internal approval stamps require actual matching audit evidence and never attest drafts", async () => {
-  const { approvalFromEvents, approvalLines, approvalActions } =
-    await import("../src/lib/pdf/approval");
-  assert.deepEqual(approvalActions("purchases", "partial"), [
-    "confirm_purchase",
-  ]);
-  assert.ok(
-    approvalActions("warehouse_transfers", "partial").includes(
-      "dispatch_warehouse_transfer",
-    ),
-  );
-  const id = randomUUID();
-  const evidence = {
-    id: "251",
-    record_id: id,
-    entity: "incoming_inspections",
-    action: "finalize_incoming_inspection",
-    actor: "Quality Officer",
-    actor_id: randomUUID(),
-    created_at: "2026-10-23T06:00:00Z",
-  };
-  assert.equal(
-    approvalFromEvents("incoming_inspections", id, "draft", [evidence]),
-    null,
-  );
-  assert.equal(
-    approvalFromEvents("incoming_inspections", randomUUID(), "pass", [
-      evidence,
-    ]),
-    null,
-  );
-  assert.equal(
-    approvalFromEvents("incoming_inspections", id, "pass", [
-      { ...evidence, action: "save_incoming_results" },
-    ]),
-    null,
-  );
-  assert.equal(
-    approvalFromEvents("incoming_inspections", id, "pass", [
-      { ...evidence, created_at: "invalid" },
-    ]),
-    null,
-  );
-  assert.equal(
-    approvalFromEvents("incoming_inspections", id, "pass", []),
-    null,
-  );
-  const stamp = approvalFromEvents("incoming_inspections", id, "fail", [
-    evidence,
-  ])!;
-  assert.equal(stamp.name, "Quality Officer");
-  assert.equal(stamp.eventId, "WORK-251");
-  assert.match(
-    approvalLines(stamp).find(([key]) => key === "Recorded at")![1],
-    /13:00:00 WIB$/,
-  );
-  const pdf = await renderOperationDocument(
-    { id, number: "IN-251", state: "fail", results: [] },
-    "incoming",
-    stamp,
-  );
-  const doc = await PDFDocument.load(pdf);
-  assert.ok(doc.getPageCount() > 0);
+test("issued and draft operation PDFs omit internal signature stamps", async () => {
+  for (const state of ["pass", "draft"]) {
+    const pdf = await renderOperationDocument(
+      { id: randomUUID(), number: "IN-251", state, results: [] },
+      "incoming",
+    );
+    const doc = await PDFDocument.load(pdf);
+    assert.ok(doc.getPageCount() > 0);
+    assert.doesNotMatch(doc.getKeywords() || "", /Internal approval|WORK-/);
+  }
 });
 
 test("changing a reference source clears scoped choices without changing quantities", async () => {
@@ -272,4 +225,113 @@ test("save feedback distinguishes rejection from an unconfirmed outcome without 
   } finally {
     globalThis.fetch = original;
   }
+});
+
+test("transfer preflight identifies duplicate receipt lines, zero receipts and identical locations", async () => {
+  const { commandSchema } = await import("../src/lib/operations/validation");
+  const id = randomUUID(),
+    key = randomUUID();
+  const receipt = {
+    id,
+    version: 1,
+    request_key: key,
+    reason: "Actual receiving",
+    lines: [
+      { line_id: id, quantity: "1", lost_quantity: "0" },
+      { line_id: id, quantity: "2", lost_quantity: "0" },
+    ],
+  };
+  const duplicate = commandSchema("receive_warehouse_transfer").safeParse(
+    receipt,
+  );
+  assert.equal(duplicate.success, false);
+  if (!duplicate.success)
+    assert.ok(
+      duplicate.error.issues.some(
+        (issue) => issue.path.join(".") === "lines.1.line_id",
+      ),
+    );
+  const zero = commandSchema("receive_warehouse_transfer").safeParse({
+    ...receipt,
+    lines: [{ line_id: id, quantity: "0", lost_quantity: "0" }],
+  });
+  assert.equal(zero.success, false);
+  assert.equal(
+    commandSchema("receive_warehouse_transfer").safeParse({
+      ...receipt,
+      lines: [receipt.lines[0]],
+    }).success,
+    true,
+  );
+  const transfer = commandSchema("create_warehouse_transfer").safeParse({
+    request_key: key,
+    from_location: id,
+    to_location: id,
+    date: "2026-10-25",
+    reason: "Transfer request",
+    lines: [],
+    pallet_ids: [{ id }],
+  });
+  assert.equal(transfer.success, false);
+  if (!transfer.success)
+    assert.ok(
+      transfer.error.issues.some(
+        (issue) => issue.path.join(".") === "to_location",
+      ),
+    );
+});
+
+test("formula preflight highlights repeated materials while preserving valid formula quantities", async () => {
+  const { commandSchema } = await import("../src/lib/operations/validation");
+  const material = randomUUID();
+  const line = {
+    material_id: material,
+    quantity: "10.5",
+    role: "ingredient",
+    tolerance_percent: "0",
+  };
+  const data = {
+    request_key: randomUUID(),
+    title: "Stearate formula",
+    product_id: randomUUID(),
+    unit_id: randomUUID(),
+    output_quantity: "20",
+    effective_date: "2026-10-25",
+    lines: [line, { ...line, quantity: "9.5" }],
+    notes: "",
+  };
+  const result = commandSchema("save_formula").safeParse(data);
+  assert.equal(result.success, false);
+  if (!result.success)
+    assert.ok(
+      result.error.issues.some(
+        (issue) => issue.path.join(".") === "lines.1.material_id",
+      ),
+    );
+  assert.equal(
+    commandSchema("save_formula").safeParse({
+      ...data,
+      lines: [{ ...line, quantity: "20" }],
+    }).success,
+    true,
+  );
+});
+
+test("locale translation preserves canonical/user values and unknown keys", async () => {
+  const { translate } = await import("../src/components/i18n/locale-provider");
+  assert.equal(translate("Save", "id"), "Simpan");
+  assert.equal(translate("Save", "en"), "Save");
+  assert.equal(translate("Step 2 of 3", "id"), "Langkah 2 dari 3");
+  assert.equal(
+    translate("Search pallet location…", "id"),
+    "Cari Lokasi palet…",
+  );
+  for (const value of [
+    "INBIOSAN 200",
+    "200.01.21102026.2027",
+    "1000.50",
+    "constructor",
+    "__proto__",
+  ])
+    assert.equal(translate(value, "id"), value);
 });

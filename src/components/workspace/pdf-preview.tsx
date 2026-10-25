@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import {
   Dialog,
   DialogContent,
@@ -21,6 +23,8 @@ export function PdfPreview({
   onIssue: () => Promise<void>;
   busy: boolean;
 }) {
+  const { t: localize } = useLocale();
+
   return (
     <Dialog
       open={Boolean(url)}
@@ -30,9 +34,15 @@ export function PdfPreview({
     >
       <DialogContent className="pdf-preview-dialog">
         <DialogHeader>
-          <DialogTitle>Preview COA</DialogTitle>
+          <DialogTitle>
+            <Localized>{"Preview COA"}</Localized>
+          </DialogTitle>
           <DialogDescription>
-            Not issued yet. The certificate number is assigned on issuance.
+            <Localized>
+              {
+                " Not issued yet. The certificate number is assigned on issuance. "
+              }
+            </Localized>
           </DialogDescription>
         </DialogHeader>
         {url && (
@@ -43,11 +53,11 @@ export function PdfPreview({
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-xs text-primary"
             >
-              Open preview in a new tab
+              <Localized>{" Open preview in a new tab "}</Localized>
               <ExternalLink className="size-3.5" />
             </a>
             <iframe
-              title="Certificate PDF preview"
+              title={localize("Certificate PDF preview")}
               src={url + "#toolbar=0"}
               className="pdf-preview-frame"
             />
@@ -55,7 +65,7 @@ export function PdfPreview({
         )}
         <DialogFooter>
           <Button variant="outline" disabled={busy} onClick={onClose}>
-            Back to editing
+            <Localized>{" Back to editing "}</Localized>
           </Button>
           <SlideConfirm
             label="Issue COA"

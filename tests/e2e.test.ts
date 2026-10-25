@@ -1,3 +1,4 @@
+import { exerciseBilingualRelease } from "./bilingual-release-browser";
 import { exerciseTransactionDesign } from "./transaction-design-browser";
 import { exerciseOperatorWorkflow } from "./operator-workflow-browser";
 import { exerciseInteractionStability } from "./interaction-stability-browser";
@@ -283,7 +284,10 @@ test(
         else await dialog.dismiss();
       });
       const runtimeErrors: string[] = [];
-      page.on("pageerror", (e) => runtimeErrors.push(e.message));
+      page.on("pageerror", (e) => {
+        runtimeErrors.push(e.message);
+        console.error("Browser runtime error", e.message);
+      });
       const artifacts =
         process.env.TEST_ARTIFACT_DIR ?? "/workspace/redesign-apple-review";
       mkdirSync(artifacts, { recursive: true });
@@ -384,6 +388,11 @@ test(
         );
         assert.equal(scoped.status(), 503);
         assert.match((await scoped.json()).message, /database update/);
+        return;
+      }
+      if (process.env.TEST_BILINGUAL_ONLY === "1") {
+        await exerciseBilingualRelease(page, origin, capture);
+        assert.deepEqual(runtimeErrors, []);
         return;
       }
       if (process.env.TEST_DESIGN_ONLY === "1") {

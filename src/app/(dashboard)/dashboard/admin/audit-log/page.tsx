@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { RecordLoadingBoundary } from "@/components/workspace/record-loading";
 import { useTableState } from "@/components/tables/use-table-state";
 import { AdvancedRecordsTable } from "@/components/tables/advanced-records-table";
@@ -36,9 +38,11 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { toast } from "@/components/i18n/toast";
 type Audit = AuditLogEntry & { before_data?: unknown; after_data?: unknown };
 export default function AuditPage() {
+  const { t: localize } = useLocale();
+
   const { user } = useUser(),
     [search, setSearch] = useState(""),
     [query, setQuery] = useState(""),
@@ -131,7 +135,7 @@ export default function AuditPage() {
     return (
       <EmptyState
         error
-        title="Access restricted"
+        title={localize("Access restricted")}
         description="Only administrators and QC admins can view the audit log."
       />
     );
@@ -139,13 +143,13 @@ export default function AuditPage() {
     <div className="page-stack">
       <PageHeader
         eyebrow="Administration"
-        title="Audit log"
+        title={localize("Audit log")}
         description="Account activity and data changes."
       />
       <DataToolbar
         search={search}
         onSearch={setSearch}
-        placeholder="Search users, actions, or references…"
+        placeholder={localize("Search users, actions, or references…")}
         total={total}
         loading={loading}
         onRefresh={() => void load()}
@@ -194,11 +198,21 @@ export default function AuditPage() {
           <Table data-actions>
             <TableHeader>
               <TableRow>
-                <TableHead>Time (WIB)</TableHead>
-                <TableHead>Users</TableHead>
-                <TableHead>Actions</TableHead>
-                <TableHead>Reference</TableHead>
-                <TableHead>Detail</TableHead>
+                <TableHead>
+                  <Localized>{"Time (WIB)"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Users"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Actions"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Reference"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Detail"}</Localized>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -209,11 +223,11 @@ export default function AuditPage() {
                   <TableCell colSpan={5}>
                     <EmptyState
                       error
-                      title="Could not load the audit log"
+                      title={localize("Could not load the audit log")}
                       description={error}
                     >
                       <Button variant="outline" onClick={() => void load()}>
-                        Retry
+                        <Localized>{" Retry "}</Localized>
                       </Button>
                     </EmptyState>
                   </TableCell>
@@ -222,7 +236,7 @@ export default function AuditPage() {
                 <TableRow>
                   <TableCell colSpan={5}>
                     <EmptyState
-                      title="No matching activity"
+                      title={localize("No matching activity")}
                       description="Change the search or date range."
                     />
                   </TableCell>
@@ -261,7 +275,7 @@ export default function AuditPage() {
                         <button
                           type="button"
                           className="row-action"
-                          title="Activity details"
+                          title={localize("Activity details")}
                           onClick={() => void show(row)}
                         >
                           <Eye className="size-3.5" />
@@ -296,7 +310,9 @@ export default function AuditPage() {
       >
         <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Activity details</DialogTitle>
+            <DialogTitle>
+              <Localized>{"Activity details"}</Localized>
+            </DialogTitle>
             <DialogDescription>
               {detail?.aksi} · {detail?.user_name}
             </DialogDescription>
@@ -304,24 +320,28 @@ export default function AuditPage() {
           <RecordLoadingBoundary loading={detailLoading}>
             {detailLoading ? (
               <p role="status" className="py-8 text-sm text-muted">
-                Loading changes…
+                <Localized>{" Loading changes… "}</Localized>
               </p>
             ) : detailError ? (
               <EmptyState
                 error
-                title="Could not load details"
+                title={localize("Could not load details")}
                 description="Reload this activity."
               >
                 <Button
                   variant="outline"
                   onClick={() => detail && void show(detail)}
                 >
-                  Retry
+                  <Localized>{" Retry "}</Localized>
                 </Button>
               </EmptyState>
             ) : detail && !detail.before_data && !detail.after_data ? (
               <p className="py-5 text-sm text-muted">
-                Detailed changes are unavailable for this older activity.
+                <Localized>
+                  {
+                    " Detailed changes are unavailable for this older activity. "
+                  }
+                </Localized>
               </p>
             ) : (
               <div className="audit-diff">
@@ -331,7 +351,13 @@ export default function AuditPage() {
                 ].map(([label, value]) => (
                   <section key={String(label)}>
                     <h3>{String(label)}</h3>
-                    <pre>{value ? JSON.stringify(value, null, 2) : "None"}</pre>
+                    <pre>
+                      {value ? (
+                        JSON.stringify(value, null, 2)
+                      ) : (
+                        <Localized>{"None"}</Localized>
+                      )}
+                    </pre>
                   </section>
                 ))}
               </div>

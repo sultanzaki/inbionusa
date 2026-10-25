@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { DashboardAnalytics } from "@/components/workspace/dashboard-analytics";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -24,6 +26,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 function QualityDashboardPage() {
+  const { t: localize } = useLocale();
+
   const [data, setData] = useState<DashboardData | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [failedKeys, setFailedKeys] = useState<string[]>([]);
@@ -83,7 +87,11 @@ function QualityDashboardPage() {
 
   if (!data)
     return (
-      <div className="page-stack" role="status" aria-label="Loading dashboard">
+      <div
+        className="page-stack"
+        role="status"
+        aria-label={localize("Loading dashboard")}
+      >
         <div className="space-y-3">
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-12 w-72 max-w-full" />
@@ -132,15 +140,17 @@ function QualityDashboardPage() {
     <div className="page-stack overview-page">
       <PageHeader
         eyebrow="Dashboard"
-        title="Quality overview"
+        title={localize("Quality overview")}
         description={dateLabel || "INBIONUSA quality control"}
       />
       {loadError && (
         <Alert variant="destructive">
           <AlertTriangle />
-          <AlertTitle>Some data is unavailable</AlertTitle>
+          <AlertTitle>
+            <Localized>{"Some data is unavailable"}</Localized>
+          </AlertTitle>
           <AlertDescription>
-            Values marked — could not be loaded.
+            <Localized>{" Values marked — could not be loaded. "}</Localized>
           </AlertDescription>
           <AlertAction>
             <Button
@@ -148,14 +158,19 @@ function QualityDashboardPage() {
               size="sm"
               onClick={() => void fetchData()}
             >
-              Retry
+              <Localized>{" Retry "}</Localized>
             </Button>
           </AlertAction>
         </Alert>
       )}
-      <section className="overview-summary" aria-label="Test summary">
+      <section
+        className="overview-summary"
+        aria-label={localize("Test summary")}
+      >
         <div className="quality-summary">
-          <p className="summary-label">Pass rate</p>
+          <p className="summary-label">
+            <Localized>{"Pass rate"}</Localized>
+          </p>
           <div className="summary-number">
             {resultFailed || !total ? (
               <span>—</span>
@@ -167,11 +182,15 @@ function QualityDashboardPage() {
             )}
           </div>
           <p className="summary-caption">
-            {resultFailed
-              ? "Could not load test results."
-              : total
-                ? `${data.lot_pass.toLocaleString("en-GB")} of ${total.toLocaleString("en-GB")} lots meet specifications.`
-                : "A summary will appear after the first inspection."}
+            {resultFailed ? (
+              <Localized>{"Could not load test results."}</Localized>
+            ) : total ? (
+              `${data.lot_pass.toLocaleString("en-GB")} of ${total.toLocaleString("en-GB")} lots meet specifications.`
+            ) : (
+              <Localized>
+                {"A summary will appear after the first inspection."}
+              </Localized>
+            )}
           </p>
           <div
             className="quality-bar"
@@ -194,20 +213,20 @@ function QualityDashboardPage() {
           <div className="quality-legend">
             <span>
               <i />
-              PASS{" "}
+              <Localized>{" PASS"}</Localized>{" "}
               <strong>
                 {resultFailed ? "—" : data.lot_pass.toLocaleString("en-GB")}
               </strong>
             </span>
             <span>
               <i />
-              FAIL{" "}
+              <Localized>{" FAIL"}</Localized>{" "}
               <strong>
                 {resultFailed ? "—" : data.lot_fail.toLocaleString("en-GB")}
               </strong>
             </span>
             <Link href="/dashboard/quality/inspections">
-              View inspections
+              <Localized>{" View inspections "}</Localized>
               <ArrowUpRight className="size-3.5" />
             </Link>
           </div>
@@ -215,7 +234,9 @@ function QualityDashboardPage() {
         <div className="overview-totals">
           {metrics.map(({ key, label, value, href }) => (
             <Link href={href} key={key}>
-              <span>{label}</span>
+              <span>
+                <Localized>{label}</Localized>
+              </span>
               <strong>
                 {failedKeys.includes(key) ? "—" : value.toLocaleString("en-GB")}
               </strong>
@@ -229,21 +250,33 @@ function QualityDashboardPage() {
         <section className="recent-section">
           <div className="section-heading">
             <div>
-              <h2>Recent inspections</h2>
-              <p>The eight most recent inspections.</p>
+              <h2>
+                <Localized>{"Recent inspections"}</Localized>
+              </h2>
+              <p>
+                <Localized>{"The eight most recent inspections."}</Localized>
+              </p>
             </div>
             <Link href="/dashboard/quality/inspections">
-              View all
+              <Localized>{" View all "}</Localized>
               <ArrowRight className="size-3.5" />
             </Link>
           </div>
           <Table className="dashboard-recent-table">
             <TableHeader>
               <TableRow>
-                <TableHead>Lot number</TableHead>
-                <TableHead>Products</TableHead>
-                <TableHead>Test date</TableHead>
-                <TableHead className="text-right">Results</TableHead>
+                <TableHead>
+                  <Localized>{"Lot number"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Products"}</Localized>
+                </TableHead>
+                <TableHead>
+                  <Localized>{"Test date"}</Localized>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Localized>{"Results"}</Localized>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -290,12 +323,16 @@ function QualityDashboardPage() {
                 <TableRow>
                   <TableCell colSpan={4} className="!h-52 text-center">
                     <p className="text-sm font-medium">
-                      {failedKeys.includes("recent_inspeksi")
-                        ? "Inspections unavailable"
-                        : "No inspections yet"}
+                      {failedKeys.includes("recent_inspeksi") ? (
+                        <Localized>{"Inspections unavailable"}</Localized>
+                      ) : (
+                        <Localized>{"No inspections yet"}</Localized>
+                      )}
                     </p>
                     <p className="mt-2 text-xs text-muted">
-                      Add a product and specifications to start testing.
+                      <Localized>
+                        {" Add a product and specifications to start testing. "}
+                      </Localized>
                     </p>
                   </TableCell>
                 </TableRow>
@@ -305,8 +342,12 @@ function QualityDashboardPage() {
         </section>
       </div>
       <footer className="overview-footnote">
-        <span>INBIONUSA</span>
-        <span>Quality Control System</span>
+        <span>
+          <Localized>{"INBIONUSA"}</Localized>
+        </span>
+        <span>
+          <Localized>{"Quality Control System"}</Localized>
+        </span>
       </footer>
     </div>
   );

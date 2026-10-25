@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { ContextSummary } from "@/components/workspace/record-overview";
 import {
   useRef,
@@ -26,7 +28,7 @@ import {
   useFormRecovery,
 } from "@/components/workspace/form-recovery";
 import { RecordLoadingBoundary } from "@/components/workspace/record-loading";
-import { toast } from "sonner";
+import { toast } from "@/components/i18n/toast";
 import { SlideConfirm } from "@/components/ui/slide-confirm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,17 +105,22 @@ export function HelpTip({
   text: string;
   label?: string;
 }) {
+  const { t: localize } = useLocale();
   return (
     <Popover>
       <PopoverTrigger
         render={
-          <button type="button" className="erp-help" aria-label={label} />
+          <button
+            type="button"
+            className="erp-help"
+            aria-label={localize(label)}
+          />
         }
       >
         ?
       </PopoverTrigger>
       <PopoverContent className="max-w-80 rounded-lg border bg-surface p-3 text-sm text-foreground shadow-lg leading-relaxed">
-        {text}
+        <Localized>{text}</Localized>
       </PopoverContent>
     </Popover>
   );
@@ -170,14 +177,20 @@ export function ERPField({
   return (
     <div className="erp-field" data-field-path={path}>
       <div className="flex items-center gap-2">
-        <label htmlFor={id}>{label}</label>
+        <label htmlFor={id}>
+          <Localized>{label}</Localized>
+        </label>
         {explanation && <HelpTip text={explanation} label={"About " + label} />}
       </div>
       {content}
-      {hint && <small id={id + "-hint"}>{hint}</small>}
+      {hint && (
+        <small id={id + "-hint"}>
+          <Localized>{hint}</Localized>
+        </small>
+      )}
       {error && (
         <small id={id + "-error"} className="text-destructive" role="alert">
-          {error.message}
+          <Localized>{error.message}</Localized>
         </small>
       )}
     </div>
@@ -273,12 +286,18 @@ function ERPModalContent({
         }
       >
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          {description && <DialogDescription>{description}</DialogDescription>}
+          <DialogTitle>
+            <Localized>{title}</Localized>
+          </DialogTitle>
+          {description && (
+            <DialogDescription>
+              <Localized>{description}</Localized>
+            </DialogDescription>
+          )}
         </DialogHeader>
         {layout === "record" ? (
           <RecordLoadingBoundary loading={loading}>
-            {children}
+            <Localized>{children}</Localized>
           </RecordLoadingBoundary>
         ) : (
           children
@@ -453,12 +472,16 @@ export function ERPForm({
             />
             {busy && (
               <p role="status" className="save-status">
-                Saving changes… Keep this form open.
+                <Localized>
+                  {" Saving changes… Keep this form open. "}
+                </Localized>
               </p>
             )}
             {error && (
               <div role="alert" tabIndex={-1} className="erp-error">
-                <p>{error}</p>
+                <p>
+                  <Localized>{error}</Localized>
+                </p>
                 {fields.length > 0 && (
                   <ul className="mt-2 space-y-1">
                     {fields.map((f, i) => (
@@ -468,13 +491,15 @@ export function ERPForm({
                           className="text-left underline"
                           onClick={() => focusField(f.path)}
                         >
-                          {humanLabel(
-                            f.path.replace(
-                              /\.(\d+)\./g,
-                              (_, n) => ` · line ${Number(n) + 1} · `,
-                            ),
-                          )}
-                          : {f.message}
+                          <Localized>
+                            {humanLabel(
+                              f.path.replace(
+                                /\.(\d+)\./g,
+                                (_, n) => ` · line ${Number(n) + 1} · `,
+                              ),
+                            )}
+                          </Localized>
+                          : <Localized>{f.message}</Localized>
                         </button>
                       </li>
                     ))}
@@ -554,7 +579,7 @@ export function ERPForm({
               loading={busy}
               disabled={disabled || busy || uncertain}
             >
-              {label}
+              <Localized>{label}</Localized>
             </Button>
           )}
         </DialogFooter>
@@ -589,7 +614,7 @@ export function ERPActionButton({
         disabled={disabled}
         onClick={() => setOpen(true)}
       >
-        {children}
+        <Localized>{children}</Localized>
       </Button>
       {open && (
         <ERPModal
@@ -617,7 +642,9 @@ export function ERPActionButton({
                 />
               </ERPField>
             ) : (
-              <p>Continue with this action?</p>
+              <p>
+                <Localized>{"Continue with this action?"}</Localized>
+              </p>
             )}
           </ERPForm>
         </ERPModal>
@@ -636,28 +663,43 @@ export function ERPModuleGuard({
   if (error)
     return (
       <div className="erp-empty" role="alert">
-        <p>{error}</p>
+        <p>
+          <Localized>{error}</Localized>
+        </p>
         <Button variant="outline" onClick={refresh}>
-          Retry configuration
+          <Localized>{" Retry configuration "}</Localized>
         </Button>
       </div>
     );
-  if (!data) return <p role="status">Preparing workspace…</p>;
+  if (!data)
+    return (
+      <p role="status">
+        <Localized>{"Preparing workspace…"}</Localized>
+      </p>
+    );
   if (!can(module))
     return (
       <div className="erp-empty">
-        <h2>Module unavailable</h2>
-        <p>This module is disabled or your account does not have access.</p>
+        <h2>
+          <Localized>{"Module unavailable"}</Localized>
+        </h2>
+        <p>
+          <Localized>
+            {"This module is disabled or your account does not have access."}
+          </Localized>
+        </p>
       </div>
     );
   return (
     <>
       {data.modules.find((m) => m.key === module)?.state === "read_only" && (
         <p className="erp-notice">
-          Read-only mode. Existing records remain available.
+          <Localized>
+            {" Read-only mode. Existing records remain available. "}
+          </Localized>
         </p>
       )}
-      {children}
+      <Localized>{children}</Localized>
     </>
   );
 }

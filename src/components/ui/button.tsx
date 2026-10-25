@@ -1,3 +1,4 @@
+import { Localized } from "@/components/i18n/locale-provider";
 import { Loader2 } from "lucide-react";
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -63,7 +64,7 @@ function Button({
       {loading && (
         <Loader2 aria-hidden="true" className="size-4 animate-spin" />
       )}
-      {children}
+      <Localized>{children}</Localized>
     </ButtonPrimitive>
   );
 }

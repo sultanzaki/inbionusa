@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { RecordOverview } from "@/components/workspace/record-overview";
 import { useWorkPosition } from "@/components/workspace/use-work-position";
 import { useOperatorState } from "@/components/workspace/form-recovery";
@@ -352,6 +354,8 @@ export function GrowthWorkspace({ area }: { area: Area }) {
   );
 }
 function GrowthView({ area }: { area: Area }) {
+  const { t: localize } = useLocale();
+
   const params = useSearchParams(),
     router = useRouter(),
     erp = useERP();
@@ -468,14 +472,17 @@ function GrowthView({ area }: { area: Area }) {
                 aria-current={t.key === tab.key ? "page" : undefined}
                 onClick={() => changeTab(t.key)}
               >
-                {t.label}
+                <Localized>{t.label}</Localized>
               </button>
             ))}
           </nav>
         )}
         <ModuleInsights module={scope} />
         {area === "crm" && tab.key === "opportunities" && (
-          <div className="crm-stage-strip" aria-label="Pipeline stages">
+          <div
+            className="crm-stage-strip"
+            aria-label={localize("Pipeline stages")}
+          >
             {states.opportunities.map((s) => (
               <button
                 type="button"
@@ -493,7 +500,7 @@ function GrowthView({ area }: { area: Area }) {
         )}
         {area === "documents" && params.get("product") && (
           <p className="growth-context-note">
-            Filtered to one product.{" "}
+            <Localized>{" Filtered to one product."}</Localized>{" "}
             <button
               type="button"
               className="underline"
@@ -503,14 +510,17 @@ function GrowthView({ area }: { area: Area }) {
                 router.replace("/dashboard/product-documents");
               }}
             >
-              Show all products
+              <Localized>{" Show all products "}</Localized>
             </button>
           </p>
         )}
         {area === "documents" && (
           <p className="growth-context-note">
-            Expiry alerts use a 30-day window. Published revision details are
-            locked; create a new revision to replace them.
+            <Localized>
+              {
+                " Expiry alerts use a 30-day window. Published revision details are locked; create a new revision to replace them. "
+              }
+            </Localized>
           </p>
         )}
         <DataToolbar
@@ -525,14 +535,16 @@ function GrowthView({ area }: { area: Area }) {
           onRefresh={result.refresh}
           filter={
             <select
-              aria-label="Filter status"
+              aria-label={localize("Filter status")}
               value={state}
               onChange={(e) => {
                 setState(e.target.value);
                 setPage(1);
               }}
             >
-              <option value="">All statuses</option>
+              <option value="">
+                <Localized>{"All statuses"}</Localized>
+              </option>
               {states[tab.key].map((s) => (
                 <option key={s} value={s}>
                   {label(s)}
@@ -542,26 +554,36 @@ function GrowthView({ area }: { area: Area }) {
           }
         />
         <div className="growth-list-heading">
-          <h2>{tab.label}</h2>
+          <h2>
+            <Localized>{tab.label}</Localized>
+          </h2>
         </div>
         {result.error ? (
           <div role="alert" className="erp-empty">
-            <p>{result.error}</p>
+            <p>
+              <Localized>{result.error}</Localized>
+            </p>
             <Button onClick={result.refresh} variant="outline">
-              Retry
+              <Localized>{" Retry "}</Localized>
             </Button>
           </div>
         ) : result.loading ? (
           <p role="status" className="erp-empty">
-            Loading records…
+            <Localized>{" Loading records… "}</Localized>
           </p>
         ) : !result.data.rows.length ? (
           <div className="erp-empty">
-            <h3>No records found</h3>
+            <h3>
+              <Localized>{"No records found"}</Localized>
+            </h3>
             <p>
-              {q || state
-                ? "Try another search or status."
-                : "Create your first record to get started."}
+              {q || state ? (
+                <Localized>{"Try another search or status."}</Localized>
+              ) : (
+                <Localized>
+                  {"Create your first record to get started."}
+                </Localized>
+              )}
             </p>
           </div>
         ) : (
@@ -591,10 +613,18 @@ function GrowthView({ area }: { area: Area }) {
               <Table data-actions>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Record</TableHead>
-                    <TableHead>Details</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-12">Actions</TableHead>
+                    <TableHead>
+                      <Localized>{"Record"}</Localized>
+                    </TableHead>
+                    <TableHead>
+                      <Localized>{"Details"}</Localized>
+                    </TableHead>
+                    <TableHead>
+                      <Localized>{"Status"}</Localized>
+                    </TableHead>
+                    <TableHead className="w-12">
+                      <Localized>{"Actions"}</Localized>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -629,7 +659,7 @@ function GrowthView({ area }: { area: Area }) {
                             className="row-action"
                             onClick={() => setSelected(row)}
                           >
-                            View details
+                            <Localized>{" View details "}</Localized>
                           </button>
                         </RowActions>
                       </TableCell>
@@ -652,7 +682,7 @@ function GrowthView({ area }: { area: Area }) {
           <ERPModal
             layout="record"
             loading
-            title="Record details"
+            title={localize("Record details")}
             description="Loading…"
             onClose={() => setSelected(null)}
           >
@@ -700,7 +730,7 @@ function GrowthView({ area }: { area: Area }) {
                       reason
                       onDone={done}
                     >
-                      Reverse transaction
+                      <Localized>{" Reverse transaction "}</Localized>
                     </ERPActionButton>
                   )}
                 {tab.key === "purchases" && (
@@ -710,14 +740,14 @@ function GrowthView({ area }: { area: Area }) {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Preview purchase order PDF
+                    <Localized>{" Preview purchase order PDF "}</Localized>
                     <ArrowUpRight className="size-4" />
                   </a>
                 )}
                 {write && ["suppliers", "materials"].includes(tab.key) && (
                   <Button variant="outline" onClick={() => edit(selected)}>
                     <Pencil />
-                    Edit
+                    <Localized>{" Edit "}</Localized>
                   </Button>
                 )}
                 {(write || approve || erp.can("warehouse", "write")) &&
@@ -728,7 +758,7 @@ function GrowthView({ area }: { area: Area }) {
                           variant="outline"
                           onClick={() => edit(selected)}
                         >
-                          Edit draft
+                          <Localized>{" Edit draft "}</Localized>
                         </Button>
                       )}
                       {selected.state === "draft" && approve && (
@@ -740,7 +770,7 @@ function GrowthView({ area }: { area: Area }) {
                           }}
                           onDone={done}
                         >
-                          Confirm purchase
+                          <Localized>{" Confirm purchase "}</Localized>
                         </ERPActionButton>
                       )}
                       {["confirmed", "partial"].includes(
@@ -757,7 +787,7 @@ function GrowthView({ area }: { area: Area }) {
                               setSelected(null);
                             }}
                           >
-                            Receive materials
+                            <Localized>{" Receive materials "}</Localized>
                           </Button>
                         )}
                       {["draft", "confirmed"].includes(selected.state || "") &&
@@ -772,7 +802,7 @@ function GrowthView({ area }: { area: Area }) {
                             reason
                             onDone={done}
                           >
-                            Cancel outstanding
+                            <Localized>{" Cancel outstanding "}</Localized>
                           </ERPActionButton>
                         )}
                     </>
@@ -785,7 +815,7 @@ function GrowthView({ area }: { area: Area }) {
                           variant="outline"
                           onClick={() => edit(selected)}
                         >
-                          Edit opportunity
+                          <Localized>{" Edit opportunity "}</Localized>
                         </Button>
                         <Button
                           variant="outline"
@@ -802,7 +832,7 @@ function GrowthView({ area }: { area: Area }) {
                             setSelected(null);
                           }}
                         >
-                          Schedule activity
+                          <Localized>{" Schedule activity "}</Localized>
                         </Button>
                       </>
                     )}
@@ -817,7 +847,7 @@ function GrowthView({ area }: { area: Area }) {
                         setSelected(null);
                       }}
                     >
-                      Change stage
+                      <Localized>{" Change stage "}</Localized>
                     </Button>
                     {!selected.customer_id &&
                       selected.state !== "lost" &&
@@ -832,7 +862,7 @@ function GrowthView({ area }: { area: Area }) {
                             setSelected(null);
                           }}
                         >
-                          Link customer
+                          <Localized>{" Link customer "}</Localized>
                         </Button>
                       )}
                     {selected.customer_id &&
@@ -842,7 +872,7 @@ function GrowthView({ area }: { area: Area }) {
                           className="erp-document-link"
                           href={`/dashboard/sales?view=quotes&customer=${selected.customer_id}&opportunity=${selected.id}`}
                         >
-                          Create quotation
+                          <Localized>{" Create quotation "}</Localized>
                           <ArrowUpRight className="size-4" />
                         </Link>
                       )}
@@ -860,14 +890,14 @@ function GrowthView({ area }: { area: Area }) {
                       }}
                       onDone={done}
                     >
-                      Complete activity
+                      <Localized>{" Complete activity "}</Localized>
                     </ERPActionButton>
                   )}
                 {(write || approve) && tab.key === "product_documents" && (
                   <>
                     {write && selected.state === "draft" && (
                       <Button variant="outline" onClick={() => edit(selected)}>
-                        Edit draft
+                        <Localized>{" Edit draft "}</Localized>
                       </Button>
                     )}
                     {write && (
@@ -886,7 +916,7 @@ function GrowthView({ area }: { area: Area }) {
                           setSelected(null);
                         }}
                       >
-                        New revision
+                        <Localized>{" New revision "}</Localized>
                       </Button>
                     )}
                     {selected.state === "draft" && approve && (
@@ -895,7 +925,7 @@ function GrowthView({ area }: { area: Area }) {
                         payload={{ id: selected.id, version: selected.version }}
                         onDone={done}
                       >
-                        Publish revision
+                        <Localized>{" Publish revision "}</Localized>
                       </ERPActionButton>
                     )}
                     {["draft", "published"].includes(selected.state || "") &&
@@ -909,7 +939,7 @@ function GrowthView({ area }: { area: Area }) {
                           reason
                           onDone={done}
                         >
-                          Withdraw document
+                          <Localized>{" Withdraw document "}</Localized>
                         </ERPActionButton>
                       )}
                   </>
@@ -973,9 +1003,15 @@ function RowDetails({ row: r, entity }: { row: RecordRow; entity: string }) {
       <>
         <p>{r.product}</p>
         <small>
-          {r.kind} · {r.language?.toUpperCase()} · Rev {r.revision}
+          {r.kind} · {r.language?.toUpperCase()}{" "}
+          <Localized>{" · Rev "}</Localized>
+          {r.revision}
           <br />
-          {r.expiry_date ? `Expires ${r.expiry_date}` : "No expiry"}
+          {r.expiry_date ? (
+            `Expires ${r.expiry_date}`
+          ) : (
+            <Localized>{"No expiry"}</Localized>
+          )}
         </small>
       </>
     );
@@ -992,10 +1028,11 @@ function RowDetails({ row: r, entity }: { row: RecordRow; entity: string }) {
     return (
       <>
         <p>
-          {decimal(r.on_hand)} {r.unit} on hand
+          {decimal(r.on_hand)} {r.unit} <Localized>{" on hand "}</Localized>
         </p>
         <small>
-          Minimum {decimal(r.minimum_stock)} {r.unit}
+          <Localized>{" Minimum "}</Localized>
+          {decimal(r.minimum_stock)} {r.unit}
         </small>
       </>
     );
@@ -1137,7 +1174,13 @@ function RecordDetail({ row: r, entity }: { row: RecordRow; entity: string }) {
                   : text(value);
             return (
               <div key={k}>
-                <dt>{k === "display_state" ? "Status" : label(k)}</dt>
+                <dt>
+                  {k === "display_state" ? (
+                    <Localized>{"Status"}</Localized>
+                  ) : (
+                    label(k)
+                  )}
+                </dt>
                 <dd>{formatted}</dd>
               </div>
             );
@@ -1150,7 +1193,7 @@ function RecordDetail({ row: r, entity }: { row: RecordRow; entity: string }) {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Open document
+          <Localized>{" Open document "}</Localized>
           <ArrowUpRight className="size-4" />
         </a>
       )}
@@ -1162,11 +1205,15 @@ function RecordDetail({ row: r, entity }: { row: RecordRow; entity: string }) {
                 {l.code} · {l.name}
               </strong>
               <span>
-                Ordered {decimal(l.quantity)} {l.unit} · Received{" "}
-                {decimal(l.received)} · Outstanding {decimal(l.outstanding)}
+                <Localized>{" Ordered "}</Localized>
+                {decimal(l.quantity)} {l.unit}{" "}
+                <Localized>{" · Received"}</Localized> {decimal(l.received)}{" "}
+                <Localized>{" · Outstanding "}</Localized>
+                {decimal(l.outstanding)}
               </span>
               <small>
-                Unit price {r.currency} {decimal(l.price)}
+                <Localized>{" Unit price "}</Localized>
+                {r.currency} {decimal(l.price)}
               </small>
             </div>
           ))}
@@ -1174,9 +1221,13 @@ function RecordDetail({ row: r, entity }: { row: RecordRow; entity: string }) {
       )}
       {entity === "opportunities" && (
         <>
-          <h3>Follow-up history</h3>
+          <h3>
+            <Localized>{"Follow-up history"}</Localized>
+          </h3>
           {!r.activities?.length && (
-            <p className="text-sm text-muted">No activities yet.</p>
+            <p className="text-sm text-muted">
+              <Localized>{"No activities yet."}</Localized>
+            </p>
           )}
           {r.activities?.map((a) => (
             <div className="growth-line-summary" key={a.id}>
@@ -1187,9 +1238,13 @@ function RecordDetail({ row: r, entity }: { row: RecordRow; entity: string }) {
               {a.notes && <small>{a.notes}</small>}
             </div>
           ))}
-          <h3>Linked quotations</h3>
+          <h3>
+            <Localized>{"Linked quotations"}</Localized>
+          </h3>
           {!r.quotes?.length && (
-            <p className="text-sm text-muted">No linked quotations.</p>
+            <p className="text-sm text-muted">
+              <Localized>{"No linked quotations."}</Localized>
+            </p>
           )}
           {r.quotes?.map((q) => (
             <Link
@@ -1434,15 +1489,20 @@ function GrowthForm({
     >
       {isConvert && (
         <p className="erp-notice">
-          Choose an existing customer to avoid duplicates. Leave empty to create
-          one from this opportunity’s company and contact details.
+          <Localized>
+            {
+              " Choose an existing customer to avoid duplicates. Leave empty to create one from this opportunity’s company and contact details. "
+            }
+          </Localized>
         </p>
       )}
       {entity === "product_documents" && (
         <p className="erp-notice">
-          Use a shareable HTTPS link to the original file. Access permissions
-          stay with your document provider. Revision numbers are assigned
-          automatically.
+          <Localized>
+            {
+              " Use a shareable HTTPS link to the original file. Access permissions stay with your document provider. Revision numbers are assigned automatically. "
+            }
+          </Localized>
         </p>
       )}
       <div className="erp-form-grid">
@@ -1507,7 +1567,10 @@ function GrowthForm({
           {purchaseLines.map((l, i) => (
             <div className="growth-edit-line" key={l.key}>
               <div className="growth-line-title">
-                <strong>Material {i + 1}</strong>
+                <strong>
+                  <Localized>{"Material "}</Localized>
+                  {i + 1}
+                </strong>
                 <Button
                   type="button"
                   variant="ghost"
@@ -1517,7 +1580,7 @@ function GrowthForm({
                     setPurchaseLines((v) => v.filter((_, n) => n !== i))
                   }
                 >
-                  Remove
+                  <Localized>{" Remove "}</Localized>
                 </Button>
               </div>
               <ERPPicker
@@ -1585,11 +1648,11 @@ function GrowthForm({
             }
           >
             <Plus />
-            Add material
+            <Localized>{" Add material "}</Localized>
           </Button>
           <p className="erp-notice">
             <strong>
-              Estimated total:{" "}
+              <Localized>{"Estimated total:"}</Localized>{" "}
               {money(
                 decimalUnits(
                   purchaseLines.reduce(
@@ -1605,18 +1668,22 @@ function GrowthForm({
             </strong>
           </p>
           <p className="erp-notice">
-            This draft does not change stock. Confirmation requires approval
-            access. Prices are recorded in the selected currency; invoices and
-            payment are managed in Finance when enabled.
+            <Localized>
+              {
+                " This draft does not change stock. Confirmation requires approval access. Prices are recorded in the selected currency; invoices and payment are managed in Finance when enabled. "
+              }
+            </Localized>
           </p>
         </div>
       )}
       {isReceipt && (
         <div className="growth-edit-lines">
           <p className="erp-notice">
-            Enter only the quantities received now. Leave a quantity blank to
-            skip that line. Posting updates the purchase order and material
-            stock together.
+            <Localized>
+              {
+                " Enter only the quantities received now. Leave a quantity blank to skip that line. Posting updates the purchase order and material stock together. "
+              }
+            </Localized>
           </p>
           {erp.can("service", "write") && (
             <label className="flex items-center gap-2 text-sm">
@@ -1625,7 +1692,7 @@ function GrowthForm({
                 checked={holdReceipt}
                 onChange={(e) => setHoldReceipt(e.target.checked)}
               />
-              Hold received lots for review
+              <Localized>{" Hold received lots for review "}</Localized>
             </label>
           )}
           {receiptLines.map((l, i) => {
@@ -1641,7 +1708,8 @@ function GrowthForm({
                   {source?.code} · {source?.name}
                 </strong>
                 <p className="text-xs text-muted">
-                  Outstanding: {decimal(source?.outstanding)} {source?.unit}
+                  <Localized>{" Outstanding: "}</Localized>
+                  {decimal(source?.outstanding)} {source?.unit}
                 </p>
                 <div className="erp-form-grid">
                   <ERPField
@@ -1655,8 +1723,8 @@ function GrowthForm({
                         change("quantity", String(source?.outstanding || "0"))
                       }
                     >
-                      Use remaining {decimal(source?.outstanding)}{" "}
-                      {source?.unit}
+                      <Localized>{" Use remaining "}</Localized>
+                      {decimal(source?.outstanding)} {source?.unit}
                     </button>
                     <Input
                       inputMode="decimal"

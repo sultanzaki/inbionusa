@@ -1,3 +1,4 @@
+import { Localized } from "@/components/i18n/locale-provider";
 import type { HasilUjiItem } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,10 +17,18 @@ export function ResultTable({ items }: { items: HasilUjiItem[] }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Parameter</TableHead>
-              <TableHead>Standard</TableHead>
-              <TableHead>Results</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>
+                <Localized>{"Parameter"}</Localized>
+              </TableHead>
+              <TableHead>
+                <Localized>{"Standard"}</Localized>
+              </TableHead>
+              <TableHead>
+                <Localized>{"Results"}</Localized>
+              </TableHead>
+              <TableHead>
+                <Localized>{"Status"}</Localized>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -28,7 +37,7 @@ export function ResultTable({ items }: { items: HasilUjiItem[] }) {
                 <TableCell className="font-medium">{item.p}</TableCell>
                 <TableCell className="font-data text-xs text-muted">
                   {item.t === "TEXT"
-                    ? item.k || "Observation"
+                    ? item.k || <Localized>{"Observation"}</Localized>
                     : item.t === "MIN"
                       ? `≥ ${item.mn}`
                       : item.t === "MAX"
@@ -67,10 +76,12 @@ export function ResultTable({ items }: { items: HasilUjiItem[] }) {
             </div>
             <dl className="result-card-values">
               <div>
-                <dt>Standard</dt>
+                <dt>
+                  <Localized>{"Standard"}</Localized>
+                </dt>
                 <dd>
                   {item.t === "TEXT"
-                    ? item.k || "Observation"
+                    ? item.k || <Localized>{"Observation"}</Localized>
                     : item.t === "MIN"
                       ? `≥ ${item.mn}`
                       : item.t === "MAX"
@@ -79,7 +90,9 @@ export function ResultTable({ items }: { items: HasilUjiItem[] }) {
                 </dd>
               </div>
               <div>
-                <dt>Result</dt>
+                <dt>
+                  <Localized>{"Result"}</Localized>
+                </dt>
                 <dd>
                   {item.val || "—"}
                   {item.u && (

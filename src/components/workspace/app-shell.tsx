@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { roleLabel } from "@/lib/rbac";
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { ThemeControl } from "@/components/theme/theme-control";
@@ -110,6 +112,8 @@ export function AppShell({
   children: ReactNode;
   footer?: ReactNode;
 }) {
+  const { t: localize } = useLocale();
+
   const erp = useERP();
   const { user } = useUser(),
     pathname = usePathname(),
@@ -249,7 +253,7 @@ export function AppShell({
         render={
           <button
             className="app-account-button"
-            aria-label="Open account menu"
+            aria-label={localize("Open account menu")}
           />
         }
       >
@@ -280,7 +284,7 @@ export function AppShell({
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push("/account/password")}>
           <KeyRound />
-          Change password
+          <Localized>{" Change password "}</Localized>
         </DropdownMenuItem>
         <DropdownMenuItem
           variant="destructive"
@@ -288,7 +292,7 @@ export function AppShell({
           onClick={() => void logout()}
         >
           {loggingOut ? <Loader2 className="animate-spin" /> : <LogOut />}
-          Sign out
+          <Localized>{" Sign out "}</Localized>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -300,14 +304,22 @@ export function AppShell({
       }
     >
       <a href="#main-content" className="skip-link">
-        Skip to main content
+        <Localized>{" Skip to main content "}</Localized>
       </a>
       <aside className="workspace-sidebar">
         <Link href="/dashboard" className="sidebar-brand">
           <Image src="/logo.png" alt="INBIONUSA" width={32} height={32} />
-          <span>INBIONUSA</span>
+          <span>
+            <Localized>{"INBIONUSA"}</Localized>
+          </span>
         </Link>
-        <Suspense fallback={<p className="sr-only">Loading navigation…</p>}>
+        <Suspense
+          fallback={
+            <p className="sr-only">
+              <Localized>{"Loading navigation…"}</Localized>
+            </p>
+          }
+        >
           <WorkspaceSidebar collapsed={collapsed} />
         </Suspense>
       </aside>
@@ -322,14 +334,18 @@ export function AppShell({
           <Link
             href="/dashboard"
             className="app-wordmark"
-            aria-label="INBIONUSA — Dashboard"
+            aria-label={localize("INBIONUSA — Dashboard")}
           >
             <Image src="/logo.png" alt="" width={34} height={34} priority />
-            <span>INBIONUSA</span>
+            <span>
+              <Localized>{"INBIONUSA"}</Localized>
+            </span>
           </Link>
           <button
             className="sidebar-toggle"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={localize(
+              collapsed ? "Expand sidebar" : "Collapse sidebar",
+            )}
             onClick={() => {
               setCollapsed(!collapsed);
               localStorage.setItem("inb-sidebar", String(!collapsed));
@@ -338,16 +354,18 @@ export function AppShell({
             {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
           </button>
           <span className="workspace-current">
-            {current?.label || "Workspace"}
+            <Localized>{current?.label || "Workspace"}</Localized>
           </span>
           <div className="app-topbar-actions">
             <button
               className="app-global-search"
-              aria-label="Search lots, products, COAs, or pages"
+              aria-label={localize("Search lots, products, COAs, or pages")}
               onClick={() => setCommandOpen(true)}
             >
               <Search className="size-4" />
-              <span>Search…</span>
+              <span>
+                <Localized>{"Search…"}</Localized>
+              </span>
             </button>
             {accountMenu}
           </div>
@@ -365,7 +383,7 @@ export function AppShell({
           setCommandOpen(v);
           if (!v) setQuery("");
         }}
-        title="Search INBIONUSA"
+        title={localize("Search INBIONUSA")}
         description="Find lots, products, certificates, orders, or pages."
       >
         <Command shouldFilter={false}>
@@ -376,8 +394,8 @@ export function AppShell({
               setResults([]);
               setSearchError(false);
             }}
-            placeholder="Search lots, products, or COAs…"
-            aria-label="Search all modules"
+            placeholder={localize("Search lots, products, or COAs…")}
+            aria-label={localize("Search all modules")}
           />
           <CommandList>
             {shownNavigation.length > 0 && (
@@ -389,7 +407,9 @@ export function AppShell({
                     onSelect={() => navigate(n.href)}
                   >
                     <Icon className="size-4 text-muted" />
-                    <span>{n.label}</span>
+                    <span>
+                      <Localized>{n.label}</Localized>
+                    </span>
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -416,18 +436,18 @@ export function AppShell({
             )}
             {searching && (
               <p role="status" className="px-4 py-5 text-xs text-muted">
-                Searching…
+                <Localized>{" Searching… "}</Localized>
               </p>
             )}
             {searchError && (
               <div role="alert" className="px-4 py-4 text-xs text-danger">
-                Search failed.
+                <Localized>{" Search failed. "}</Localized>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setRetry((v) => v + 1)}
                 >
-                  Retry
+                  <Localized>{" Retry "}</Localized>
                 </Button>
               </div>
             )}
@@ -436,11 +456,15 @@ export function AppShell({
               query.length >= 2 &&
               results.length === 0 &&
               shownNavigation.length === 0 && (
-                <CommandEmpty>No matching results.</CommandEmpty>
+                <CommandEmpty>
+                  <Localized>{"No matching results."}</Localized>
+                </CommandEmpty>
               )}
             {query.length < 2 && (
               <p className="px-4 py-4 text-xs text-muted">
-                Type at least 2 characters to search.
+                <Localized>
+                  {" Type at least 2 characters to search. "}
+                </Localized>
               </p>
             )}
           </CommandList>

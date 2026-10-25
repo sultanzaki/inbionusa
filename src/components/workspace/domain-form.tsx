@@ -1,4 +1,8 @@
 "use client";
+import { Localized } from "@/components/i18n/locale-provider";
+
+import { useLocale } from "@/components/i18n/locale-provider";
+
 import {
   createContext,
   useContext,
@@ -27,6 +31,8 @@ export function DomainForm({
   onSubmit: () => void | Promise<void>;
   children: ReactNode;
 }) {
+  const { t: localize } = useLocale();
+
   const [errors, setErrors] = useState<Errors>({});
   const ref = useRef<HTMLFormElement>(null);
   function submit(e: React.FormEvent) {
@@ -63,7 +69,7 @@ export function DomainForm({
       <form
         ref={ref}
         onSubmit={submit}
-        aria-label="Quality data form"
+        aria-label={localize("Quality data form")}
         noValidate
         className="contents"
         onChange={(e) => {
@@ -102,7 +108,7 @@ export function DomainForm({
                   }}
                 >
                   {path === "_form" ? "" : humanLabel(path) + ": "}
-                  {message}
+                  <Localized>{message}</Localized>
                 </button>
               ))}
             </span>
@@ -154,7 +160,7 @@ export function Field({
       {error ? (
         <p id={`${id}-hint`} className="field-error">
           <CircleAlert className="mt-0.5 size-3 shrink-0" />
-          {error}
+          <Localized>{error}</Localized>
         </p>
       ) : hint ? (
         <p id={`${id}-hint`} className="form-hint">

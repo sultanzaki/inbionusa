@@ -121,7 +121,7 @@ export async function exerciseInteractionStability(
     const closingText = await confirmation.evaluate(async (el) => {
       (
         Array.from(el.querySelectorAll("button")).find(
-          (button) => button.textContent === "Back",
+          (button) => button.textContent?.trim() === "Back",
         ) as HTMLButtonElement
       ).click();
       await new Promise((resolve) => requestAnimationFrame(resolve));

@@ -1,4 +1,6 @@
 "use client";
+import { Localized, useLocale } from "@/components/i18n/locale-provider";
+
 import { displayNumber } from "@/lib/erp/ux";
 import { useFileDownload } from "@/components/workspace/use-file-download";
 import {
@@ -25,7 +27,7 @@ import {
   Download,
   RotateCcw,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/i18n/toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,6 +104,8 @@ export function AdvancedRecordsTable({
   context?: Record<string, string>;
   onContext?: (context: Record<string, string>) => void;
 }) {
+  const { t: localize } = useLocale();
+
   const fileDownload = useFileDownload();
   const { columns, query, layout } = state;
   const [panel, setPanel] = useState<
@@ -229,21 +233,27 @@ export function AdvancedRecordsTable({
     : rows;
   return (
     <div className={`advanced-table advanced-table-${layout.density}`}>
-      <div className="grid-tools" role="toolbar" aria-label="Table tools">
+      <div
+        className="grid-tools"
+        role="toolbar"
+        aria-label={localize("Table tools")}
+      >
         <Button variant="outline" size="sm" onClick={() => open("filters")}>
           <SlidersHorizontal className="size-3.5" />
-          Filters{query.filters.length ? ` (${query.filters.length})` : ""}
+          <Localized>{" Filters"}</Localized>
+          {query.filters.length ? ` (${query.filters.length})` : ""}
         </Button>
         <Button variant="outline" size="sm" onClick={() => open("sort")}>
-          Sort{query.sorts.length ? ` (${query.sorts.length})` : ""}
+          <Localized>{" Sort"}</Localized>
+          {query.sorts.length ? ` (${query.sorts.length})` : ""}
         </Button>
         <Button variant="outline" size="sm" onClick={() => open("columns")}>
           <Columns3 className="size-3.5" />
-          Columns
+          <Localized>{" Columns "}</Localized>
         </Button>
         <Button variant="outline" size="sm" onClick={() => open("views")}>
           <Bookmark className="size-3.5" />
-          Views
+          <Localized>{" Views "}</Localized>
         </Button>
         {exportURL && (
           <>
@@ -255,7 +265,11 @@ export function AdvancedRecordsTable({
               onClick={() => void download("csv")}
             >
               {!fileDownload.busy && <Download className="size-3.5" />}
-              {fileDownload.busy === "csv" ? "Preparing CSV…" : "CSV"}
+              {fileDownload.busy === "csv" ? (
+                <Localized>{"Preparing CSV…"}</Localized>
+              ) : (
+                <Localized>{"CSV"}</Localized>
+              )}
             </Button>
             <Button
               variant="outline"
@@ -264,7 +278,11 @@ export function AdvancedRecordsTable({
               loading={fileDownload.busy === "xlsx"}
               onClick={() => void download("xlsx")}
             >
-              {fileDownload.busy === "xlsx" ? "Preparing Excel…" : "Excel"}
+              {fileDownload.busy === "xlsx" ? (
+                <Localized>{"Preparing Excel…"}</Localized>
+              ) : (
+                <Localized>{"Excel"}</Localized>
+              )}
             </Button>
           </>
         )}
@@ -285,17 +303,20 @@ export function AdvancedRecordsTable({
           }}
         >
           <Copy className="size-3.5" />
-          Share view
+          <Localized>{" Share view "}</Localized>
         </Button>
         {(query.filters.length > 0 || query.sorts.length > 0) && (
           <Button variant="ghost" size="sm" onClick={() => state.reset()}>
             <RotateCcw className="size-3.5" />
-            Reset
+            <Localized>{" Reset "}</Localized>
           </Button>
         )}
       </div>
       {query.filters.length > 0 && (
-        <div className="grid-chips" aria-label="Active table filters">
+        <div
+          className="grid-chips"
+          aria-label={localize("Active table filters")}
+        >
           {query.filters.map((f, i) => (
             <button
               key={i}
@@ -309,14 +330,18 @@ export function AdvancedRecordsTable({
               {columns.find((c) => c.key === f.field)?.label} ·{" "}
               {f.op.replaceAll("_", " ")} {f.value}
               <X className="size-3" />
-              <span className="sr-only">Remove filter</span>
+              <span className="sr-only">
+                <Localized>{"Remove filter"}</Localized>
+              </span>
             </button>
           ))}
         </div>
       )}
       {grouped && (
         <div className="grid-group-summary">
-          <span>Current page groups</span>
+          <span>
+            <Localized>{"Current page groups"}</Localized>
+          </span>
           {[...grouped].map(([key, count]) => (
             <span key={key}>
               {key} <strong>{count}</strong>
@@ -354,9 +379,13 @@ export function AdvancedRecordsTable({
                     <button
                       className="grid-header-sort"
                       onClick={(e) => sort(col.key, e.shiftKey)}
-                      title="Sort column. Shift-click to add another sort."
+                      title={localize(
+                        "Sort column. Shift-click to add another sort.",
+                      )}
                     >
-                      <span className="grid-column-title">{col.label}</span>
+                      <span className="grid-column-title">
+                        <Localized>{col.label}</Localized>
+                      </span>
                       {sorting?.direction === "asc" ? (
                         <ArrowUp className="size-3" />
                       ) : sorting ? (
@@ -407,7 +436,7 @@ export function AdvancedRecordsTable({
                 );
               })}
               <TableHead style={{ width: "var(--table-actions-width)" }}>
-                Actions
+                <Localized>{" Actions "}</Localized>
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -454,8 +483,8 @@ export function AdvancedRecordsTable({
                                 columns.find((c) => c.key === layout.group)
                                   ?.label
                               }
-                              : {group} · {grouped?.get(group)} rows on this
-                              page
+                              : {group} · {grouped?.get(group)}{" "}
+                              <Localized>{" rows on this page "}</Localized>
                             </button>
                           </TableCell>
                         </TableRow>
@@ -495,7 +524,7 @@ export function AdvancedRecordsTable({
                                     )
                                   }
                                   onClick={(e) => e.stopPropagation()}
-                                  title="Double-click to copy"
+                                  title={localize("Double-click to copy")}
                                 >
                                   {[
                                     "state",
@@ -550,7 +579,7 @@ export function AdvancedRecordsTable({
                                   {col.key === "status" &&
                                     row.superseded === true && (
                                       <Badge variant="secondary">
-                                        Superseded
+                                        <Localized>{" Superseded "}</Localized>
                                       </Badge>
                                     )}
                                 </span>
@@ -569,8 +598,13 @@ export function AdvancedRecordsTable({
         </Table>
       )}
       {summary && summary.length > 0 && (
-        <div className="grid-group-summary" aria-label="Filtered totals">
-          <span>Filtered totals · all matching records</span>
+        <div
+          className="grid-group-summary"
+          aria-label={localize("Filtered totals")}
+        >
+          <span>
+            <Localized>{"Filtered totals · all matching records"}</Localized>
+          </span>
           {summary
             .filter((s) => visible.some((c) => c.key === s.field))
             .map((s) => (
@@ -581,7 +615,9 @@ export function AdvancedRecordsTable({
             ))}
         </div>
       )}
-      <div className="grid-footnote">{rows.length} rows on this page</div>
+      <div className="grid-footnote">
+        {rows.length} <Localized>{" rows on this page"}</Localized>
+      </div>
       <Sheet
         open={panel !== null}
         onOpenChange={(v) => {
@@ -591,22 +627,36 @@ export function AdvancedRecordsTable({
         <SheetContent className="grid-settings-sheet">
           <SheetHeader>
             <SheetTitle>
-              {panel === "filters"
-                ? "Advanced filters"
-                : panel === "columns"
-                  ? "Table layout"
-                  : panel === "sort"
-                    ? "Sort records"
-                    : "Saved views"}
+              {panel === "filters" ? (
+                <Localized>{"Advanced filters"}</Localized>
+              ) : panel === "columns" ? (
+                <Localized>{"Table layout"}</Localized>
+              ) : panel === "sort" ? (
+                <Localized>{"Sort records"}</Localized>
+              ) : (
+                <Localized>{"Saved views"}</Localized>
+              )}
             </SheetTitle>
             <SheetDescription>
-              {panel === "filters"
-                ? "All conditions must match. Filters apply to every record before pagination."
-                : panel === "columns"
-                  ? "Customize this table for your account on this device."
-                  : panel === "sort"
-                    ? "Rules apply from top to bottom, across all pages."
-                    : "Save filters, sorting, search and column layout for reuse."}
+              {panel === "filters" ? (
+                <Localized>
+                  {
+                    "All conditions must match. Filters apply to every record before pagination."
+                  }
+                </Localized>
+              ) : panel === "columns" ? (
+                <Localized>
+                  {"Customize this table for your account on this device."}
+                </Localized>
+              ) : panel === "sort" ? (
+                <Localized>
+                  {"Rules apply from top to bottom, across all pages."}
+                </Localized>
+              ) : (
+                <Localized>
+                  {"Save filters, sorting, search and column layout for reuse."}
+                </Localized>
+              )}
             </SheetDescription>
           </SheetHeader>
           <div className="grid-settings-body">
@@ -651,7 +701,8 @@ export function AdvancedRecordsTable({
                           });
                         }}
                       >
-                        Last {days} days
+                        <Localized>{" Last "}</Localized>
+                        {days} <Localized>{" days "}</Localized>
                       </Button>
                     ))}
                   </div>
@@ -661,7 +712,10 @@ export function AdvancedRecordsTable({
                     const col = columns.find((c) => c.key === f.field);
                     return (
                       <fieldset key={i}>
-                        <legend>Condition {i + 1}</legend>
+                        <legend>
+                          <Localized>{"Condition "}</Localized>
+                          {i + 1}
+                        </legend>
                         <select
                           aria-label={`Filter field ${i + 1}`}
                           value={f.field}
@@ -682,7 +736,7 @@ export function AdvancedRecordsTable({
                         >
                           {columns.map((c) => (
                             <option key={c.key} value={c.key}>
-                              {c.label}
+                              <Localized>{c.label}</Localized>
                             </option>
                           ))}
                         </select>
@@ -773,7 +827,7 @@ export function AdvancedRecordsTable({
                             })
                           }
                         >
-                          Remove condition
+                          <Localized>{" Remove condition "}</Localized>
                         </Button>
                       </fieldset>
                     );
@@ -796,14 +850,14 @@ export function AdvancedRecordsTable({
                     })
                   }
                 >
-                  Add condition
+                  <Localized>{" Add condition "}</Localized>
                 </Button>
                 <Button
                   onClick={() => {
                     applyQuery();
                   }}
                 >
-                  Apply filters
+                  <Localized>{" Apply filters "}</Localized>
                 </Button>
               </>
             )}
@@ -826,7 +880,7 @@ export function AdvancedRecordsTable({
                     >
                       {columns.map((c) => (
                         <option key={c.key} value={c.key}>
-                          {c.label}
+                          <Localized>{c.label}</Localized>
                         </option>
                       ))}
                     </select>
@@ -847,8 +901,12 @@ export function AdvancedRecordsTable({
                         })
                       }
                     >
-                      <option value="asc">Ascending</option>
-                      <option value="desc">Descending</option>
+                      <option value="asc">
+                        <Localized>{"Ascending"}</Localized>
+                      </option>
+                      <option value="desc">
+                        <Localized>{"Descending"}</Localized>
+                      </option>
                     </select>
                     <Button
                       variant="ghost"
@@ -859,7 +917,7 @@ export function AdvancedRecordsTable({
                         })
                       }
                     >
-                      Remove
+                      <Localized>{" Remove "}</Localized>
                     </Button>
                   </div>
                 ))}
@@ -883,21 +941,21 @@ export function AdvancedRecordsTable({
                     })
                   }
                 >
-                  Add sort
+                  <Localized>{" Add sort "}</Localized>
                 </Button>
                 <Button
                   onClick={() => {
                     applyQuery();
                   }}
                 >
-                  Apply sorting
+                  <Localized>{" Apply sorting "}</Localized>
                 </Button>
               </>
             )}
             {panel === "columns" && (
               <>
                 <Button variant="outline" onClick={() => state.reset()}>
-                  Restore default table
+                  <Localized>{" Restore default table "}</Localized>
                 </Button>
                 <label className="grid-checkbox-label">
                   <input
@@ -905,12 +963,12 @@ export function AdvancedRecordsTable({
                     checked={exportAll}
                     onChange={(e) => setExportAll(e.target.checked)}
                   />
-                  Export all allowed columns
+                  <Localized>{" Export all allowed columns "}</Localized>
                 </label>
                 <label>
-                  Row spacing
+                  <Localized>{" Row spacing "}</Localized>
                   <select
-                    aria-label="Row spacing"
+                    aria-label={localize("Row spacing")}
                     value={layout.density}
                     onChange={(e) => {
                       const density = e.currentTarget
@@ -918,26 +976,32 @@ export function AdvancedRecordsTable({
                       state.setLayout((layout) => ({ ...layout, density }));
                     }}
                   >
-                    <option value="comfortable">Comfortable</option>
-                    <option value="compact">Compact</option>
+                    <option value="comfortable">
+                      <Localized>{"Comfortable"}</Localized>
+                    </option>
+                    <option value="compact">
+                      <Localized>{"Compact"}</Localized>
+                    </option>
                   </select>
                 </label>
                 <label>
-                  Page group summary
+                  <Localized>{" Page group summary "}</Localized>
                   <select
-                    aria-label="Page group summary"
+                    aria-label={localize("Page group summary")}
                     value={layout.group}
                     onChange={(e) => {
                       const group = e.currentTarget.value;
                       state.setLayout((layout) => ({ ...layout, group }));
                     }}
                   >
-                    <option value="">None</option>
+                    <option value="">
+                      <Localized>{"None"}</Localized>
+                    </option>
                     {columns
                       .filter((c) => c.type !== "number")
                       .map((c) => (
                         <option key={c.key} value={c.key}>
-                          {c.label}
+                          <Localized>{c.label}</Localized>
                         </option>
                       ))}
                   </select>
@@ -994,10 +1058,10 @@ export function AdvancedRecordsTable({
             {panel === "views" && (
               <>
                 <label>
-                  View name
+                  <Localized>{" View name "}</Localized>
                   <Input
                     maxLength={60}
-                    placeholder="e.g. Overdue customer invoices"
+                    placeholder={localize("e.g. Overdue customer invoices")}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                   />
@@ -1010,7 +1074,7 @@ export function AdvancedRecordsTable({
                     toast.success("View saved.");
                   }}
                 >
-                  Save current view
+                  <Localized>{" Save current view "}</Localized>
                 </Button>
                 {state.views.map((v) => (
                   <div className="grid-saved-view" key={v.id}>
@@ -1035,7 +1099,11 @@ export function AdvancedRecordsTable({
                     </Button>
                   </div>
                 ))}
-                {!state.views.length && <p>No saved views yet.</p>}
+                {!state.views.length && (
+                  <p>
+                    <Localized>{"No saved views yet."}</Localized>
+                  </p>
+                )}
               </>
             )}
           </div>
