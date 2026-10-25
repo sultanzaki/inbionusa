@@ -64,13 +64,6 @@ export default function LoginPage() {
         </p>
       </aside>
       <main className="login-form-panel">
-        <div className="login-brand-scene">
-          <div className="login-orbits" aria-hidden="true"><i /><i /><i /></div>
-          <div className="login-scene-brand">
-            <span className="login-logo-tile"><Image src="/logo.png" alt="" width={48} height={48} priority /></span>
-            <span>INBIONUSA</span>
-          </div>
-        </div>
         <LoginForm />
         <p className="login-mobile-copyright">
           <Copyright />

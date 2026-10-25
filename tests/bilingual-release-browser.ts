@@ -44,7 +44,8 @@ export async function exerciseBilingualRelease(
       "operator-test",
     );
     await selectLocale("id");
-    assert.equal(await page.locator(".login-brand-scene").evaluate(el => getComputedStyle(el).display), "grid");
+    assert.equal(await page.locator(".login-brand-scene").count(), 0);
+    await page.locator(".login-mobile-brand").waitFor();
     await capture(`login-id-${size.width}`);
     await page.reload();
     await page.getByRole("heading", { name: "Masuk", exact: true }).waitFor();
@@ -58,7 +59,7 @@ export async function exerciseBilingualRelease(
   await page.waitForFunction(() => document.documentElement.classList.contains("dark"));
   await capture("login-dark-mobile");
   await page.emulateMedia({ reducedMotion: "reduce" });
-  assert.equal(await page.locator(".login-brand-scene").evaluate(el => getComputedStyle(el, "::before").animationName), "none");
+  assert.equal(await page.locator(".login-form-panel").evaluate(el => getComputedStyle(el, "::before").animationName), "none");
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.evaluate(() => { localStorage.setItem("inb-appearance", "light"); });
   await page.reload();
