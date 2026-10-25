@@ -1,9 +1,6 @@
 "use client";
 import { Localized, useLocale } from "@/components/i18n/locale-provider";
 
-import { LanguageControl } from "@/components/i18n/locale-provider";
-import { ThemeControl } from "@/components/theme/theme-control";
-import Image from "next/image";
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Eye, EyeOff, ArrowRight } from "lucide-react";
@@ -18,7 +15,7 @@ function SubmitButton() {
     <Button
       type="submit"
       loading={pending}
-      className="h-12 w-full justify-between px-4"
+      className="login-submit h-12 w-full justify-between px-4"
     >
       <span>
         {pending ? (
@@ -38,21 +35,6 @@ export function LoginForm() {
   const [show, setShow] = useState(false);
   return (
     <div className="login-form-card surface-enter">
-      <div className="login-mobile-brand">
-        <Image
-          src="/logo.png"
-          alt="INBIONUSA logo"
-          width={36}
-          height={36}
-          priority
-        />
-        <span className="text-sm font-bold tracking-tight text-primary-deep">
-          <Localized>{" INBIONUSA "}</Localized>
-        </span>
-      </div>
-      <p className="mb-3 text-xs font-medium text-muted">
-        <Localized>{"INBIONUSA account"}</Localized>
-      </p>
       <h1>
         <Localized>{"Sign in"}</Localized>
       </h1>
@@ -95,7 +77,7 @@ export function LoginForm() {
               type="button"
               onClick={() => setShow((v) => !v)}
               className="absolute right-1.5 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-alt hover:text-primary"
-              aria-label={show ? "Hide password" : "Show password"}
+              aria-label={localize(show ? "Hide password" : "Show password")}
               aria-pressed={show}
             >
               {show ? (
@@ -117,13 +99,6 @@ export function LoginForm() {
           <SubmitButton />
         </div>
       </form>
-      <div className="login-preferences">
-        <LanguageControl />
-        <ThemeControl />
-      </div>
-      <p className="login-footer">
-        <Localized>{"Need access? Contact your administrator."}</Localized>
-      </p>
     </div>
   );
 }
