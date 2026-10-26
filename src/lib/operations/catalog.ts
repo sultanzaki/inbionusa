@@ -187,6 +187,7 @@ export const workCommands: Record<string, WorkCommand> = {
   },
   save_formula: {
     label: "New formula",
+    editLabel: "Edit formula",
     help: "Define material quantities for the stated output size. Every ingredient uses its own base stock unit. No stock changes when a formula is saved.",
     module: "production",
     fields: [

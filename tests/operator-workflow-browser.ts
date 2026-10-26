@@ -26,21 +26,36 @@ export async function exerciseOperatorWorkflow(
   );
   await form.getByRole("button", { name: "Continue", exact: true }).click();
   await form.getByRole("combobox", { name: "Material", exact: true }).waitFor();
-  await form
-    .getByText("Draft saved on this device.", { exact: true })
-    .waitFor();
+  assert.equal(
+    await page.evaluate(
+      () =>
+        Object.keys(localStorage).filter(
+          (k) =>
+            k.startsWith("inb:draft:") && k.includes("/dashboard/production"),
+        ).length,
+    ),
+    0,
+    "confidential formula values are not persisted",
+  );
   await page.reload();
   await page.getByRole("button", { name: "New formula", exact: true }).click();
   form = page.getByRole("dialog", { name: "New formula", exact: true });
-  await form
-    .getByRole("button", { name: "Restore draft", exact: true })
-    .click();
+  assert.equal(
+    await form
+      .getByRole("button", { name: "Restore draft", exact: true })
+      .count(),
+    0,
+  );
   assert.equal(
     await form
       .getByRole("textbox", { name: "Formula name", exact: true })
       .inputValue(),
-    "Recovered operator formula",
+    "",
+    "confidential work must be re-entered after reload",
   );
+  await form
+    .getByRole("textbox", { name: "Formula name", exact: true })
+    .fill("Unsaved operator formula");
   if (
     await form
       .getByRole("button", { name: "Show all fields", exact: true })

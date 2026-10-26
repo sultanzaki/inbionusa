@@ -2326,3 +2326,70 @@ export const messages: Record<string, string> = {
   "Withdrawn certificate history cannot be edited.":
     "Riwayat sertifikat yang ditarik tidak dapat diedit.",
 };
+
+Object.assign(messages, {
+  "Protect this BOM": "Lindungi BOM ini",
+  "Use a separate password. Only you and users you authorize can unlock this BOM.":
+    "Gunakan kata sandi khusus. Hanya Anda dan pengguna yang Anda beri izin yang dapat membuka BOM ini.",
+  "BOM password": "Kata sandi BOM",
+  "Confirm BOM password": "Konfirmasi kata sandi BOM",
+  "New BOM password": "Kata sandi BOM baru",
+  "At least 16 characters. This password is not saved in browser drafts.":
+    "Minimal 16 karakter. Kata sandi ini tidak disimpan dalam draft browser.",
+  "Use a BOM password of at least 16 characters and at most 64 UTF-8 bytes.":
+    "Gunakan kata sandi BOM minimal 16 karakter dan maksimal 64 byte UTF-8.",
+  "BOM passwords do not match.": "Konfirmasi kata sandi BOM tidak sesuai.",
+  "Confidential BOM": "BOM rahasia",
+  "BOM unlocked": "BOM terbuka",
+  "Access is limited to this signed-in session for 15 minutes.":
+    "Akses berlaku selama 15 menit pada sesi login ini.",
+  "The composition requires the owner's permission and a separate BOM password.":
+    "Komposisi memerlukan izin pemilik dan kata sandi khusus BOM.",
+  "Checking BOM access…": "Memeriksa akses BOM…",
+  "BOM owner": "Pemilik BOM",
+  "Unlock BOM": "Buka BOM",
+  "Set BOM password": "Tetapkan kata sandi BOM",
+  "The BOM owner must set its password first.":
+    "Pemilik BOM harus menetapkan kata sandi terlebih dahulu.",
+  "Ask the BOM owner to grant you access. Production read permission is also required.":
+    "Minta izin kepada pemilik BOM. Anda juga memerlukan izin baca modul Produksi.",
+  "Lock BOM": "Kunci BOM",
+  "Manage BOM access": "Kelola akses BOM",
+  "Authorized users": "Pengguna yang diberi izin",
+  "Only the BOM owner has access.": "Hanya pemilik BOM yang memiliki akses.",
+  "Revoke access": "Cabut akses",
+  "Grant BOM access": "Berikan akses BOM",
+  "Grant access": "Berikan akses",
+  "Choose a user": "Pilih pengguna",
+  "Change BOM password": "Ganti kata sandi BOM",
+  "Change BOM password?": "Ganti kata sandi BOM?",
+  "Administrator recovery": "Pemulihan oleh administrator",
+  "Resetting does not reveal the password or composition. The owner must set a new password.":
+    "Reset tidak menampilkan kata sandi atau komposisi. Pemilik harus menetapkan kata sandi baru.",
+  "Recovery reason": "Alasan pemulihan",
+  "Reset BOM password": "Reset kata sandi BOM",
+  "Reset BOM password?": "Reset kata sandi BOM?",
+  "Revoke BOM access?": "Cabut akses BOM?",
+  "All unlocks will be revoked. Only the BOM owner can set the replacement password.":
+    "Semua akses terbuka akan dicabut. Hanya pemilik BOM yang dapat menetapkan kata sandi pengganti.",
+  "Existing access will be checked again before the next protected operation.":
+    "Izin akses akan diperiksa kembali sebelum operasi terlindungi berikutnya.",
+  "Could not verify BOM access.": "Akses BOM belum dapat diverifikasi.",
+  "Could not update BOM access.": "Akses BOM belum dapat diperbarui.",
+  "You do not have permission to access this BOM.":
+    "Anda tidak memiliki izin untuk mengakses BOM ini.",
+  "Review the selected BOM action.": "Periksa tindakan BOM yang dipilih.",
+  "BOM is locked. Open Formulas & BOM and unlock it with your BOM password.":
+    "BOM terkunci. Buka Formula & BOM dan masukkan kata sandi BOM Anda.",
+  "Enter a recovery reason of at least 8 characters.":
+    "Masukkan alasan pemulihan minimal 8 karakter.",
+  "Too many BOM password attempts. Try again in 15 minutes.":
+    "Terlalu banyak percobaan kata sandi BOM. Coba lagi dalam 15 menit.",
+  "Incorrect BOM password.": "Kata sandi BOM salah.",
+  "Choose an active user with Production read access.":
+    "Pilih pengguna aktif dengan izin baca modul Produksi.",
+  "Set a BOM password when creating a formula.":
+    "Tetapkan kata sandi BOM saat membuat formula.",
+});
+
+Object.assign(messages, {"Edit formula":"Edit formula"});

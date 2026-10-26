@@ -30,6 +30,7 @@ import { humanLabel, displayNumber } from "@/lib/erp/ux";
 import { useFileDownload } from "@/components/workspace/use-file-download";
 import { useWorkRecords } from "./data";
 import { CommandForm } from "./command-form";
+import { BomAccessBoundary } from "./bom-access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -108,6 +109,7 @@ function DetailRows({
                       value != null &&
                       value !== "" &&
                       !key.endsWith("_id") &&
+                      !key.startsWith("bom_") &&
                       ![
                         "id",
                         "material",
@@ -375,6 +377,26 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
   );
   const detail = useWorkRecords(entity, { id: selected }, Boolean(selected));
   const row = detail.data.rows[0];
+  const confidential =
+    entity === "formulas" ||
+    entity === "manufacturing_orders" ||
+    Boolean(row?.bom_formula_id);
+  const expiry = String(row?.bom_expires_at || "");
+  const bomServerTime = String(row?.bom_server_time || "");
+  useEffect(() => {
+    if (!confidential || !expiry) return;
+    const timer = setTimeout(
+      () => {
+        setAction(null);
+        detail.refresh();
+        list.refresh();
+      },
+      Math.max(0, Date.parse(expiry) - Date.parse(bomServerTime)) + 20,
+    );
+    return () => clearTimeout(timer);
+    // Refresh callbacks intentionally use the currently selected record at expiry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confidential, expiry, bomServerTime, selected]);
   function select(id: string | null) {
     setSelected(id);
     const next = new URLSearchParams(params.toString());
@@ -414,6 +436,7 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
           value !== "" &&
           typeof value !== "object" &&
           !key.endsWith("_id") &&
+          !key.startsWith("bom_") &&
           ![
             "id",
             "label",
@@ -711,223 +734,238 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
             </p>
           ) : (
             <>
-              <RecordOverview row={row} entity={entity} />
-              <div className="work-detail-identity">
-                <Badge>
-                  <Localized>{humanLabel(row.state || "record")}</Localized>
-                </Badge>
-                <CopyValue value={String(row.number || row.id)} />
-                {entity === "pallets" && (
-                  <Link
-                    className="work-record-link"
-                    href={`/api/operations-label/${row.id}`}
-                    target="_blank"
-                  >
-                    <Printer className="size-3.5" />
-                    <Localized>{" Print pallet label "}</Localized>
-                  </Link>
-                )}
-              </div>
-              {[
-                "manufacturing_orders",
-                "incoming_inspections",
-                "warehouse_transfers",
-              ].includes(entity) && (
-                <div className="work-command-actions">
-                  {(entity === "manufacturing_orders"
-                    ? [
-                        ["batch", "Batch sheet PDF"],
-                        ["materials", "Material usage PDF"],
-                      ]
-                    : entity === "incoming_inspections"
-                      ? [["incoming", "Inspection PDF"]]
-                      : [["transfer", "Transfer PDF"]]
-                  ).map(([kind, label]) => (
-                    <Button
-                      key={kind}
-                      size="sm"
-                      variant="outline"
-                      disabled={Boolean(files.busy)}
-                      loading={files.busy === kind}
-                      onClick={() =>
-                        files.download(
-                          `/api/operations-document/${kind}/${row.id}?download=1`,
-                          `${row.number}-${kind}.pdf`,
-                          kind,
-                        )
-                      }
+              <BomAccessBoundary
+                enabled={confidential}
+                row={row}
+                onChanged={() => {
+                  setAction(null);
+                  detail.refresh();
+                  list.refresh();
+                }}
+              >
+                <RecordOverview row={row} entity={entity} />
+                <div className="work-detail-identity">
+                  <Badge>
+                    <Localized>{humanLabel(row.state || "record")}</Localized>
+                  </Badge>
+                  <CopyValue value={String(row.number || row.id)} />
+                  {entity === "pallets" && (
+                    <Link
+                      className="work-record-link"
+                      href={`/api/operations-label/${row.id}`}
+                      target="_blank"
                     >
-                      <Download className="size-3.5" />
-                      <Localized>{label}</Localized>
+                      <Printer className="size-3.5" />
+                      <Localized>{" Print pallet label "}</Localized>
+                    </Link>
+                  )}
+                </div>
+                {[
+                  "manufacturing_orders",
+                  "incoming_inspections",
+                  "warehouse_transfers",
+                ].includes(entity) && (
+                  <div className="work-command-actions">
+                    {(entity === "manufacturing_orders"
+                      ? [
+                          ["batch", "Batch sheet PDF"],
+                          ["materials", "Material usage PDF"],
+                        ]
+                      : entity === "incoming_inspections"
+                        ? [["incoming", "Inspection PDF"]]
+                        : [["transfer", "Transfer PDF"]]
+                    ).map(([kind, label]) => (
+                      <Button
+                        key={kind}
+                        size="sm"
+                        variant="outline"
+                        disabled={Boolean(files.busy)}
+                        loading={files.busy === kind}
+                        onClick={() =>
+                          files.download(
+                            `/api/operations-document/${kind}/${row.id}?download=1`,
+                            `${row.number}-${kind}.pdf`,
+                            kind,
+                          )
+                        }
+                      >
+                        <Download className="size-3.5" />
+                        <Localized>{label}</Localized>
+                      </Button>
+                    ))}
+                  </div>
+                )}
+                {workflow && current >= 0 && (
+                  <ol
+                    className="work-progress"
+                    aria-label={localize("Record progress")}
+                  >
+                    {workflow.map((state, index) => (
+                      <li key={state} data-complete={index <= current}>
+                        <span>
+                          {index < current ? (
+                            <CheckCircle2 className="size-3.5" />
+                          ) : index === current ? (
+                            <Clock3 className="size-3.5" />
+                          ) : (
+                            index + 1
+                          )}
+                        </span>
+                        <Localized>{humanLabel(state)}</Localized>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+                <div className="work-command-actions">
+                  {commands.map((name) => (
+                    <Button
+                      variant={name === commands[0] ? "default" : "outline"}
+                      size="sm"
+                      key={name}
+                      disabled={Boolean(action)}
+                      onClick={() => setAction(name)}
+                    >
+                      <Localized>
+                        {workCommands[name].editLabel ||
+                          workCommands[name].label}
+                      </Localized>
                     </Button>
                   ))}
                 </div>
-              )}
-              {workflow && current >= 0 && (
-                <ol
-                  className="work-progress"
-                  aria-label={localize("Record progress")}
-                >
-                  {workflow.map((state, index) => (
-                    <li key={state} data-complete={index <= current}>
-                      <span>
-                        {index < current ? (
-                          <CheckCircle2 className="size-3.5" />
-                        ) : index === current ? (
-                          <Clock3 className="size-3.5" />
-                        ) : (
-                          index + 1
-                        )}
-                      </span>
-                      <Localized>{humanLabel(state)}</Localized>
-                    </li>
+                <dl className="work-facts">
+                  {visibleFacts.map(([key, value]) => (
+                    <div key={key}>
+                      <dt>
+                        <Localized>{humanLabel(key)}</Localized>
+                      </dt>
+                      <dd>{shown(value, key)}</dd>
+                    </div>
                   ))}
-                </ol>
-              )}
-              <div className="work-command-actions">
-                {commands.map((name) => (
-                  <Button
-                    variant={name === commands[0] ? "default" : "outline"}
-                    size="sm"
-                    key={name}
-                    disabled={Boolean(action)}
-                    onClick={() => setAction(name)}
+                </dl>
+                {Boolean(row.file_url) && (
+                  <a
+                    href={String(row.file_url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="work-record-link"
                   >
-                    <Localized>{workCommands[name].editLabel || workCommands[name].label}</Localized>
-                  </Button>
-                ))}
-              </div>
-              <dl className="work-facts">
-                {visibleFacts.map(([key, value]) => (
-                  <div key={key}>
-                    <dt>
-                      <Localized>{humanLabel(key)}</Localized>
-                    </dt>
-                    <dd>{shown(value, key)}</dd>
-                  </div>
-                ))}
-              </dl>
-              {Boolean(row.file_url) && (
-                <a
-                  href={String(row.file_url)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="work-record-link"
-                >
-                  <Localized>{" Open version-specific document "}</Localized>
-                  <ArrowUpRight className="size-3.5" />
-                </a>
-              )}
-              {entity === "manufacturing_orders" && (
-                <>
-                  <DetailRows
-                    title={localize("Formula requirements")}
-                    rows={
-                      (row.formula_snapshot as { requirements?: WorkRow[] })
-                        ?.requirements || []
-                    }
-                  />
-                  <DetailRows
-                    title={localize("Planned versus net actual use")}
-                    rows={(row.material_usage as WorkRow[]) || []}
-                  />
-                  <DetailRows
-                    title={localize("Production deviations")}
-                    rows={(row.deviations as WorkRow[]) || []}
-                  />
-                  <DetailRows
-                    title={localize("Material reservations")}
-                    rows={(row.reservations as WorkRow[]) || []}
-                  />
-                  <DetailRows
-                    title={localize("Actual material use & returns")}
-                    rows={(row.inputs as WorkRow[]) || []}
-                  />
-                  <DetailRows
-                    title={localize("Finished batches")}
-                    rows={(row.outputs as WorkRow[]) || []}
-                  />
-                  <DetailRows
-                    title={localize("Customer deliveries")}
-                    rows={(row.deliveries as WorkRow[]) || []}
-                  />
-                  {Boolean((row.outputs as WorkRow[])?.[0]?.lot_id) && (
-                    <Genealogy
-                      lot={String((row.outputs as WorkRow[])[0].lot_id)}
+                    <Localized>{" Open version-specific document "}</Localized>
+                    <ArrowUpRight className="size-3.5" />
+                  </a>
+                )}
+                {entity === "manufacturing_orders" && (
+                  <>
+                    <DetailRows
+                      title={localize("Formula requirements")}
+                      rows={
+                        (row.formula_snapshot as { requirements?: WorkRow[] })
+                          ?.requirements || []
+                      }
                     />
-                  )}
-                </>
-              )}
-              {entity === "formulas" && (
-                <DetailRows
-                  title={localize("Formula materials & packaging")}
-                  rows={(row.lines as WorkRow[]) || []}
-                />
-              )}{" "}
-              {entity === "material_specs" && (
-                <DetailRows
-                  title={localize("Inspection parameters")}
-                  rows={(row.parameters as WorkRow[]) || []}
-                />
-              )}{" "}
-              {entity === "incoming_inspections" && (
-                <>
+                    <DetailRows
+                      title={localize("Planned versus net actual use")}
+                      rows={(row.material_usage as WorkRow[]) || []}
+                    />
+                    <DetailRows
+                      title={localize("Production deviations")}
+                      rows={(row.deviations as WorkRow[]) || []}
+                    />
+                    <DetailRows
+                      title={localize("Material reservations")}
+                      rows={(row.reservations as WorkRow[]) || []}
+                    />
+                    <DetailRows
+                      title={localize("Actual material use & returns")}
+                      rows={(row.inputs as WorkRow[]) || []}
+                    />
+                    <DetailRows
+                      title={localize("Finished batches")}
+                      rows={(row.outputs as WorkRow[]) || []}
+                    />
+                    <DetailRows
+                      title={localize("Customer deliveries")}
+                      rows={(row.deliveries as WorkRow[]) || []}
+                    />
+                    {Boolean((row.outputs as WorkRow[])?.[0]?.lot_id) && (
+                      <Genealogy
+                        lot={String((row.outputs as WorkRow[])[0].lot_id)}
+                      />
+                    )}
+                  </>
+                )}
+                {entity === "formulas" && (
                   <DetailRows
-                    title={localize("Captured specification")}
-                    rows={
-                      (row.spec_snapshot as { parameters?: WorkRow[] })
-                        ?.parameters || []
-                    }
+                    title={localize("Formula materials & packaging")}
+                    rows={(row.lines as WorkRow[]) || []}
                   />
+                )}{" "}
+                {entity === "material_specs" && (
                   <DetailRows
-                    title={localize("Recorded results")}
-                    rows={(row.results as WorkRow[]) || []}
+                    title={localize("Inspection parameters")}
+                    rows={(row.parameters as WorkRow[]) || []}
                   />
-                </>
-              )}{" "}
-              {entity === "warehouse_transfers" && (
-                <DetailRows
-                  title={localize("Transfer manifest & receipt")}
-                  rows={(row.lines as WorkRow[]) || []}
-                />
-              )}{" "}
-              {entity === "pallets" && (
-                <DetailRows
-                  title={localize("Packed contents")}
-                  rows={(row.contents as WorkRow[]) || []}
-                />
-              )}{" "}
-              {entity === "warehouse_access" && (
-                <DetailRows
-                  title={localize("Assigned warehouses")}
-                  rows={(row.warehouses as WorkRow[]) || []}
-                />
-              )}{" "}
-              {entity === "document_distributions" && (
-                <DetailRows
-                  title={localize("Document revision sent")}
-                  rows={[row.document_snapshot as WorkRow]}
-                />
-              )}{" "}
-              {Boolean(row.quote_id) && (
-                <Link
-                  className="work-record-link"
-                  href={`/dashboard/sales?view=quotes&record=${row.quote_id}`}
-                >
-                  <Localized>{" Open linked quotation "}</Localized>
-                  <ArrowUpRight className="size-3.5" />
-                </Link>
-              )}{" "}
-              {((entity.endsWith("inventory") && row.lot_id) ||
-                entity === "material_lots") && (
-                <Genealogy lot={String(row.lot_id || row.id)} />
-              )}{" "}
-              {!row.id.includes(":") && <History entity={entity} id={row.id} />}
+                )}{" "}
+                {entity === "incoming_inspections" && (
+                  <>
+                    <DetailRows
+                      title={localize("Captured specification")}
+                      rows={
+                        (row.spec_snapshot as { parameters?: WorkRow[] })
+                          ?.parameters || []
+                      }
+                    />
+                    <DetailRows
+                      title={localize("Recorded results")}
+                      rows={(row.results as WorkRow[]) || []}
+                    />
+                  </>
+                )}{" "}
+                {entity === "warehouse_transfers" && (
+                  <DetailRows
+                    title={localize("Transfer manifest & receipt")}
+                    rows={(row.lines as WorkRow[]) || []}
+                  />
+                )}{" "}
+                {entity === "pallets" && (
+                  <DetailRows
+                    title={localize("Packed contents")}
+                    rows={(row.contents as WorkRow[]) || []}
+                  />
+                )}{" "}
+                {entity === "warehouse_access" && (
+                  <DetailRows
+                    title={localize("Assigned warehouses")}
+                    rows={(row.warehouses as WorkRow[]) || []}
+                  />
+                )}{" "}
+                {entity === "document_distributions" && (
+                  <DetailRows
+                    title={localize("Document revision sent")}
+                    rows={[row.document_snapshot as WorkRow]}
+                  />
+                )}{" "}
+                {Boolean(row.quote_id) && (
+                  <Link
+                    className="work-record-link"
+                    href={`/dashboard/sales?view=quotes&record=${row.quote_id}`}
+                  >
+                    <Localized>{" Open linked quotation "}</Localized>
+                    <ArrowUpRight className="size-3.5" />
+                  </Link>
+                )}{" "}
+                {((entity.endsWith("inventory") && row.lot_id) ||
+                  entity === "material_lots") && (
+                  <Genealogy lot={String(row.lot_id || row.id)} />
+                )}{" "}
+                {!row.id.includes(":") && (
+                  <History entity={entity} id={row.id} />
+                )}
+              </BomAccessBoundary>
             </>
           )}
         </ERPModal>
       )}
-      {action && (
+      {action && (!selected || !confidential || row?.bom_unlocked === true) && (
         <CommandForm
           key={action + ":" + (selected || "new")}
           action={action}

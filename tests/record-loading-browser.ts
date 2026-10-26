@@ -125,25 +125,24 @@ export async function exerciseRecordLoading(
     await dialog
       .getByRole("status", { name: "Loading linked documents…", exact: true })
       .waitFor();
-    const beforeFocus = await page.evaluate(
-      () =>
-        performance
-          .getEntriesByType("resource")
-          .filter((r) => r.name.includes("/api/erp/")).length,
-    );
-    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-    await page.waitForTimeout(100);
-    const afterFocus = await page.evaluate(
-      () =>
-        performance
-          .getEntriesByType("resource")
-          .filter((r) => r.name.includes("/api/erp/")).length,
-    );
-    assert.equal(
-      afterFocus,
-      beforeFocus,
-      "Returning focus must not reload freshly loaded ERP data",
-    );
+    // Count newly started requests, not completions from controls already in flight.
+    const focusRequests: string[] = [];
+    const trackFocusRequest = (request: import("playwright").Request) => {
+      if (request.url().includes("/api/erp/"))
+        focusRequests.push(request.url());
+    };
+    page.on("request", trackFocusRequest);
+    try {
+      await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+      await page.waitForTimeout(100);
+      assert.deepEqual(
+        focusRequests,
+        [],
+        "Returning focus must not reload freshly loaded ERP data",
+      );
+    } finally {
+      page.off("request", trackFocusRequest);
+    }
     await capture("record-loading-desktop");
     releaseFlow();
     await loading.waitFor({ state: "hidden" });

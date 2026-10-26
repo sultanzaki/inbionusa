@@ -114,6 +114,17 @@ export function AppShell({
 }) {
   const { t: localize } = useLocale();
 
+  useEffect(() => {
+    // Earlier releases could retain composition in recoverable production drafts.
+    try {
+      for (const key of Object.keys(localStorage))
+        if (
+          key.startsWith("inb:draft:") &&
+          key.includes("/dashboard/production")
+        )
+          localStorage.removeItem(key);
+    } catch {}
+  }, []);
   const erp = useERP();
   const { user } = useUser(),
     pathname = usePathname(),

@@ -1,3 +1,4 @@
+import { exerciseBomSecurity } from "./bom-security-browser";
 import { exerciseBilingualRelease } from "./bilingual-release-browser";
 import { exerciseTransactionDesign } from "./transaction-design-browser";
 import { exerciseOperatorWorkflow } from "./operator-workflow-browser";
@@ -388,6 +389,18 @@ test(
         );
         assert.equal(scoped.status(), 503);
         assert.match((await scoped.json()).message, /database update/);
+        return;
+      }
+      if (process.env.TEST_BOM_ONLY === "1") {
+        await exerciseBomSecurity(
+          page,
+          db,
+          origin,
+          user.id,
+          capture,
+          accessible,
+        );
+        assert.deepEqual(runtimeErrors, []);
         return;
       }
       if (process.env.TEST_BILINGUAL_ONLY === "1") {

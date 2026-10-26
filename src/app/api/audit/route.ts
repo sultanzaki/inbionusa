@@ -1,3 +1,4 @@
+import { erpRpc, erpUxError } from "@/lib/erp/server";
 import { parseTableQuery } from "@/lib/tables/schema";
 import { applyTableQuery } from "@/lib/tables/postgrest";
 import { requireUser } from "@/lib/auth";
@@ -28,14 +29,8 @@ export async function GET(request: Request) {
   if (!p.success) return privateJson({ message: "Invalid filter." }, 400);
   const v = p.data;
   if (v.id) {
-    const { data, error } = await createAdminClient()
-      .from("audit_log")
-      .select("id,waktu,user_name,aksi,referensi,before_data,after_data")
-      .eq("id", v.id)
-      .single();
-    return error
-      ? privateJson({ message: "Activity not found." }, 404)
-      : privateJson({ data });
+    const { data, error } = await erpRpc("erp_bom_audit", { p_id: v.id });
+    return error ? erpUxError(error) : privateJson({ data });
   }
   let grid;
   try {

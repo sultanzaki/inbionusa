@@ -267,7 +267,18 @@ export async function exerciseOperationalUX(
     .getByLabel("Reason", { exact: true })
     .fill("Verified against bank statement");
   await submitControl(top(), "Confirm");
+  await page.mouse.move(0, 0);
   await page
+    .locator('[data-sonner-toast][data-removed="false"]')
+    .last()
+    .waitFor({ state: "hidden", timeout: 10000 });
+  const paymentNumber = (
+    await db.query("select number from erp_fin_payments where bank_reference=$1", [key + "-manual"])
+  ).rows[0].number;
+  // A refreshed document may briefly expose its own allocation action. Target
+  // the newly verified payment rather than the previous document underneath.
+  await page
+    .getByRole("dialog", { name: paymentNumber, exact: true })
     .getByRole("button", { name: "Allocate payment", exact: true })
     .click();
   await top()

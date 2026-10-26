@@ -1,4 +1,5 @@
 "use client";
+import { bomPasswordError } from "@/lib/bom-security";
 import { Localized } from "@/components/i18n/locale-provider";
 
 import { ContextSummary } from "@/components/workspace/record-overview";
@@ -55,7 +56,16 @@ function initial(field: WorkField, row?: WorkRow): unknown {
 }
 export function CommandForm(props: Parameters<typeof CommandFormContent>[0]) {
   return (
-    <FormRecovery scope={props.action} recordId={props.row?.id || "new"}>
+    <FormRecovery
+      scope={props.action}
+      recordId={props.row?.id || "new"}
+      disabled={
+        workCommands[props.action]?.module === "production" ||
+        ["save_deviation", "save_capa"].includes(props.action) ||
+        Boolean(props.row?.manufacturing_order_id || props.row?.deviation_id) ||
+        Boolean(props.row?.bom_formula_id)
+      }
+    >
       <CommandFormContent {...props} />
     </FormRecovery>
   );
@@ -138,11 +148,16 @@ function CommandFormContent({
   const locked = useRef(false),
     confirmed = useRef(false),
     form = useRef<HTMLFormElement>(null);
+  const [bomPassword, setBomPassword] = useState("");
+  const [bomConfirm, setBomConfirm] = useState("");
+  const creatingBOM = action === "save_formula" && !row;
   const [busy, setBusy] = useState(false),
     [errors, setErrors] = useState<{ path: string; message: string }[]>([]),
     [failure, setFailure] = useState("");
   const dirty =
-    JSON.stringify(values) !== baseline || Boolean(recovery?.restored.values);
+    JSON.stringify(values) !== baseline ||
+    Boolean(recovery?.restored.values) ||
+    Boolean(creatingBOM && (bomPassword || bomConfirm));
   const context: WorkRow = {
     id: row?.id || "",
     ...row,
@@ -204,13 +219,31 @@ function CommandFormContent({
       );
       return;
     }
+    if (creatingBOM) {
+      const message =
+        bomPasswordError(bomPassword) ||
+        (bomPassword !== bomConfirm ? "BOM passwords do not match." : null);
+      if (message) {
+        journey.current?.reveal();
+        setErrors([{ path: "bom_password", message }]);
+        setFailure(message);
+        requestAnimationFrame(() =>
+          form.current
+            ?.querySelector<HTMLInputElement>('[name="bom_password"]')
+            ?.focus(),
+        );
+        return;
+      }
+    }
     locked.current = true;
     setBusy(true);
     setFailure("");
     try {
       const data = await saveRequest<{ id: string; entity: string }>(
         "/api/operations/" + action,
-        parsed.data,
+        creatingBOM
+          ? { ...parsed.data, bom_password: bomPassword }
+          : parsed.data,
       );
       invalidateERPReads();
       toast.success(
@@ -584,6 +617,55 @@ function CommandFormContent({
           <ContextSummary values={values} />
           <div className="context-form-main">
             <RecoveryNotice />
+            {creatingBOM && (
+              <fieldset className="bom-password-setup">
+                <legend>
+                  <Localized>{"Protect this BOM"}</Localized>
+                </legend>
+                <p>
+                  <Localized>
+                    {
+                      "Use a separate password. Only you and users you authorize can unlock this BOM."
+                    }
+                  </Localized>
+                </p>
+                <label htmlFor={formId + "-bom-password"}>
+                  <Localized>{"BOM password"}</Localized>
+                </label>
+                <Input
+                  id={formId + "-bom-password"}
+                  name="bom_password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={bomPassword}
+                  onChange={(e) => setBomPassword(e.target.value)}
+                  maxLength={64}
+                  disabled={busy}
+                  aria-invalid={
+                    errors.some((e) => e.path === "bom_password") || undefined
+                  }
+                />
+                <label htmlFor={formId + "-bom-confirm"}>
+                  <Localized>{"Confirm BOM password"}</Localized>
+                </label>
+                <Input
+                  id={formId + "-bom-confirm"}
+                  type="password"
+                  autoComplete="new-password"
+                  value={bomConfirm}
+                  onChange={(e) => setBomConfirm(e.target.value)}
+                  maxLength={64}
+                  disabled={busy}
+                />
+                <small>
+                  <Localized>
+                    {
+                      "At least 16 characters. This password is not saved in browser drafts."
+                    }
+                  </Localized>
+                </small>
+              </fieldset>
+            )}
             <SaveStatus
               uncertain={uncertain}
               onChecked={() => setUncertain(false)}

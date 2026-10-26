@@ -204,9 +204,14 @@ export async function exerciseReleaseReadiness(
   await page.getByRole("button", { name: "Sign in", exact: true }).waitFor();
   await capture("84-dark-login");
   await accessible();
-  await page.getByRole("button", { name: "Light theme", exact: true }).click();
+  assert.equal(
+    await page.locator(".theme-control").count(),
+    0,
+    "login follows saved appearance without exposing settings",
+  );
   await page.context().addCookies(savedCookies);
   await page.goto(origin + "/dashboard");
+  await theme("Light");
   // A fresh non-admin session exercises both SSR action visibility and API boundaries.
   const uid = (
       await db.query(

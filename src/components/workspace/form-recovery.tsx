@@ -33,10 +33,12 @@ export function FormRecovery({
   scope,
   children,
   recordId,
+  disabled = false,
 }: {
   scope: string;
   children: ReactNode;
   recordId?: string;
+  disabled?: boolean;
 }) {
   const outer = useContext(Context);
   const { user } = useUser();
@@ -45,6 +47,20 @@ export function FormRecovery({
   const record = recordId ?? params.get("record") ?? "new";
   const identity =
     recordId === undefined && params.get("record") ? "record" : scope;
+  useEffect(() => {
+    if (!disabled) return;
+    // Remove legacy confidential drafts without reading their contents.
+    try {
+      for (const key of Object.keys(localStorage))
+        if (
+          key.startsWith("inb:draft:") &&
+          (key.includes("/dashboard/production") ||
+            key.includes(`:${path}:${record}:`))
+        )
+          localStorage.removeItem(key);
+    } catch {}
+  }, [disabled, path, record]);
+  if (disabled) return <Context value={null}>{children}</Context>;
   return outer ? (
     children
   ) : (

@@ -335,3 +335,15 @@ test("locale translation preserves canonical/user values and unknown keys", asyn
   ])
     assert.equal(translate(value, "id"), value);
 });
+
+test("BOM passwords are independent, never trimmed, and bounded before bcrypt", async () => {
+  const { bomPasswordError } = await import("../src/lib/bom-security");
+  assert.ok(bomPasswordError(undefined));
+  assert.ok(bomPasswordError("short"));
+  assert.ok(bomPasswordError(" ".repeat(20)));
+  assert.equal(bomPasswordError("A strong independent BOM password"), null);
+  assert.equal(bomPasswordError("a".repeat(64)), null);
+  assert.ok(bomPasswordError("a".repeat(65)));
+  assert.equal(bomPasswordError("é".repeat(32)), null);
+  assert.ok(bomPasswordError("é".repeat(33)));
+});

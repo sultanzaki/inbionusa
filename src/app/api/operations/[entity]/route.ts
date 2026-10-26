@@ -1,3 +1,4 @@
+import { bomPasswordError } from "@/lib/bom-security";
 import { authorizedRead } from "@/lib/authorized-read";
 import { requireUser, logAudit } from "@/lib/auth";
 import { privateJson } from "@/lib/api-response";
@@ -195,9 +196,24 @@ export async function POST(request: Request, context: Context) {
       );
     return privateJson({ message: "Invalid operation." }, 400);
   }
-  const { data, error } = await erpRpc("erp_work_mutate", {
-    p_action: action,
-    p_payload: payload,
-  });
+  const creatingBOM = action === "save_formula" && !payload.id;
+  const password =
+    raw && typeof raw === "object" && "bom_password" in raw
+      ? raw.bom_password
+      : undefined;
+  if (creatingBOM) {
+    const message = bomPasswordError(password);
+    if (message)
+      return privateJson(
+        { message, fields: [{ path: "bom_password", message }] },
+        422,
+      );
+  }
+  const { data, error } = creatingBOM
+    ? await erpRpc("erp_bom_create", {
+        p_payload: payload,
+        p_password: password,
+      })
+    : await erpRpc("erp_work_mutate", { p_action: action, p_payload: payload });
   return error ? erpError(error) : privateJson(data);
 }

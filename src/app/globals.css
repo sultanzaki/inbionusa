@@ -7153,3 +7153,24 @@ body:has(.login-layout) {
 .login-operations .login-form-panel {
   min-height: 100dvh;
 }
+
+.bom-access { border: 1px solid var(--color-border); border-radius: 14px; padding: 18px; margin-bottom: 18px; background: var(--color-surface-alt); overflow-wrap: anywhere; }
+.bom-access header { display: flex; align-items: flex-start; gap: 12px; }
+.bom-access-icon { display: grid; place-items: center; flex-shrink: 0; width: 38px; height: 38px; color: var(--color-primary); background: var(--color-primary-soft); border-radius: 10px; }
+.bom-access-icon svg { width: 20px; height: 20px; }
+.bom-access p, .bom-password-setup p, .bom-password-setup small { color: var(--color-muted); font-size: 12px; line-height: 1.65; margin-block: 5px 12px; }
+.bom-access-form, .bom-password-setup { display: grid; gap: 9px; min-width: 0; }
+.bom-access-form { max-width: 430px; margin-top: 14px; }
+.bom-access-form label, .bom-password-setup label { font-size: 12px; font-weight: 600; }
+.bom-access-form select { width: 100%; min-width: 0; padding: 11px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text); background: var(--color-surface); }
+.bom-access-form button { justify-self: start; }
+.bom-access-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.bom-access-management { border-top: 1px solid var(--color-border); padding-top: 16px; margin-top: 16px; }
+.bom-access-management h3 { font-size: 13px; font-weight: 600; }
+.bom-access-management ul { margin-top: 10px; }
+.bom-access-management li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; font-size: 12px; }
+.bom-access details { margin-top: 18px; font-size: 12px; }
+.bom-access summary { cursor: pointer; font-weight: 600; padding-block: 8px; }
+.bom-password-setup { margin-bottom: 20px; padding: 16px; border: 1px solid var(--color-border); border-radius: 10px; }
+.bom-password-setup legend { padding-inline: 6px; font-size: 13px; font-weight: 600; }
+@media (max-width: 639px) { .bom-access { padding: 14px; } .bom-access-management li { flex-wrap: wrap; } }
