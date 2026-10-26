@@ -80,7 +80,8 @@ export async function exerciseReleaseReadiness(
     await page.waitForFunction(
       () => document.querySelectorAll("main#main-content").length === 1,
     );
-    await page.locator("main").waitFor();
+    // Next can retain the departing page during its route transition.
+    await page.locator("main#main-content:visible").first().waitFor();
     const title = {
       dashboard: "Overview",
       "dashboard/master-data/products": "Products",
