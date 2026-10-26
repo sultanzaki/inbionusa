@@ -391,6 +391,65 @@ test(
         assert.match((await scoped.json()).message, /database update/);
         return;
       }
+      if (process.env.TEST_PACKAGING_ONLY === "1") {
+        const custom = "Lined bulk bag " + suffix;
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.goto(origin + "/dashboard/master-data/products");
+        await page
+          .getByRole("button", { name: "New product", exact: true })
+          .first()
+          .click();
+        const dialog = page.getByRole("dialog", {
+          name: "New product",
+          exact: true,
+        });
+        await dialog.getByPlaceholder("PRD-001").fill("PKG-" + suffix);
+        await dialog
+          .getByPlaceholder("Product name", { exact: true })
+          .fill("Packaging product " + suffix);
+        await dialog.getByLabel(/^Packaging type/).fill(custom);
+        await capture("packaging-custom-mobile");
+        await accessible();
+        assert.ok(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        );
+        await dialog.getByRole("button", { name: "Add", exact: true }).click();
+        await dialog.waitFor({ state: "hidden" });
+        const saved = (
+          await db.query(
+            "select tipe_kemasan from master_produk where kode_produk=$1",
+            ["PKG-" + suffix],
+          )
+        ).rows[0];
+        assert.equal(saved.tipe_kemasan, custom);
+        const suggestions = await page.request.get(
+          origin + "/api/products/packaging",
+        );
+        assert.equal(suggestions.status(), 200);
+        assert.ok((await suggestions.json()).options.includes(custom));
+        await page.reload();
+        await page
+          .getByRole("button", { name: "New product", exact: true })
+          .first()
+          .click();
+        await page.waitForFunction(
+          (value) =>
+            Array.from(
+              document.querySelectorAll<HTMLDataListElement>(
+                "#product-packaging-options option",
+              ),
+            ).some((o) => o.getAttribute("value") === value),
+          custom,
+        );
+        await page.getByLabel(/^Packaging type/).fill(custom);
+        await page.setViewportSize({ width: 1440, height: 1000 });
+        await capture("packaging-reused-desktop");
+        await accessible();
+        assert.deepEqual(runtimeErrors, []);
+        return;
+      }
       if (process.env.TEST_BOM_ONLY === "1") {
         await exerciseBomSecurity(
           page,

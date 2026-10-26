@@ -66,7 +66,7 @@ export async function exerciseERP(
       ".01." +
       today.split("-").reverse().join("") +
       "." +
-      expiry.slice(0, 4);
+      expiry.slice(2, 4);
   const product = (
     await qc("create_produk", {
       kode_produk: code,

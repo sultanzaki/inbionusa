@@ -2393,3 +2393,7 @@ Object.assign(messages, {
 });
 
 Object.assign(messages, {"Edit formula":"Edit formula"});
+
+Object.assign(messages, {
+  "Select or enter a packaging type": "Pilih atau masukkan jenis kemasan",
+});

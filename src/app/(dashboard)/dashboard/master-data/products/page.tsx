@@ -86,6 +86,7 @@ const satuanList = [
   "Box",
 ];
 const kemasanList = [
+  "Bag",
   "Bottle",
   "Sachet",
   "Box",
@@ -179,6 +180,24 @@ export default function ProdukPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [packagingOptions, setPackagingOptions] = useState<string[]>([]);
+  useEffect(() => {
+    if (!dialogOpen) return;
+    const controller = new AbortController();
+    void fetch("/api/products/packaging", {
+      signal: controller.signal,
+      cache: "no-store",
+    })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const result = await response.json();
+        if (!controller.signal.aborted) setPackagingOptions(result.options);
+      })
+      .catch(() => {
+        /* Suggestions are optional; custom entry remains available. */
+      });
+    return () => controller.abort();
+  }, [dialogOpen]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ProdukForm>(emptyForm);
   const [spesifikasi, setSpesifikasi] = useState<SpesifikasiForm[]>([]);
@@ -592,23 +611,33 @@ export default function ProdukPage() {
                       </select>
                     </Field>
                     <Field label="Packaging type" name="tipe_kemasan">
-                      <select
-                        className={selectClass}
+                      <Input
+                        list="product-packaging-options"
                         value={form.tipe_kemasan}
                         onChange={(e) =>
                           setForm({ ...form, tipe_kemasan: e.target.value })
                         }
-                      >
-                        <option value="">
-                          <Localized>{"Select…"}</Localized>
-                        </option>
-                        {kemasanList.map((k) => (
-                          <option key={k} value={k}>
-                            {k}
-                          </option>
-                        ))}
-                      </select>
+                        maxLength={1000}
+                        autoComplete="off"
+                        placeholder={localize(
+                          "Select or enter a packaging type",
+                        )}
+                      />
                     </Field>
+                    <datalist id="product-packaging-options">
+                      {Array.from(
+                        new Set([
+                          ...kemasanList,
+                          ...packagingOptions,
+                          form.tipe_kemasan,
+                        ]),
+                      )
+                        .filter(Boolean)
+                        .sort((a, b) => a.localeCompare(b))
+                        .map((packaging) => (
+                          <option key={packaging} value={packaging} />
+                        ))}
+                    </datalist>
                   </div>
 
                   {editingId && (
