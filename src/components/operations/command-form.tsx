@@ -565,7 +565,7 @@ function CommandFormContent({
     <ERPModal
       title={
         row && action.startsWith("save_")
-          ? command.label.replace(/^New /, "Edit ")
+          ? command.editLabel || command.label.replace(/^New /, "Edit ")
           : command.label
       }
       description={row?.label || ""}

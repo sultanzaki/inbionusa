@@ -1,5 +1,7 @@
 /** Indonesian interface messages. Document language is configured separately. */
 export const messages: Record<string, string> = {
+  "Edit warehouse": "Edit gudang",
+  "Edit location": "Edit lokasi",
   "Expand sidebar": "Perluas menu samping",
   "Collapse sidebar": "Ringkas menu samping",
   Language: "Bahasa",

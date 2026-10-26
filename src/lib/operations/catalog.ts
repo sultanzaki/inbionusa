@@ -31,6 +31,7 @@ export type WorkField = {
 };
 export type WorkCommand = {
   label: string;
+  editLabel?: string;
   help: string;
   module: ModuleKey;
   verb?: "write" | "approve";
@@ -141,6 +142,7 @@ const identity = [c("label", "Reference"), c("state", "Status")];
 export const workCommands: Record<string, WorkCommand> = {
   save_warehouse: {
     label: "New warehouse",
+    editLabel: "Edit warehouse",
     help: "Warehouses contain storage locations. Existing stock history stays linked to its original locations.",
     module: "warehouse",
     fields: [
@@ -152,6 +154,7 @@ export const workCommands: Record<string, WorkCommand> = {
   },
   save_warehouse_location: {
     label: "Storage location",
+    editLabel: "Edit location",
     help: "Create a rack or bin inside an existing warehouse. Locations with stock history cannot be reassigned.",
     module: "warehouse",
     fields: [

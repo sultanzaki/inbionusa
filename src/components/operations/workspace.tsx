@@ -793,7 +793,7 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
                     disabled={Boolean(action)}
                     onClick={() => setAction(name)}
                   >
-                    {workCommands[name].label}
+                    <Localized>{workCommands[name].editLabel || workCommands[name].label}</Localized>
                   </Button>
                 ))}
               </div>
