@@ -2421,3 +2421,5 @@ Object.assign(messages, {
   "Cleaning and inspection are required before reuse.":
     "Pencucian dan pemeriksaan wajib dilakukan sebelum digunakan kembali.",
 });
+
+Object.assign(messages, { "Cleaning records": "Riwayat pencucian" });

@@ -1,4 +1,5 @@
 "use client";
+import { EquipmentCleaningHistory } from "./equipment-cleaning-history";
 import { Localized, useLocale } from "@/components/i18n/locale-provider";
 
 import {
@@ -932,6 +933,11 @@ export function OperationsWorkspace({ entity }: { entity: string }) {
                     rows={(row.contents as WorkRow[]) || []}
                   />
                 )}{" "}
+                {entity === "equipment" && (
+                  <EquipmentCleaningHistory
+                    rows={(row.cleaning as WorkRow[]) || []}
+                  />
+                )}
                 {entity === "warehouse_access" && (
                   <DetailRows
                     title={localize("Assigned warehouses")}

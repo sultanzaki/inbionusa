@@ -217,6 +217,22 @@ test(
           ...process.env,
           SUPABASE_URL: "http://127.0.0.1:55434",
           SUPABASE_SERVICE_ROLE_KEY: jwt("service_role"),
+          ...(process.env.TEST_EQUIPMENT_FORM_ONLY === "1"
+            ? {
+                EQUIPMENT_FORM_SECRET:
+                  "local-form-integration-test-only-secret",
+                EQUIPMENT_FORM_SOURCE_ID: "test-sheet",
+                EQUIPMENT_FORM_ACTOR_ID: user.id,
+                EQUIPMENT_FORM_APPROVED_ANSWERS: JSON.stringify({
+                  rinse: ["Ya"],
+                  residue: ["Tidak"],
+                  condition: ["Baik"],
+                  dry: ["Ya"],
+                  outcome: ["Sesuai"],
+                  ready: ["Ya"],
+                }),
+              }
+            : {}),
         },
         stdio: "ignore",
       },
@@ -389,6 +405,86 @@ test(
         );
         assert.equal(scoped.status(), 503);
         assert.match((await scoped.json()).message, /database update/);
+        return;
+      }
+      if (process.env.TEST_EQUIPMENT_FORM_ONLY === "1") {
+        const { cleaningHeaders } =
+          await import("../src/lib/integrations/equipment-form");
+        await db.query(
+          "update erp_modules set state='active' where key='production'",
+        );
+        const location = (
+          await db.query("select id,name from erp_locations where code='MAIN'")
+        ).rows[0];
+        const name = "FORM-" + suffix;
+        const asset = (
+          await db.query(
+            "insert into erp_equipment(code,name,location_id) values($1,$1,$2) returning id",
+            [name, location.id],
+          )
+        ).rows[0].id;
+        await db.query("update users set nama_lengkap=$1 where id=$2", [
+          name,
+          user.id,
+        ]);
+        const fields = Object.fromEntries(cleaningHeaders.map((h) => [h, ""]));
+        Object.assign(fields, {
+          "Nama Alat": name,
+          "Area Kerja": location.name,
+          "Nama Petugas": name,
+          "Nama Pemeriksa/Penanggung Jawab Verifikasi": name,
+          "Metode Pencucian (Sesuai SOP)": "Pencucian Najis Ringan (Air)",
+          "Jenis Potensi Najis": "Ringan",
+          "Kondisi Alat Setelah Pencucian": "Baik",
+        });
+        for (const i of [11, 14, 18]) fields[cleaningHeaders[i]] = "Ya";
+        fields[cleaningHeaders[12]] = "Tidak";
+        fields[cleaningHeaders[15]] = "Sesuai";
+        const payload = {
+          event_id: randomUUID(),
+          source_id: "test-sheet",
+          started_at: new Date(Date.now() - 120000).toISOString(),
+          finished_at: new Date(Date.now() - 60000).toISOString(),
+          fields,
+        };
+        const body = JSON.stringify(payload),
+          stamp = String(Date.now());
+        const signature = createHmac(
+          "sha256",
+          "local-form-integration-test-only-secret",
+        )
+          .update(stamp + "." + body)
+          .digest("hex");
+        const url = origin + "/api/integrations/equipment-cleaning";
+        assert.equal((await fetch(url, { method: "POST", body })).status, 401);
+        const send = () =>
+          fetch(url, {
+            method: "POST",
+            body,
+            headers: {
+              "Content-Type": "application/json",
+              "x-inb-timestamp": stamp,
+              "x-inb-signature": signature,
+            },
+          });
+        const response = await send();
+        assert.equal(response.status, 200, await response.text());
+        assert.equal((await (await send()).json()).duplicate, true);
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.goto(
+          origin + "/dashboard/production/equipment?record=" + asset,
+        );
+        await page.getByText("Cleaning records", { exact: true }).waitFor();
+        await page
+          .locator("details")
+          .filter({ hasText: "pass" })
+          .first()
+          .locator("summary")
+          .click();
+        await page.getByText("Nomor Batch", { exact: true }).waitFor();
+        await capture("equipment-form-history-mobile");
+        await accessible();
+        assert.deepEqual(runtimeErrors, []);
         return;
       }
       if (process.env.TEST_EQUIPMENT_WORKSPACE_ONLY === "1") {

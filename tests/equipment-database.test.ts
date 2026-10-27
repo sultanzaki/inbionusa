@@ -18,6 +18,15 @@ before(async () => {
   );
   await db.query(sql);
   await db.query(sql);
+  const integrationSql = await readFile(
+    new URL(
+      "../src/lib/db/migrations/031_equipment_form_import.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  await db.query(integrationSql);
+  await db.query(integrationSql);
 });
 after(() => db.end());
 beforeEach(() => db.query("begin"));
@@ -181,4 +190,130 @@ test("equipment starts dirty and the same operator may clean and inspect it", as
     /clean/,
   );
   await db.query("rollback to savepoint reuse");
+});
+
+test("form imports preserve answers, reject mismatches and replay without duplicating cleaning", async () => {
+  const f = await fixture();
+  const actor = (
+    await db.query("select user_id from sessions where token=$1", [f.token])
+  ).rows[0].user_id;
+  await db.query("update users set nama_lengkap=$1 where id=$2", [
+    actor,
+    actor,
+  ]);
+  const code = randomUUID();
+  const e = await insert(
+    "insert into erp_equipment(code,name,location_id) values($1,$1,$2)",
+    [code, f.location],
+  );
+  const fields = {
+    "Nama Alat": code,
+    "Area Kerja": "Batch bin",
+    "Nama Petugas": actor,
+    "Nama Pemeriksa/Penanggung Jawab Verifikasi": actor,
+    "Metode Pencucian (Sesuai SOP)": "Wash",
+    "Kondisi Alat Setelah Pencucian": "Intact",
+    Notes: "Saved exactly",
+    "Nomor Batch": "",
+  };
+  const now = (
+    await db.query(
+      "select (now()-interval '2 minutes')::text a,(now()-interval '1 minute')::text b",
+    )
+  ).rows[0];
+  const payload = {
+    source_id: "test-sheet",
+    event_id: randomUUID(),
+    fields,
+    started_at: now.a,
+    finished_at: now.b,
+  };
+  async function run(p = payload, hash = "a".repeat(64)) {
+    return (
+      await db.query("select erp_import_equipment_cleaning($1,$2,true,$3) r", [
+        actor,
+        p,
+        hash,
+      ])
+    ).rows[0].r;
+  }
+  const imported = await run();
+  assert.equal(imported.duplicate, false);
+  assert.equal((await run()).duplicate, true);
+  assert.equal(
+    (
+      await db.query(
+        "select count(*)::int n from erp_equipment_cleaning where equipment_id=$1",
+        [e],
+      )
+    ).rows[0].n,
+    1,
+  );
+  assert.equal(
+    (
+      await db.query(
+        "select form_data from erp_equipment_cleaning where id=$1",
+        [imported.id],
+      )
+    ).rows[0].form_data.Notes,
+    "Saved exactly",
+  );
+  await db.query("savepoint rejected");
+  await assert.rejects(
+    () => run(payload, "b".repeat(64)),
+    /different contents/,
+  );
+  await db.query("rollback to savepoint rejected");
+  await db.query("savepoint stale");
+  await assert.rejects(
+    () => run({ ...payload, event_id: randomUUID() }),
+    /newer cleaning/,
+  );
+  await db.query("rollback to savepoint stale");
+  await db.query("savepoint denied");
+  await db.query("set local role authenticated");
+  await assert.rejects(() => run());
+  await db.query("rollback to savepoint denied");
+  const date = (await db.query("select erp_today()::text d")).rows[0].d;
+  const movement = (
+    await db.query("select erp_mutate($1,'save_move',$2) r", [
+      f.token,
+      {
+        kind: "production",
+        date,
+        to_location: f.location,
+        reason: "Integration batch",
+        lines: [
+          {
+            product_id: f.product,
+            unit_id: f.unit,
+            quantity: "1",
+            mfg_date: date,
+          },
+        ],
+      },
+    ])
+  ).rows[0].r;
+  const number = (
+    await db.query("select number from erp_movements where id=$1", [
+      movement.id,
+    ])
+  ).rows[0].number;
+  await db.query(
+    "insert into erp_equipment_uses(equipment_id,movement_id,operator_id,started_at,finished_at) values($1,$2,$3,now()-interval '10 minutes',now()-interval '5 minutes')",
+    [e, movement.id, actor],
+  );
+  const next = {
+    ...payload,
+    event_id: randomUUID(),
+    finished_at: (
+      await db.query("select (now()-interval '30 seconds')::text t")
+    ).rows[0].t,
+    fields: { ...fields, "Nomor Batch": "WRONG" },
+  };
+  await db.query("savepoint batch");
+  await assert.rejects(() => run(next), /does not match/);
+  await db.query("rollback to savepoint batch");
+  next.fields["Nomor Batch"] = number;
+  assert.equal((await run(next)).result, "pass");
 });
