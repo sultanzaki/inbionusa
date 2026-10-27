@@ -347,3 +347,29 @@ test("BOM passwords are independent, never trimmed, and bounded before bcrypt", 
   assert.equal(bomPasswordError("é".repeat(32)), null);
   assert.ok(bomPasswordError("é".repeat(33)));
 });
+
+test("every operations workspace accepts its initial table query and column sorting", async () => {
+  const { parseTableQuery } = await import("../src/lib/tables/schema");
+  for (const [entity, collection] of Object.entries(workCollections)) {
+    assert.deepEqual(
+      parseTableQuery(null, "work_" + entity),
+      { filters: [], sorts: [] },
+      entity,
+    );
+    const field = collection.columns[0].key;
+    const sorts = [{ field, direction: "asc" }];
+    assert.deepEqual(
+      parseTableQuery(JSON.stringify({ sorts }), "work_" + entity).sorts,
+      sorts,
+      entity,
+    );
+  }
+  assert.doesNotThrow(() =>
+    parseTableQuery(
+      JSON.stringify({
+        filters: [{ field: "name", op: "contains", value: "Mixer" }],
+      }),
+      "work_equipment",
+    ),
+  );
+});

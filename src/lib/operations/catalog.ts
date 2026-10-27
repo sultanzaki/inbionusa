@@ -136,7 +136,7 @@ const approve = (
 const c = (
   key: string,
   label: string,
-  type?: "number" | "date" | "boolean",
+  type: "text" | "number" | "date" | "boolean" = "text",
 ) => ({ key, label, type });
 const identity = [c("label", "Reference"), c("state", "Status")];
 export const workCommands: Record<string, WorkCommand> = {
@@ -1212,12 +1212,6 @@ export const workCollections: Record<string, WorkCollection> = {
     ],
   },
 };
-export const workColumnDefinitions = Object.fromEntries(
-  Object.entries(workCollections).map(([key, collection]) => [
-    "work_" + key,
-    collection.columns,
-  ]),
-);
 export function workHref(entity: string, id?: string) {
   return (
     `/dashboard/${workPaths[entity] || "operations/" + entity}` +
@@ -1376,3 +1370,11 @@ workCollections.equipment = {
   ],
 };
 workPaths.equipment = "production/equipment";
+
+// Build the table registry after every collection has been registered.
+export const workColumnDefinitions = Object.fromEntries(
+  Object.entries(workCollections).map(([key, collection]) => [
+    "work_" + key,
+    collection.columns,
+  ]),
+);

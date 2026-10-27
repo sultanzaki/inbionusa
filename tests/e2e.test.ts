@@ -391,6 +391,40 @@ test(
         assert.match((await scoped.json()).message, /database update/);
         return;
       }
+      if (process.env.TEST_EQUIPMENT_WORKSPACE_ONLY === "1") {
+        await db.query(
+          "update erp_modules set state='active' where key='production'",
+        );
+        await page.goto(origin + "/dashboard/production/equipment");
+        await page
+          .getByRole("button", { name: "New equipment", exact: true })
+          .first()
+          .waitFor();
+        for (const query of [
+          "",
+          "?q=Mixer",
+          "?grid=" +
+            encodeURIComponent(
+              JSON.stringify({ sorts: [{ field: "name", direction: "asc" }] }),
+            ),
+        ]) {
+          const response = await page.request.get(
+            origin + "/api/operations/equipment" + query,
+          );
+          assert.equal(response.status(), 200, await response.text());
+        }
+        assert.equal(
+          await page
+            .getByText("Could not load this workspace", { exact: true })
+            .count(),
+          0,
+        );
+        await page.setViewportSize({ width: 390, height: 844 });
+        await capture("equipment-workspace-mobile");
+        await accessible();
+        assert.deepEqual(runtimeErrors, []);
+        return;
+      }
       if (process.env.TEST_PACKAGING_ONLY === "1") {
         const custom = "Lined bulk bag " + suffix;
         await page.setViewportSize({ width: 390, height: 844 });
