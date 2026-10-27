@@ -50,6 +50,7 @@ export function useWorkspaceGroups() {
             icon: Factory,
             links: [
               ["Production orders", "/dashboard/production/orders"],
+              ["Equipment & cleaning", "/dashboard/production/equipment"],
               ["Formulas & BOM", "/dashboard/production/formulas"],
               ["Production records", "/dashboard/production"],
             ],

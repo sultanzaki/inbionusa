@@ -2392,8 +2392,32 @@ Object.assign(messages, {
     "Tetapkan kata sandi BOM saat membuat formula.",
 });
 
-Object.assign(messages, {"Edit formula":"Edit formula"});
+Object.assign(messages, { "Edit formula": "Edit formula" });
 
 Object.assign(messages, {
   "Select or enter a packaging type": "Pilih atau masukkan jenis kemasan",
+});
+
+Object.assign(messages, {
+  "Equipment & cleaning": "Alat dan pencucian",
+  "New equipment": "Alat baru",
+  "Edit equipment": "Ubah alat",
+  "Equipment code": "Kode alat",
+  "Equipment name": "Nama alat",
+  "Serial number": "Nomor seri",
+  Capacity: "Kapasitas",
+  "Start cleaning": "Mulai pencucian",
+  "Record cleaning inspection": "Catat pemeriksaan pencucian",
+  "Cleaned by": "Petugas pencucian",
+  "Inspected by": "Petugas pemeriksa",
+  "Cleaning method": "Metode pencucian",
+  "Cleaning agent": "Bahan pembersih",
+  "Equipment condition": "Kondisi alat",
+  "Inspection result": "Hasil pemeriksaan",
+  "Use for production": "Gunakan untuk produksi",
+  "Finish equipment use": "Selesaikan penggunaan alat",
+  "Choose one production order or production record.":
+    "Pilih satu perintah produksi atau catatan produksi.",
+  "Cleaning and inspection are required before reuse.":
+    "Pencucian dan pemeriksaan wajib dilakukan sebelum digunakan kembali.",
 });
