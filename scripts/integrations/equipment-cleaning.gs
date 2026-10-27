@@ -5,6 +5,7 @@ const CLEANING_HEADERS = [
   "Area Kerja",
   "Nama Alat",
   "Produk/Bahan/Sampel Terakhir Diproses Menggunakan Alat",
+  'Batch Number Produksi (Jika Bukan Produk Inbionusa, Tuliskan "-")',
   "Nama Petugas",
   "Waktu Mulai Pencucian",
   "Waktu Selesai Pencucian",
@@ -19,7 +20,6 @@ const CLEANING_HEADERS = [
   "Jika Ditemukan Ketidaksesuaian, Tindakan Apa Yang Dilakukan?",
   "Nama Pemeriksa/Penanggung Jawab Verifikasi",
   "Apakah Alat Sudah Dinyatakan Siap Digunakan Kembali?",
-  "Nomor Batch",
   "Notes"
 ];
 const OUTBOX = '_ERP_Cleaning_Outbox';

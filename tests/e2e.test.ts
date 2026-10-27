@@ -437,9 +437,11 @@ test(
           "Jenis Potensi Najis": "Ringan",
           "Kondisi Alat Setelah Pencucian": "Baik",
         });
-        for (const i of [11, 14, 18]) fields[cleaningHeaders[i]] = "Ya";
-        fields[cleaningHeaders[12]] = "Tidak";
-        fields[cleaningHeaders[15]] = "Sesuai";
+        for (const i of [12, 15, 19]) fields[cleaningHeaders[i]] = "Ya";
+        fields[cleaningHeaders[13]] = "Tidak";
+        fields[cleaningHeaders[16]] = "Sesuai";
+        fields[cleaningHeaders[5]] = "-";
+        fields[cleaningHeaders[4]] = "Solvent";
         const payload = {
           event_id: randomUUID(),
           source_id: "test-sheet",
@@ -481,7 +483,12 @@ test(
           .first()
           .locator("summary")
           .click();
-        await page.getByText("Nomor Batch", { exact: true }).waitFor();
+        await page
+          .getByText(
+            'Batch Number Produksi (Jika Bukan Produk Inbionusa, Tuliskan "-")',
+            { exact: true },
+          )
+          .waitFor();
         await capture("equipment-form-history-mobile");
         await accessible();
         assert.deepEqual(runtimeErrors, []);

@@ -27,6 +27,15 @@ before(async () => {
   );
   await db.query(integrationSql);
   await db.query(integrationSql);
+  const latest = await readFile(
+    new URL(
+      "../src/lib/db/migrations/032_equipment_form_batch_field.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  await db.query(latest);
+  await db.query(latest);
 });
 after(() => db.end());
 beforeEach(() => db.query("begin"));
@@ -214,7 +223,8 @@ test("form imports preserve answers, reject mismatches and replay without duplic
     "Metode Pencucian (Sesuai SOP)": "Wash",
     "Kondisi Alat Setelah Pencucian": "Intact",
     Notes: "Saved exactly",
-    "Nomor Batch": "",
+    'Batch Number Produksi (Jika Bukan Produk Inbionusa, Tuliskan "-")': "-",
+    "Produk/Bahan/Sampel Terakhir Diproses Menggunakan Alat": "Solvent",
   };
   const now = (
     await db.query(
@@ -309,11 +319,54 @@ test("form imports preserve answers, reject mismatches and replay without duplic
     finished_at: (
       await db.query("select (now()-interval '30 seconds')::text t")
     ).rows[0].t,
-    fields: { ...fields, "Nomor Batch": "WRONG" },
+    fields: {
+      ...fields,
+      'Batch Number Produksi (Jika Bukan Produk Inbionusa, Tuliskan "-")':
+        "WRONG",
+    },
   };
   await db.query("savepoint batch");
   await assert.rejects(() => run(next), /does not match/);
   await db.query("rollback to savepoint batch");
-  next.fields["Nomor Batch"] = number;
+  next.fields[
+    'Batch Number Produksi (Jika Bukan Produk Inbionusa, Tuliskan "-")'
+  ] = number;
+  await db.query("savepoint dash");
+  next.fields[
+    'Batch Number Produksi (Jika Bukan Produk Inbionusa, Tuliskan "-")'
+  ] = "-";
+  await assert.rejects(() => run(next), /real batch number/);
+  await db.query("rollback to savepoint dash");
+  next.fields[
+    'Batch Number Produksi (Jika Bukan Produk Inbionusa, Tuliskan "-")'
+  ] = number;
   assert.equal((await run(next)).result, "pass");
+  const external = {
+    ...next,
+    event_id: randomUUID(),
+    finished_at: (
+      await db.query("select (now()-interval '10 seconds')::text t")
+    ).rows[0].t,
+    fields: {
+      ...next.fields,
+      'Batch Number Produksi (Jika Bukan Produk Inbionusa, Tuliskan "-")': "-",
+    },
+  };
+  const ext = await run(external);
+  assert.equal(ext.result, "pass");
+  assert.equal(
+    (
+      await db.query(
+        "select usage_id from erp_equipment_cleaning where id=$1",
+        [ext.id],
+      )
+    ).rows[0].usage_id,
+    null,
+  );
+  await db.query("savepoint internal");
+  external.event_id = randomUUID();
+  external.fields["Produk/Bahan/Sampel Terakhir Diproses Menggunakan Alat"] =
+    "INDOSTER 01";
+  await assert.rejects(() => run(external), /real batch number/);
+  await db.query("rollback to savepoint internal");
 });

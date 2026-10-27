@@ -4,19 +4,19 @@
 
 Google Form tetap menjadi tempat pengisian harian. Apps Script terikat pada spreadsheet jawaban, mengirim JSON bertanda tangan ke `POST /api/integrations/equipment-cleaning`. Tidak perlu membuat Web App Apps Script atau endpoint Google yang dapat dibaca publik. ERP menyimpan semua 21 kolom dan menampilkan jawaban pada detail alat → Cleaning records.
 
-Kolom tambahan memakai judul **Nomor Batch**. Urutan kolom bebas; semua judul harus sama persis (spasi tepi diabaikan). Form lain pada spreadsheet yang sama tidak diproses. Jangan menyisipkan password login atau kunci Supabase ke form maupun spreadsheet.
+Kolom batch terbaru memakai judul persis **Batch Number Produksi (Jika Bukan Produk Inbionusa, Tuliskan "-")**, setelah kolom produk/bahan/sampel. Antrean lama dengan judul “Nomor Batch” tetap diterima sebagai alias pada payload. Urutan kolom bebas; semua judul harus sama persis (spasi tepi diabaikan). Form lain pada spreadsheet yang sama tidak diproses. Jangan menyisipkan password login atau kunci Supabase ke form maupun spreadsheet.
 
 ## Persiapan master
 
 - Nama Alat harus cocok dengan nama alat di ERP dan Area Kerja harus cocok dengan nama lokasi alat. Pasangan harus unik. Perbedaan kapital dan spasi tepi diabaikan; nama ambigu ditolak.
 - Nama Petugas dan Nama Pemeriksa harus cocok dengan nama lengkap pengguna ERP yang aktif, tidak diwajibkan mengganti password, dan memiliki izin tulis Production serta akses lokasi alat. Orang yang sama boleh mengisi keduanya. Jangan membuat akun bersama untuk menggantikan identitas operator.
 - Sebelum mencuci alat bekas pakai, selesaikan penggunaan alat di ERP. Pencucian tidak otomatis menghentikan batch yang sedang berjalan.
-- Nomor Batch wajib untuk alat yang sudah pernah digunakan. Cocokkan dengan nomor lot hasil produksi, nomor production order (MO), atau nomor production record (PRD) pada pemakaian terakhir alat. Teks produk terakhir hanya keterangan, bukan pengganti identitas batch. Untuk pencucian awal alat baru, Nomor Batch harus kosong.
+- Nomor batch nyata wajib untuk produk INBIONUSA dan pemakaian ERP yang belum mempunyai hasil pencucian lulus. Cocokkan dengan nomor lot hasil produksi, nomor production order (MO), atau nomor production record (PRD) pada pemakaian terakhir alat. Teks produk terakhir hanya keterangan, bukan pengganti identitas batch. Untuk bahan nonproduk INBIONUSA seperti Solvent/Acid/Base, isi `-`. Tanda ini hanya diterima jika tidak ada pemakaian ERP yang belum terselesaikan pencuciannya; catatan nonproduksi tidak ditautkan secara palsu ke batch ERP sebelumnya. Produk INBIONUSA yang belum dicatat pemakaian batchnya perlu didaftarkan terlebih dahulu.
 - Pencucian yang lebih lama dari penggunaan/inspeksi terakhir ditolak untuk diperiksa manual. Jangan melakukan backfill buta lalu menganggap kondisi alat saat ini sudah benar.
 
 ## Konfigurasi server ERP
 
-Terapkan migrasi 031 setelah 030, deploy kode aplikasi, lalu atur variabel server berikut pada Vercel (jangan memakai awalan NEXT_PUBLIC):
+Terapkan migrasi 031 setelah 030, kemudian 032 untuk kolom batch terbaru, deploy kode aplikasi, lalu atur variabel server berikut pada Vercel (jangan memakai awalan NEXT_PUBLIC):
 
 | Variabel | Isi |
 |---|---|
@@ -68,3 +68,7 @@ Secret hanya berada di environment server dan Script properties, tidak di URL/ce
 ## Penghapusan data uji
 
 Migrasi 031 menambahkan tabel `erp_equipment_imports` yang mereferensikan riwayat pencucian. SQL reset alat yang lama perlu menambahkan penghapusan receipt **sebelum** riwayat pencucian, kemudian penggunaan dan master alat. Setelah reset, jangan mengirim ulang outbox lama tanpa meninjau dampaknya. Audit dan replay log tidak dihapus oleh reset alat tersebut.
+
+## Memperbarui script yang sudah terpasang
+
+Ganti seluruh Code.gs dengan versi terbaru. Pertahankan Script properties, nama tab outbox, dan isi antrean. Jalankan installEquipmentSync kembali; script memasang ulang hanya trigger miliknya agar tidak ganda. Pastikan header batch spreadsheet memakai judul terbaru dengan tanda kutip biasa pada "-". Jangan menghapus riwayat outbox SENT atau membuat event ID baru hanya untuk mengirim ulang pesan yang sama.

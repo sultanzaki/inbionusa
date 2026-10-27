@@ -37,44 +37,63 @@ test("all six safety answers must match the explicitly configured approved value
     ready: ["Ya"],
   });
   for (const [i, v] of [
-    [11, "Ya"],
-    [12, "Tidak"],
-    [13, "Baik"],
-    [14, "Ya"],
-    [15, "Sesuai"],
-    [18, "Ya"],
+    [12, "Ya"],
+    [13, "Tidak"],
+    [14, "Baik"],
+    [15, "Ya"],
+    [16, "Sesuai"],
+    [19, "Ya"],
   ] as const)
     fields[cleaningHeaders[i]] = v;
-  fields[cleaningHeaders[8]] = "Ringan";
-  fields[cleaningHeaders[9]] = "Pencucian Najis Ringan (Air)";
+  fields[cleaningHeaders[9]] = "Ringan";
+  fields[cleaningHeaders[10]] = "Pencucian Najis Ringan (Air)";
   assert.ok(inspectionPassed(fields, config));
-  fields[cleaningHeaders[12]] = "Ya";
+  fields[cleaningHeaders[13]] = "Ya";
   assert.equal(inspectionPassed(fields, config), false);
-  fields[cleaningHeaders[12]] = "Tidak";
-  fields[cleaningHeaders[18]] = "Belum";
+  fields[cleaningHeaders[13]] = "Tidak";
+  fields[cleaningHeaders[19]] = "Belum";
   assert.equal(inspectionPassed(fields, config), false);
   assert.equal(cleaningHeaders.length, 21);
-  assert.ok(cleaningHeaders.includes("Nomor Batch"));
+  assert.ok(
+    cleaningHeaders.includes(
+      'Batch Number Produksi (Jika Bukan Produk Inbionusa, Tuliskan "-")',
+    ),
+  );
   assert.equal(formSchema.safeParse({ fields }).success, false);
 });
 
 test("actual Google Form answers permit only complete checks and the matching cleaning method", () => {
   const fields = Object.fromEntries(cleaningHeaders.map((h) => [h, ""]));
   Object.assign(fields, {
-    [cleaningHeaders[8]]: "Sedang",
-    [cleaningHeaders[9]]: "Pencucian Najis Sedang (Air + Sabun)",
-    [cleaningHeaders[11]]: "Ya, sesuai prosedur",
-    [cleaningHeaders[12]]: "Tidak ditemukan residu yang terlihat",
-    [cleaningHeaders[13]]: "Bersih secara visual",
-    [cleaningHeaders[14]]:
+    [cleaningHeaders[9]]: "Sedang",
+    [cleaningHeaders[10]]: "Pencucian Najis Sedang (Air + Sabun)",
+    [cleaningHeaders[12]]: "Ya, sesuai prosedur",
+    [cleaningHeaders[13]]: "Tidak ditemukan residu yang terlihat",
+    [cleaningHeaders[14]]: "Bersih secara visual",
+    [cleaningHeaders[15]]:
       "Sudah ditangani sesuai prosedur, tetapi belum disimpan",
-    [cleaningHeaders[15]]: "Selesai dan memenuhi kriteria pemeriksaan",
-    [cleaningHeaders[18]]: "Siap digunakan kembali",
+    [cleaningHeaders[16]]: "Selesai dan memenuhi kriteria pemeriksaan",
+    [cleaningHeaders[19]]: "Siap digunakan kembali",
   });
   assert.equal(inspectionPassed(fields), true);
-  fields[cleaningHeaders[11]] = "Tidak berlaku sesuai SOP";
+  fields[cleaningHeaders[12]] = "Tidak berlaku sesuai SOP";
   assert.equal(inspectionPassed(fields), false);
-  fields[cleaningHeaders[11]] = "Ya, sesuai prosedur";
-  fields[cleaningHeaders[9]] = "Pencucian Najis Ringan (Air)";
+  fields[cleaningHeaders[12]] = "Ya, sesuai prosedur";
+  fields[cleaningHeaders[10]] = "Pencucian Najis Ringan (Air)";
   assert.equal(inspectionPassed(fields), false);
+});
+
+test("legacy queued payloads retain their batch mapping while the latest header follows form order", () => {
+  const fields = Object.fromEntries(cleaningHeaders.map((h) => [h, "test"]));
+  delete fields[cleaningHeaders[5]];
+  fields["Nomor Batch"] = "200.01.27102026.27";
+  const value = formSchema.parse({
+    event_id: "12345678-1234-4234-8234-123456789abc",
+    source_id: "source",
+    started_at: "2026-10-27T01:00:00Z",
+    finished_at: "2026-10-27T02:00:00Z",
+    fields,
+  });
+  assert.equal(value.fields[cleaningHeaders[5]], fields["Nomor Batch"]);
+  assert.equal(cleaningHeaders[6], "Nama Petugas");
 });

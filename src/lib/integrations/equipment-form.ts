@@ -6,6 +6,7 @@ export const cleaningHeaders = [
   "Area Kerja",
   "Nama Alat",
   "Produk/Bahan/Sampel Terakhir Diproses Menggunakan Alat",
+  `Batch Number Produksi (Jika Bukan Produk Inbionusa, Tuliskan "-")`,
   "Nama Petugas",
   "Waktu Mulai Pencucian",
   "Waktu Selesai Pencucian",
@@ -20,7 +21,6 @@ export const cleaningHeaders = [
   "Jika Ditemukan Ketidaksesuaian, Tindakan Apa Yang Dilakukan?",
   "Nama Pemeriksa/Penanggung Jawab Verifikasi",
   "Apakah Alat Sudah Dinyatakan Siap Digunakan Kembali?",
-  "Nomor Batch",
   "Notes",
 ] as const;
 export const formSchema = z
@@ -29,8 +29,21 @@ export const formSchema = z
     source_id: z.string().min(1).max(200),
     started_at: z.iso.datetime({ offset: true }),
     finished_at: z.iso.datetime({ offset: true }),
-    fields: z.object(
-      Object.fromEntries(cleaningHeaders.map((h) => [h, z.string().max(4000)])),
+    fields: z.preprocess(
+      (value) => {
+        if (value && typeof value === "object" && !Array.isArray(value)) {
+          const fields = { ...value } as Record<string, unknown>;
+          if (!(cleaningHeaders[5] in fields) && "Nomor Batch" in fields)
+            fields[cleaningHeaders[5]] = fields["Nomor Batch"];
+          return fields;
+        }
+        return value;
+      },
+      z.object(
+        Object.fromEntries(
+          cleaningHeaders.map((h) => [h, z.string().max(4000)]),
+        ),
+      ),
     ),
   })
   .strict();
@@ -78,12 +91,12 @@ export function inspectionPassed(
     })
     .parse(JSON.parse(rawConfig));
   const indexes = {
-    rinse: 11,
-    residue: 12,
-    condition: 13,
-    dry: 14,
-    outcome: 15,
-    ready: 18,
+    rinse: "Apakah Pembilasan Telah Dilakukan Sesuai Prosedur?",
+    residue: "Apakah Terdapat Residu Produk Atau Bahan Setelah Pencucian?",
+    condition: "Kondisi Alat Setelah Pencucian",
+    dry: "Apakah Alat Sudah Dikeringkan Atau Ditangani Sesuai Prosedur Penyimpanan?",
+    outcome: "Hasil Akhir Kegiatan Pencucian",
+    ready: "Apakah Alat Sudah Dinyatakan Siap Digunakan Kembali?",
   } as const;
   const methods: Record<string, string> = {
     Ringan: "Pencucian Najis Ringan (Air)",
@@ -91,16 +104,16 @@ export function inspectionPassed(
     Berat: "Pencucian Najis Berat (Air + Tanah)",
   };
   if (
-    !methods[fields[cleaningHeaders[8]]?.trim()] ||
-    methods[fields[cleaningHeaders[8]].trim()] !==
-      fields[cleaningHeaders[9]]?.trim()
+    !methods[fields["Jenis Potensi Najis"]?.trim()] ||
+    methods[fields["Jenis Potensi Najis"].trim()] !==
+      fields["Metode Pencucian (Sesuai SOP)"]?.trim()
   )
     return false;
   return Object.entries(indexes).every(([key, index]) =>
     config[key as keyof typeof config].some(
       (a) =>
         a.trim().toLocaleLowerCase("id") ===
-        fields[cleaningHeaders[index]].trim().toLocaleLowerCase("id"),
+        fields[index].trim().toLocaleLowerCase("id"),
     ),
   );
 }
