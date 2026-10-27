@@ -14,6 +14,7 @@ import { z } from "zod";
 export const maxDuration = 60;
 type Context = { params: Promise<{ entity: string }> };
 const lookups = new Set([
+  "equipment_production_records",
   "suppliers",
   "products",
   "units",

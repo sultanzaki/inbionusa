@@ -1287,3 +1287,92 @@ for (const name of [
   "cancel_sample",
 ])
   workCommands[name].verb = "write";
+
+workCommands.save_equipment = {
+  label: "New equipment",
+  editLabel: "Edit equipment",
+  help: "",
+  module: "production",
+  fields: [
+    area("code", "Equipment code"),
+    area("name", "Equipment name"),
+    ref("location_id", "Location", "locations"),
+    area("serial_number", "Serial number", false),
+    area("capacity", "Capacity", false),
+  ],
+};
+workCommands.start_equipment_cleaning = {
+  label: "Start cleaning",
+  help: "",
+  module: "production",
+  confirm: true,
+  states: ["dirty", "repair", "ready"],
+  fields: [reason],
+};
+workCommands.finish_equipment_cleaning = {
+  label: "Record cleaning inspection",
+  help: "",
+  module: "production",
+  confirm: true,
+  states: ["cleaning"],
+  fields: [
+    ref("cleaned_by", "Cleaned by", "staff"),
+    ref("inspected_by", "Inspected by", "staff"),
+    area("method", "Cleaning method"),
+    area("agent", "Cleaning agent", false),
+    area("condition", "Equipment condition"),
+    select("result", "Inspection result", ["pass", "fail"]),
+    reason,
+  ],
+};
+workCommands.use_equipment = {
+  label: "Use for production",
+  help: "Choose one production order or production record.",
+  module: "production",
+  confirm: true,
+  states: ["ready"],
+  fields: [
+    ref(
+      "manufacturing_order_id",
+      "Production order",
+      "manufacturing_orders",
+      false,
+    ),
+    ref(
+      "movement_id",
+      "Production record",
+      "equipment_production_records",
+      false,
+    ),
+    reason,
+  ],
+};
+workCommands.finish_equipment_use = {
+  label: "Finish equipment use",
+  help: "Cleaning and inspection are required before reuse.",
+  module: "production",
+  confirm: true,
+  states: ["in_use"],
+  fields: [reason],
+};
+workCollections.equipment = {
+  title: "Equipment & cleaning",
+  singular: "Equipment",
+  module: "production",
+  description: "",
+  create: "save_equipment",
+  actions: [
+    "save_equipment",
+    "start_equipment_cleaning",
+    "finish_equipment_cleaning",
+    "use_equipment",
+    "finish_equipment_use",
+  ],
+  columns: [
+    ...identity,
+    c("code", "Code"),
+    c("name", "Equipment name"),
+    c("location", "Location"),
+  ],
+};
+workPaths.equipment = "production/equipment";
