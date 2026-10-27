@@ -10,6 +10,9 @@ export function proxy(request: NextRequest) {
   // Halaman login & aset statis dilewati.
   if (
     pathname === "/login" ||
+    pathname.startsWith("/forms/") ||
+    pathname === "/api/forms" ||
+    pathname.startsWith("/api/forms/") ||
     pathname === "/api/integrations/equipment-cleaning" ||
     pathname.startsWith("/api/data/") ||
     pathname.startsWith("/api/erp/") ||

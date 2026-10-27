@@ -47,21 +47,23 @@ function jwt(role: string) {
 }
 
 test(
-  process.env.TEST_CONTROLS_ONLY === "1"
-    ? "Phase 4 transaction controls"
-    : process.env.TEST_UX_ONLY === "1"
-      ? "Operational UX phases 1–3"
-      : process.env.TEST_FINANCE_ONLY === "1"
-        ? "Operational Finance and Service workflows"
-        : process.env.TEST_RELEASE_READY_ONLY === "1"
-          ? "Release theme RBAC and insights"
-          : process.env.TEST_GROWTH_ONLY === "1"
-            ? "Purchase CRM and product document workflows"
-            : process.env.TEST_MOBILE_NAV_ONLY === "1"
-              ? "Mobile console navigation"
-              : process.env.TEST_ERP_ONLY === "1"
-                ? "ERP production browser workflows"
-                : "production app: authenticated reads, pagination, mutations, search, error handling and logout",
+  process.env.TEST_NATIVE_FORMS_ONLY === "1"
+    ? "Native Forms: publish, anonymous uploads and equipment cleaning"
+    : process.env.TEST_CONTROLS_ONLY === "1"
+      ? "Phase 4 transaction controls"
+      : process.env.TEST_UX_ONLY === "1"
+        ? "Operational UX phases 1–3"
+        : process.env.TEST_FINANCE_ONLY === "1"
+          ? "Operational Finance and Service workflows"
+          : process.env.TEST_RELEASE_READY_ONLY === "1"
+            ? "Release theme RBAC and insights"
+            : process.env.TEST_GROWTH_ONLY === "1"
+              ? "Purchase CRM and product document workflows"
+              : process.env.TEST_MOBILE_NAV_ONLY === "1"
+                ? "Mobile console navigation"
+                : process.env.TEST_ERP_ONLY === "1"
+                  ? "ERP production browser workflows"
+                  : "production app: authenticated reads, pagination, mutations, search, error handling and logout",
   { timeout: 600000 },
   async () => {
     const db = new Client({ connectionString: dbUrl });
@@ -109,7 +111,60 @@ test(
     let missingPerformanceRPCs = false;
     let holdSession: Promise<void> | null = null;
     let observeERPRead: (() => void) | null = null;
+    const formFiles = new Map<string, Buffer>();
     const relay = createServer(async (req, res) => {
+      if (
+        process.env.TEST_NATIVE_FORMS_ONLY === "1" &&
+        req.url?.startsWith("/storage/v1/")
+      ) {
+        const url = req.url;
+        if (
+          url === "/storage/v1/bucket/form-attachments" &&
+          req.method === "GET"
+        ) {
+          res.writeHead(200, { "content-type": "application/json" });
+          res.end(
+            JSON.stringify({
+              id: "form-attachments",
+              name: "form-attachments",
+              public: false,
+            }),
+          );
+          return;
+        }
+        const chunks: Buffer[] = [];
+        for await (const chunk of req) chunks.push(Buffer.from(chunk));
+        if (
+          url.startsWith("/storage/v1/object/form-attachments/") &&
+          req.method === "POST"
+        ) {
+          formFiles.set(url, Buffer.concat(chunks));
+          res.writeHead(200, { "content-type": "application/json" });
+          res.end(
+            JSON.stringify({
+              Key: url.replace("/storage/v1/object/", ""),
+              Id: randomUUID(),
+            }),
+          );
+          return;
+        }
+        if (
+          url.startsWith("/storage/v1/object/sign/form-attachments/") &&
+          req.method === "POST"
+        ) {
+          res.writeHead(200, { "content-type": "application/json" });
+          res.end(
+            JSON.stringify({
+              signedURL: url.replace("/storage/v1", "") + "?token=local-test",
+            }),
+          );
+          return;
+        }
+        res.writeHead(404, { "content-type": "application/json" });
+        res.end("{}");
+        return;
+      }
+
       if (req.url === "/rest/v1/rpc/qc_session_user" && holdSession)
         await holdSession;
       if (req.url === "/rest/v1/rpc/erp_read") observeERPRead?.();
@@ -405,6 +460,225 @@ test(
         );
         assert.equal(scoped.status(), 503);
         assert.match((await scoped.json()).message, /database update/);
+        return;
+      }
+      if (process.env.TEST_NATIVE_FORMS_ONLY === "1") {
+        await db.query(
+          "update erp_modules set state='active' where key='production'",
+        );
+        await page.goto(origin + "/dashboard/forms");
+        await page
+          .getByRole("button", { name: "Form baru", exact: true })
+          .click();
+        await page
+          .getByRole("button", {
+            name: "Tambah pertanyaan / upload",
+            exact: true,
+          })
+          .click();
+        await page.getByLabel("Label", { exact: true }).nth(1).fill("Bukti");
+        await page
+          .getByRole("combobox", { name: "Tipe pertanyaan 2", exact: true })
+          .selectOption("file");
+        await page
+          .getByRole("button", { name: "Simpan draft", exact: true })
+          .click();
+        await page
+          .getByRole("button", { name: "Terbitkan", exact: true })
+          .click();
+        const link = page.getByRole("link", { name: "Buka form", exact: true });
+        await link.waitFor();
+        const path = await link.getAttribute("href");
+        assert.ok(path);
+        const token = path!.split("/").pop();
+        const record = (
+          await db.query("select id from erp_forms where public_token=$1", [
+            token,
+          ])
+        ).rows[0].id;
+        const anonymous = await browser.newContext({
+          viewport: { width: 390, height: 844 },
+          timezoneId: "Asia/Jakarta",
+        });
+        try {
+          const publicPage = await anonymous.newPage();
+          await publicPage.goto(origin + path);
+          await publicPage
+            .getByLabel(/^Nama pengisi/)
+            .fill("Operator tanpa akun");
+          const { PDFDocument } = await import("pdf-lib");
+          const pdf = await PDFDocument.create();
+          pdf.addPage();
+          const bytes = Buffer.from(await pdf.save());
+          await publicPage.getByLabel("Bukti", { exact: true }).setInputFiles({
+            name: "evidence.pdf",
+            mimeType: "application/pdf",
+            buffer: bytes,
+          });
+          await publicPage
+            .getByRole("button", { name: "Kirim jawaban", exact: true })
+            .click();
+          await publicPage
+            .getByRole("heading", {
+              name: "Jawaban berhasil dikirim",
+              exact: true,
+            })
+            .waitFor();
+          const submission = (
+            await db.query(
+              "select * from erp_form_submissions where form_id=$1",
+              [record],
+            )
+          ).rows[0];
+          assert.equal(submission.files.length, 1);
+          assert.equal(submission.answers.name, "Operator tanpa akun");
+          assert.equal(formFiles.size, 1);
+          assert.equal(
+            (
+              await anonymous.request.get(
+                origin + "/api/forms/" + submission.id + "/files/0",
+                { maxRedirects: 0 },
+              )
+            ).status(),
+            401,
+          );
+          const download = await page.request.get(
+            origin + "/api/forms/" + submission.id + "/files/0",
+            { maxRedirects: 0 },
+          );
+          assert.ok([302, 307].includes(download.status()));
+          const qr = await page.request.get(
+            origin + "/api/forms/" + record + "/qr",
+          );
+          assert.equal(qr.status(), 200);
+          assert.match(qr.headers()["content-type"], /image\/png/);
+          await page.reload();
+          await page
+            .getByRole("button", { name: "Form baru", exact: true })
+            .waitFor();
+          await capture("forms-admin-desktop");
+          await accessible();
+          await page
+            .getByRole("navigation", { name: "Forms", exact: true })
+            .getByRole("button")
+            .first()
+            .click();
+          await page.getByText("Jawaban terbaru", { exact: true }).waitFor();
+          await page.getByRole("button", { name: "Jeda", exact: true }).click();
+          assert.equal(
+            (
+              await anonymous.request.get(origin + "/api/forms/public/" + token)
+            ).status(),
+            404,
+          );
+          const { cleaningTemplate } =
+            await import("../src/lib/forms/cleaning-template");
+          const create = await page.request.post(origin + "/api/forms", {
+            data: { action: "create", template: cleaningTemplate },
+            headers: { origin },
+          });
+          assert.equal(create.status(), 200, await create.text());
+          const created = await create.json(),
+            detail = await (
+              await page.request.get(origin + "/api/forms?id=" + created.id)
+            ).json();
+          const publish = await page.request.post(origin + "/api/forms", {
+            data: {
+              action: "publish",
+              id: created.id,
+              version: detail.version,
+            },
+            headers: { origin },
+          });
+          assert.equal(publish.status(), 200, await publish.text());
+          const cleanForm = await (
+            await page.request.get(origin + "/api/forms?id=" + created.id)
+          ).json();
+          const loc = (
+            await db.query(
+              "select id,name from erp_locations where code='MAIN'",
+            )
+          ).rows[0];
+          const asset = (
+            await db.query(
+              "insert into erp_equipment(code,name,location_id) values($1,$1,$2) returning id",
+              ["NATIVE-" + suffix, loc.id],
+            )
+          ).rows[0].id;
+          const date = (await db.query("select erp_today()::text d")).rows[0].d;
+          await publicPage.goto(origin + "/forms/" + cleanForm.public_token);
+          for (const f of cleaningTemplate.fields) {
+            let value = "Tidak ada";
+            if (f.type === "date") value = date;
+            if (f.type === "time") value = "00:00";
+            if (f.type === "select") value = f.options[0];
+            if (f.binding === "Area Kerja") value = loc.name;
+            if (f.binding === "Nama Alat") value = asset;
+            if (
+              f.binding === "Nama Petugas" ||
+              f.binding === "Nama Pemeriksa/Penanggung Jawab Verifikasi"
+            )
+              value = user.id;
+            if (f.binding?.startsWith("Batch Number Produksi")) value = "-";
+            if (
+              f.binding ===
+              "Produk/Bahan/Sampel Terakhir Diproses Menggunakan Alat"
+            )
+              value = "Solvent";
+            const input = publicPage.locator("#" + f.id);
+            if (
+              f.type === "select" ||
+              f.binding?.startsWith("Batch Number Produksi")
+            )
+              await input.selectOption(value);
+            else await input.fill(value);
+          }
+          assert.ok(
+            await publicPage.evaluate(
+              () => document.documentElement.scrollWidth <= innerWidth,
+            ),
+          );
+          await publicPage.screenshot({
+            path: artifacts + "/native-cleaning-mobile.png",
+            fullPage: true,
+            animations: "disabled",
+          });
+          await publicPage
+            .getByRole("button", { name: "Kirim jawaban", exact: true })
+            .click();
+          await publicPage
+            .getByRole("heading", {
+              name: "Jawaban berhasil dikirim",
+              exact: true,
+            })
+            .waitFor();
+          await publicPage
+            .getByText("Catatan tersimpan. Alat siap digunakan kembali.", {
+              exact: true,
+            })
+            .waitFor();
+          assert.equal(
+            (
+              await db.query("select state from erp_equipment where id=$1", [
+                asset,
+              ])
+            ).rows[0].state,
+            "ready",
+          );
+          const stored = (
+            await db.query(
+              "select answers from erp_form_submissions where form_id=$1",
+              [created.id],
+            )
+          ).rows[0].answers;
+          const assetField = cleaningTemplate.fields.find(
+            (f) => f.binding === "Nama Alat",
+          )!;
+          assert.equal(stored[assetField.id], "NATIVE-" + suffix);
+        } finally {
+          await anonymous.close();
+        }
+        assert.deepEqual(runtimeErrors, []);
         return;
       }
       if (process.env.TEST_EQUIPMENT_FORM_ONLY === "1") {
