@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cleaningTemplate } from "@/lib/forms/cleaning-template";
+import { useConfirm } from "@/components/workspace/confirm-provider";
 import {
   templateSchema,
   type Template,
@@ -69,6 +69,7 @@ const tabs = [
   { key: "share", name: "Bagikan", icon: Link2 },
 ] as const;
 export function FormsAdmin() {
+  const confirm = useConfirm();
   const [list, setList] = useState<RecordForm[]>([]),
     [ready, setReady] = useState(false),
     [selected, setSelected] = useState<RecordForm | null>(null),
@@ -161,6 +162,16 @@ export function FormsAdmin() {
         v = await r.json();
       if (!r.ok) throw Error(v.message);
       await load();
+      if (action === "delete") {
+        setSelected(null);
+        setDraft(null);
+        setActive(0);
+        setTab("questions");
+        setNotice(
+          "Form dihapus. Jawaban dan lampiran tetap tersimpan sebagai riwayat.",
+        );
+        return;
+      }
       await load(v.id);
       if (action === "create") {
         setActive(0);
@@ -254,14 +265,6 @@ export function FormsAdmin() {
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">Forms</h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            disabled={busy || dirty}
-            onClick={() => act("create", cleaningTemplate)}
-          >
-            <ListChecks />
-            Template pencucian
-          </Button>
           <Button
             disabled={busy || dirty}
             onClick={() =>
@@ -414,6 +417,23 @@ export function FormsAdmin() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={busy}
+                    onClick={async () => {
+                      const accepted = await confirm({
+                        title: "Hapus form?",
+                        description: `Form “${selected.draft.title}” akan dihapus dari daftar dan tautan pengisiannya dinonaktifkan. Jawaban, lampiran, dan riwayat pencucian tetap tersimpan.${dirty ? " Perubahan draft yang belum disimpan akan dibuang." : ""}`,
+                        confirmLabel: "Hapus form",
+                        destructive: true,
+                      });
+                      if (accepted) await act("delete");
+                    }}
+                  >
+                    <Trash2 />
+                    Hapus form
+                  </Button>
                   {dirty && (
                     <Button
                       size="sm"

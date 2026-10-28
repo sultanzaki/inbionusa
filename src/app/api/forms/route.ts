@@ -34,7 +34,14 @@ export async function POST(request: Request) {
       return privateJson({ message: "Form too large." }, 413);
     const v = z
       .object({
-        action: z.enum(["create", "save", "publish", "pause", "rotate"]),
+        action: z.enum([
+          "create",
+          "save",
+          "publish",
+          "pause",
+          "rotate",
+          "delete",
+        ]),
         id: z.uuid().optional(),
         version: z.number().int().optional(),
         template: templateSchema.optional(),

@@ -4,7 +4,7 @@
 
 Administrator membuka **Administration → Forms** (`/dashboard/admin/forms`). Menu dan tindakan pengelolaan mengikuti hak administrator ERP; pengisian melalui link publik tidak memerlukan akun.
 
-1. Pilih **Form baru** untuk template umum, atau **Template pencucian** untuk template yang terhubung ke alat.
+1. Pilih **Form baru** untuk membuat form umum. Tombol pembuatan template pencucian tidak ditampilkan; form pencucian yang sudah ada tetap dapat digunakan.
 2. Ubah judul/deskripsi, tambah pertanyaan, pilih tipe, atur wajib isi dan pilihan jawaban. Pertanyaan dapat diurutkan naik/turun. Tipe: teks, paragraf, angka, tanggal, waktu, pilihan tunggal, referensi data ERP, file. Editor menampilkan satu pertanyaan sekaligus. Gunakan daftar urutan di desktop atau pemilih pertanyaan di mobile.
 3. Untuk upload, tambahkan pertanyaan lalu pilih tipe **file**. Maksimal tiga field file, masing-masing satu file. PDF, JPG dan PNG didukung; maksimal 2 MB per file dan 3 MB gabungan.
 4. **Simpan draft**, lalu **Terbitkan**. Tombol penerbitan dinonaktifkan selama masih ada perubahan yang belum disimpan.
@@ -12,6 +12,10 @@ Administrator membuka **Administration → Forms** (`/dashboard/admin/forms`). M
 6. Tab **Pratinjau** menampilkan draft tanpa mengirim data. Jawaban terbaru dan file tersedia di tab **Jawaban**. **Jeda** menghentikan penerimaan melalui link tersebut tanpa menghapus jawaban.
 
 Perubahan draft tidak memengaruhi form yang sedang diterbitkan. Menerbitkan ulang menaikkan versi; setiap jawaban menyimpan salinan template dan versinya. Pengiriman yang memakai versi lama ditolak agar pengguna memuat ulang. Pengiriman ulang dengan ID dan isi yang sama tidak menggandakan jawaban.
+
+## Menghapus form
+
+Gunakan **Hapus form** pada toolbar, kemudian geser konfirmasi. Form hilang dari daftar dan link pengisian langsung dinonaktifkan. Penghapusan ini menyimpan jawaban, lampiran privat, serta catatan pencucian yang sudah masuk ke operasional. Tindakan tercatat dalam audit. Akses pengelolaan form yang sudah dihapus ditutup; tidak ada tombol pemulihan atau penghapusan permanen data riwayat pada rilis ini.
 
 ## Referensi data ERP
 
@@ -61,7 +65,7 @@ Jangan mengubah bucket menjadi publik. Pemeriksaan server menolak upload bila bu
 
 ## Deployment dan pemeriksaan
 
-Terapkan migrasi 033 setelah 032 dan 034 setelah 033, lalu deploy aplikasi. Form umum tidak bergantung pada modul Production. Tautan lama `/dashboard/forms` diarahkan ke lokasi Administration yang baru. Migrasi bersifat tambahan, tidak mengubah catatan produksi lama, dan tidak membuat template aktif otomatis. Tidak perlu environment secret Apps Script untuk form native. Akses Storage menggunakan service role server yang sudah digunakan aplikasi.
+Terapkan migrasi 033 setelah 032 dan 034 setelah 033 dan 035 setelah 034, lalu deploy aplikasi. Form umum tidak bergantung pada modul Production. Tautan lama `/dashboard/forms` diarahkan ke lokasi Administration yang baru. Migrasi bersifat tambahan, tidak mengubah catatan produksi lama, dan tidak membuat template aktif otomatis. Tidak perlu environment secret Apps Script untuk form native. Akses Storage menggunakan service role server yang sudah digunakan aplikasi.
 
 Pemeriksaan lokal:
 - `npx tsx --test tests/native-forms.test.ts tests/native-forms-database.test.ts`

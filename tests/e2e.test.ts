@@ -471,6 +471,12 @@ test(
         );
         await page.goto(origin + "/dashboard/forms");
         await page.waitForURL("**/dashboard/admin/forms");
+        assert.equal(
+          await page
+            .getByRole("button", { name: "Template pencucian", exact: true })
+            .count(),
+          0,
+        );
         await page
           .getByRole("button", { name: "Form baru", exact: true })
           .click();
@@ -626,6 +632,39 @@ test(
             ).status(),
             404,
           );
+          await page
+            .getByRole("button", { name: "Hapus form", exact: true })
+            .click();
+          const deleteDialog = page.getByRole("dialog", {
+            name: "Hapus form?",
+            exact: true,
+          });
+          await deleteDialog.waitFor();
+          await submitControl(deleteDialog, "Hapus form");
+          await page
+            .getByText(
+              "Form dihapus. Jawaban dan lampiran tetap tersimpan sebagai riwayat.",
+              { exact: true },
+            )
+            .waitFor();
+          assert.equal(
+            (
+              await db.query("select active from erp_forms where id=$1", [
+                record,
+              ])
+            ).rows[0].active,
+            false,
+          );
+          assert.equal(
+            (
+              await db.query(
+                "select count(*)::int n from erp_form_submissions where form_id=$1",
+                [record],
+              )
+            ).rows[0].n,
+            1,
+          );
+          assert.equal(formFiles.size, 1);
           const { cleaningTemplate } =
             await import("../src/lib/forms/cleaning-template");
           const create = await page.request.post(origin + "/api/forms", {

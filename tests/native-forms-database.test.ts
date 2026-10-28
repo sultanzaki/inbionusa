@@ -15,13 +15,20 @@ before(async () => {
     "032_equipment_form_batch_field",
     "033_native_forms",
     "034_general_forms_references",
+    "035_forms_delete",
   ]) {
     const sql = await readFile(
       new URL("../src/lib/db/migrations/" + name + ".sql", import.meta.url),
       "utf8",
     );
     await db.query(sql);
-    if (name === "033_native_forms" || name === "034_general_forms_references")
+    if (
+      [
+        "033_native_forms",
+        "034_general_forms_references",
+        "035_forms_delete",
+      ].includes(name)
+    )
       await db.query(sql);
   }
 });
@@ -418,4 +425,77 @@ test("reference search paginates deterministically and keeps published source is
     f.form.version,
   );
   assert.deepEqual(await read(0), first);
+});
+
+test("deleting a published form revokes its link and administration access while preserving responses and files", async () => {
+  const f = await referenceFixture();
+  const request = randomUUID();
+  const saved = (
+    await db.query("select erp_form_submit($1,1,$2::uuid,$2::text,$3,$4) r", [
+      f.form.public_token,
+      request,
+      { record: f.product },
+      JSON.stringify([{ name: "evidence.pdf", path: "private/evidence.pdf" }]),
+    ])
+  ).rows[0].r;
+  await admin(f.token, "delete", f.form.id, null, f.form.version);
+  assert.equal(
+    (await admin(f.token, "list")).some(
+      (r: { id: string }) => r.id === f.form.id,
+    ),
+    false,
+  );
+  const stored = (
+    await db.query(
+      "select s.files,f.active,f.deleted_at from erp_form_submissions s join erp_forms f on f.id=s.form_id where s.id=$1",
+      [saved.id],
+    )
+  ).rows[0];
+  assert.equal(stored.active, false);
+  assert.ok(stored.deleted_at);
+  assert.equal(stored.files[0].name, "evidence.pdf");
+  await db.query("savepoint deleted_link");
+  await assert.rejects(
+    db.query("select erp_form_public($1)", [f.form.public_token]),
+    /no_data_found/,
+  );
+  await db.query("rollback to savepoint deleted_link");
+  await db.query("savepoint deleted_detail");
+  await assert.rejects(admin(f.token, "detail", f.form.id), /no_data_found/);
+  await db.query("rollback to savepoint deleted_detail");
+  assert.equal(
+    (
+      await db.query(
+        "select count(*)::int n from erp_work_events where entity='forms' and record_id=$1 and action='delete'",
+        [f.form.id],
+      )
+    ).rows[0].n,
+    1,
+  );
+});
+test("form deletion rejects stale versions and nonadministrators", async () => {
+  const f = await referenceFixture();
+  await db.query("savepoint stale_delete");
+  await assert.rejects(admin(f.token, "delete", f.form.id, null, 1), /changed/);
+  await db.query("rollback to savepoint stale_delete");
+  await db.query(
+    "update users set role='viewer' where id=(select owner_id from erp_forms where id=$1)",
+    [f.form.id],
+  );
+  const viewerToken = randomUUID();
+  await db.query(
+    "insert into sessions(user_id,token,expires_at) select owner_id,$2,now()+interval '1 hour' from erp_forms where id=$1",
+    [f.form.id, viewerToken],
+  );
+  await db.query("savepoint forbidden_delete");
+  await assert.rejects(
+    admin(viewerToken, "delete", f.form.id, null, f.form.version),
+    /insufficient_privilege/,
+  );
+  await db.query("rollback to savepoint forbidden_delete");
+  assert.equal(
+    (await db.query("select active from erp_forms where id=$1", [f.form.id]))
+      .rows[0].active,
+    true,
+  );
 });
