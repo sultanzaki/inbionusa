@@ -1,13 +1,16 @@
+"use client";
+import { useLocale } from "@/components/i18n/locale-provider";
 export function FormLoading() {
+  const { t } = useLocale();
   return (
     <main className="min-h-dvh bg-background px-4 py-8 text-foreground">
       <div
         className="mx-auto max-w-4xl space-y-6"
         role="status"
-        aria-label="Memuat form"
+        aria-label={t("Loading form")}
       >
-        <p className="text-sm font-semibold text-primary">INBIONUSA</p>
-        <span className="sr-only">Memuat form…</span>
+        <p className="text-sm font-semibold text-primary">{t("INBIONUSA")}</p>
+        <span className="sr-only">{t("Loading form…")}</span>
         <div
           aria-hidden="true"
           className="animate-pulse space-y-6 motion-reduce:animate-none"

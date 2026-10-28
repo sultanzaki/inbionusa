@@ -60,7 +60,7 @@ export async function POST(request: Request) {
   try {
     const text = await request.text();
     if (text.length > 12000)
-      return privateJson({ message: "Data terlalu besar." }, 413);
+      return privateJson({ message: "The request is too large." }, 413);
     const value = save.parse(JSON.parse(text));
     if (
       (value.action === "save_warehouse" && !value.name) ||
@@ -68,14 +68,11 @@ export async function POST(request: Request) {
         (!value.room_name || !value.warehouse_id || !value.room_kind))
     )
       return privateJson(
-        { message: "Lengkapi nama, tempat, dan jenis ruangan." },
+        { message: "Enter the name, site and room type." },
         422,
       );
     if (value.id && !value.version)
-      return privateJson(
-        { message: "Muat ulang data sebelum menyimpan." },
-        422,
-      );
+      return privateJson({ message: "Reload the record before saving." }, 422);
     const { action, ...payload } = value;
     const { data, error } = await erpRpc("erp_places_admin", {
       p_action: action,
@@ -86,8 +83,8 @@ export async function POST(request: Request) {
         {
           message:
             action === "save_warehouse"
-              ? "Nama tempat sudah digunakan."
-              : "Nama ruangan sudah digunakan di tempat ini.",
+              ? "This site name already exists."
+              : "This room name already exists at this site.",
         },
         409,
       );
@@ -95,8 +92,7 @@ export async function POST(request: Request) {
   } catch {
     return privateJson(
       {
-        message:
-          "Periksa nama tempat atau ruangan. Maksimal 100 karakter, tanpa tanda /.",
+        message: "Enter a site or room name of up to 100 characters without /.",
       },
       422,
     );

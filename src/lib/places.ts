@@ -1,9 +1,9 @@
 export const roomKinds = {
-  warehouse: "Gudang",
-  laboratory: "Laboratorium",
-  production: "Produksi",
-  office: "Kantor",
-  other: "Lainnya",
+  warehouse: "Warehouse",
+  laboratory: "Laboratory",
+  production: "Production",
+  office: "Office",
+  other: "Other",
 } as const;
 export type RoomKind = keyof typeof roomKinds;
 export type Place = {

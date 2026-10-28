@@ -16,7 +16,7 @@ async function Content({ params }: { params: Promise<{ token: string }> }) {
       <PublicFormPage
         token={token}
         initialForm={null}
-        initialError="Form tidak tersedia."
+        initialError="Form unavailable."
       />
     );
   const { data, error } = await createAdminClient().rpc("erp_form_public", {
@@ -27,7 +27,7 @@ async function Content({ params }: { params: Promise<{ token: string }> }) {
       token={token}
       initialForm={error ? null : (data as PublicForm)}
       initialError={
-        error ? "Form tidak tersedia atau penerimaan jawaban telah dijeda." : ""
+        error ? "This form is unavailable or responses have been paused." : ""
       }
     />
   );

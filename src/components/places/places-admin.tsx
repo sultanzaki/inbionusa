@@ -1,4 +1,5 @@
 "use client";
+import { useLocale } from "@/components/i18n/locale-provider";
 import { useEffect, useRef, useState } from "react";
 import { useUser } from "@/app/(dashboard)/user-context";
 import { canAction } from "@/lib/types";
@@ -46,6 +47,7 @@ const icons = {
   other: DoorOpen,
 };
 export function PlacesAdmin() {
+  const { t } = useLocale();
   const { user } = useUser();
   const allowed = Boolean(user && canAction(user, "manage_users"));
   const [data, setData] = useState<ResponseData | null>(null),
@@ -121,9 +123,9 @@ export function PlacesAdmin() {
       editor &&
       JSON.stringify(editor) !== baseline.current &&
       !(await confirm({
-        title: "Tutup formulir?",
-        description: "Perubahan yang belum disimpan akan dibuang.",
-        confirmLabel: "Tutup",
+        title: t("Close form?"),
+        description: t("Unsaved changes will be discarded."),
+        confirmLabel: t("Close"),
         destructive: false,
       }))
     )
@@ -134,7 +136,7 @@ export function PlacesAdmin() {
     e.preventDefault();
     if (!editor || saving.current) return;
     if (!editor.name.trim() || editor.name.includes("/")) {
-      setError("Isi nama tanpa tanda /.");
+      setError("Enter a name without /.");
       return;
     }
     saving.current = true;
@@ -170,13 +172,9 @@ export function PlacesAdmin() {
       setQuery("");
       setVersion((n) => n + 1);
       invalidateERPReads();
-      setNotice(
-        editor.type === "site" ? "Tempat tersimpan." : "Ruangan tersimpan.",
-      );
+      setNotice(editor.type === "site" ? "Site saved." : "Room saved.");
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Tidak dapat menyimpan. Coba lagi.",
-      );
+      setError(e instanceof Error ? e.message : "Could not save. Retry.");
     } finally {
       setBusy(false);
       saving.current = false;
@@ -188,27 +186,27 @@ export function PlacesAdmin() {
   if (!allowed)
     return (
       <p className="text-sm text-muted-foreground">
-        Pengelolaan tempat dan ruangan memerlukan akses administrator.
+        {t("Administrator access is required to manage sites and rooms.")}
       </p>
     );
   return (
     <div className="mx-auto max-w-7xl space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs text-muted-foreground">Administration</p>
-          <h1 className="mt-1 text-2xl font-semibold">Tempat & ruangan</h1>
+          <p className="text-xs text-muted-foreground">{t("Administration")}</p>
+          <h1 className="mt-1 text-2xl font-semibold">{t("Sites & rooms")}</h1>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => open("site")}>
             <Plus />
-            Tempat baru
+            {t("New site")}
           </Button>
           <Button
             disabled={!data?.sites.some((s) => s.active)}
             onClick={() => open("room")}
           >
             <Plus />
-            Ruangan baru
+            {t("New room")}
           </Button>
         </div>
       </header>
@@ -217,20 +215,20 @@ export function PlacesAdmin() {
           role="alert"
           className="rounded-lg border border-destructive/30 p-3 text-sm text-destructive"
         >
-          {error}
+          {t(error)}
         </p>
       )}
       {notice && (
         <p role="status" className="text-sm text-primary">
-          {notice}
+          {t(notice)}
         </p>
       )}
       <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[240px_minmax(0,1fr)]">
         <aside className="min-w-0 rounded-xl border bg-card p-3">
           <p className="mb-3 px-2 text-xs font-semibold text-muted-foreground">
-            TEMPAT
+            {t("SITES")}
           </p>
-          <nav aria-label="Tempat" className="space-y-1">
+          <nav aria-label={t("Site")} className="space-y-1">
             <button
               className={
                 "flex w-full items-center gap-2 rounded-lg p-3 text-left text-sm " +
@@ -242,7 +240,7 @@ export function PlacesAdmin() {
               }}
             >
               <Building2 className="size-4" />
-              Semua tempat
+              {t("All sites")}
             </button>
             {data?.sites.map((s) => (
               <div
@@ -267,12 +265,13 @@ export function PlacesAdmin() {
                       {s.name}
                     </strong>
                     <span className="text-xs text-muted-foreground">
-                      {s.room_count} ruangan{s.active ? "" : " · Nonaktif"}
+                      {s.room_count} {t("Rooms").toLowerCase()}
+                      {s.active ? "" : " · " + t("Inactive")}
                     </span>
                   </span>
                 </button>
                 <Button
-                  aria-label={"Edit tempat " + s.name}
+                  aria-label={t("Edit site") + " " + s.name}
                   variant="ghost"
                   size="icon-sm"
                   className="mr-1"
@@ -288,7 +287,7 @@ export function PlacesAdmin() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-semibold">
-                {selected?.name || "Semua ruangan"}
+                {selected?.name || t("All rooms")}
               </h2>
               {selected?.address && (
                 <p className="mt-1 break-words text-xs text-muted-foreground">
@@ -299,8 +298,8 @@ export function PlacesAdmin() {
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
               <Input
-                aria-label="Cari ruangan"
-                placeholder="Cari tempat atau ruangan…"
+                aria-label={t("Search rooms")}
+                placeholder={t("Search sites or rooms…")}
                 className="pl-9"
                 value={query}
                 onChange={(e) => {
@@ -312,7 +311,7 @@ export function PlacesAdmin() {
           </div>
           {loading ? (
             <div role="status" className="grid gap-3 sm:grid-cols-2">
-              <span className="sr-only">Memuat ruangan…</span>
+              <span className="sr-only">{t("Loading rooms…")}</span>
               {[1, 2, 3, 4].map((n) => (
                 <div
                   key={n}
@@ -335,7 +334,7 @@ export function PlacesAdmin() {
                           <Icon className="size-4" />
                         </span>
                         <Button
-                          aria-label={"Edit ruangan " + room.name}
+                          aria-label={t("Edit room") + " " + room.name}
                           size="icon-sm"
                           variant="ghost"
                           onClick={() => open("room", room)}
@@ -347,11 +346,13 @@ export function PlacesAdmin() {
                         {room.name}
                       </h3>
                       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                        <span>{roomKinds[room.room_kind]}</span>
+                        <span>{t(roomKinds[room.room_kind])}</span>
                         <span>
-                          {room.active && room.site_active
-                            ? "Aktif"
-                            : "Nonaktif"}
+                          {t(
+                            room.active && room.site_active
+                              ? "Active"
+                              : "Inactive",
+                          )}
                         </span>
                       </div>
                     </article>
@@ -362,7 +363,7 @@ export function PlacesAdmin() {
                 <div className="rounded-xl border border-dashed bg-card p-8 text-center">
                   <DoorOpen className="mx-auto mb-3 size-7 text-primary" />
                   <p className="text-sm">
-                    {query ? "Ruangan tidak ditemukan." : "Belum ada ruangan."}
+                    {t(query ? "No rooms found." : "No rooms yet.")}
                   </p>
                   <Button
                     className="mt-4"
@@ -370,18 +371,19 @@ export function PlacesAdmin() {
                     disabled={!data?.sites.some((s) => s.active)}
                     onClick={() => open("room")}
                   >
-                    Tambah ruangan
+                    {t("Add room")}
                   </Button>
                 </div>
               )}
               {Boolean(data?.total) && (
                 <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                   <span>
-                    {data?.total} ruangan · Halaman {page}
+                    {data?.total} {t("Rooms").toLowerCase()} · {t("Page")}{" "}
+                    {page}
                   </span>
                   <div className="flex gap-2">
                     <Button
-                      aria-label="Halaman sebelumnya"
+                      aria-label={t("Previous page")}
                       variant="outline"
                       size="icon-sm"
                       disabled={page === 1}
@@ -390,7 +392,7 @@ export function PlacesAdmin() {
                       <ChevronLeft />
                     </Button>
                     <Button
-                      aria-label="Halaman berikutnya"
+                      aria-label={t("Next page")}
                       variant="outline"
                       size="icon-sm"
                       disabled={page * 20 >= (data?.total || 0)}
@@ -408,18 +410,23 @@ export function PlacesAdmin() {
       {editor && (
         <ERPModal
           description=""
-          title={
-            (editor.id ? "Edit " : "Tambah ") +
-            (editor.type === "site" ? "tempat" : "ruangan")
-          }
+          title={t(
+            editor.type === "site"
+              ? editor.id
+                ? "Edit site"
+                : "New site"
+              : editor.id
+                ? "Edit room"
+                : "New room",
+          )}
           onClose={() => void close()}
         >
           <form onSubmit={save} className="space-y-4">
             {editor.type === "room" && (
               <label className="block text-sm font-medium">
-                Tempat
+                {t("Site")}
                 <select
-                  aria-label="Tempat"
+                  aria-label={t("Site")}
                   className={control}
                   required
                   disabled={busy || Boolean(editor.id)}
@@ -428,7 +435,7 @@ export function PlacesAdmin() {
                     setEditor({ ...editor, site: e.target.value })
                   }
                 >
-                  <option value="">Pilih tempat…</option>
+                  <option value="">{t("Select site…")}</option>
                   {data?.sites
                     .filter((s) => s.active || s.id === editor.site)
                     .map((s) => (
@@ -440,12 +447,12 @@ export function PlacesAdmin() {
               </label>
             )}
             <label className="block text-sm font-medium">
-              {editor.type === "site" ? "Nama tempat" : "Nama ruangan"}
+              {t(editor.type === "site" ? "Site name" : "Room name")}
               <Input
                 autoFocus
-                aria-label={
-                  editor.type === "site" ? "Nama tempat" : "Nama ruangan"
-                }
+                aria-label={t(
+                  editor.type === "site" ? "Site name" : "Room name",
+                )}
                 className="mt-1.5"
                 value={editor.name}
                 required
@@ -458,10 +465,10 @@ export function PlacesAdmin() {
             {editor.type === "room" ? (
               <>
                 <label className="block text-sm font-medium">
-                  Jenis ruangan
+                  {t("Room type")}
                   <select
                     className={control}
-                    aria-label="Jenis ruangan"
+                    aria-label={t("Room type")}
                     value={editor.kind}
                     disabled={busy}
                     onChange={(e) =>
@@ -470,20 +477,20 @@ export function PlacesAdmin() {
                   >
                     {Object.entries(roomKinds).map(([k, v]) => (
                       <option key={k} value={k}>
-                        {v}
+                        {t(v)}
                       </option>
                     ))}
                   </select>
                 </label>
                 <p className="rounded-lg bg-primary/5 p-3 text-sm font-medium text-primary">
                   {data?.sites.find((s) => s.id === editor.site)?.name ||
-                    "Tempat"}
-                  /{editor.name || "Ruangan"}
+                    t("Site")}
+                  /{editor.name || t("Room")}
                 </p>
               </>
             ) : (
               <label className="block text-sm font-medium">
-                Alamat
+                {t("Address")}
                 <textarea
                   className={control}
                   rows={2}
@@ -505,11 +512,11 @@ export function PlacesAdmin() {
                   setEditor({ ...editor, active: e.target.checked })
                 }
               />
-              Aktif
+              {t("Active")}
             </label>
             {error && (
               <p role="alert" className="text-sm text-destructive">
-                {error}
+                {t(error)}
               </p>
             )}
             <div className="flex justify-end gap-2 border-t pt-4">
@@ -518,10 +525,10 @@ export function PlacesAdmin() {
                 disabled={busy}
                 onClick={() => void close()}
               >
-                Batal
+                {t("Cancel")}
               </Button>
               <Button type="submit" loading={busy}>
-                Simpan
+                {t("Save")}
               </Button>
             </div>
           </form>

@@ -68,6 +68,8 @@ export function translate(text: string, lang: Locale): string {
     const match = normalized.match(pattern);
     if (match) return format(match[1]);
   }
+  const section = normalized.match(/^Section (\d+)$/);
+  if (section) return `Bagian ${section[1]}`;
   const step = normalized.match(/^Step (\d+) of (\d+)$/);
   if (step) return `Langkah ${step[1]} dari ${step[2]}`;
   const count = normalized.match(

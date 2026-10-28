@@ -1,4 +1,5 @@
 "use client";
+import { useLocale } from "@/components/i18n/locale-provider";
 import { useEffect, useState } from "react";
 import {
   ArrowDown,
@@ -51,24 +52,25 @@ type RecordForm = {
   }[];
 };
 const types: Record<FormField["type"], string> = {
-  text: "Teks singkat",
-  textarea: "Paragraf",
-  number: "Angka",
-  date: "Tanggal",
-  time: "Waktu",
-  select: "Pilihan tunggal",
-  reference: "Referensi data ERP",
-  file: "Upload file",
+  text: "Short text",
+  textarea: "Paragraph",
+  number: "Number",
+  date: "Date",
+  time: "Time",
+  select: "Single choice",
+  reference: "ERP data reference",
+  file: "File upload",
 };
 const control =
   "mt-1.5 w-full min-w-0 rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/25 disabled:opacity-60";
 const tabs = [
-  { key: "questions", name: "Pertanyaan", icon: ListChecks },
-  { key: "preview", name: "Pratinjau", icon: Eye },
-  { key: "responses", name: "Jawaban", icon: MessageSquare },
-  { key: "share", name: "Bagikan", icon: Link2 },
+  { key: "questions", name: "Questions", icon: ListChecks },
+  { key: "preview", name: "Preview", icon: Eye },
+  { key: "responses", name: "Responses", icon: MessageSquare },
+  { key: "share", name: "Share", icon: Link2 },
 ] as const;
 export function FormsAdmin() {
+  const { t, locale } = useLocale();
   const confirm = useConfirm();
   const [list, setList] = useState<RecordForm[]>([]),
     [ready, setReady] = useState(false),
@@ -138,7 +140,7 @@ export function FormsAdmin() {
         if (indices.length) setActive(indices[0]);
         setTab("questions");
         setError(
-          "Periksa judul, label, dan pengaturan pertanyaan. Referensi ERP memerlukan sumber data; pilihan tunggal memerlukan pilihan jawaban.",
+          "Review the title, labels and question settings. ERP references need a data source; single-choice questions need options.",
         );
         return;
       }
@@ -168,7 +170,7 @@ export function FormsAdmin() {
         setActive(0);
         setTab("questions");
         setNotice(
-          "Form dihapus. Jawaban dan lampiran tetap tersimpan sebagai riwayat.",
+          "Form deleted. Responses and attachments remain in the history.",
         );
         return;
       }
@@ -179,15 +181,13 @@ export function FormsAdmin() {
       }
       setNotice(
         action === "publish"
-          ? "Form diterbitkan."
+          ? "Form published."
           : action === "pause"
-            ? "Penerimaan jawaban dijeda."
-            : "Perubahan tersimpan.",
+            ? "Responses paused."
+            : "Changes saved.",
       );
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Tidak dapat menyimpan. Coba lagi.",
-      );
+      setError(e instanceof Error ? e.message : "Could not save. Retry.");
     } finally {
       setBusy(false);
     }
@@ -212,10 +212,10 @@ export function FormsAdmin() {
           id: "f" + crypto.randomUUID().replaceAll("-", ""),
           label:
             type === "reference"
-              ? "Referensi ERP"
+              ? "ERP reference"
               : type === "file"
-                ? "Lampiran"
-                : "Pertanyaan baru",
+                ? "Attachment"
+                : "New question",
           type,
           required: false,
           options: [],
@@ -246,7 +246,7 @@ export function FormsAdmin() {
       setActive(0);
       setTab("questions");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Tidak dapat memuat form.");
+      setError(e instanceof Error ? e.message : "Could not load the form.");
     } finally {
       setBusy(false);
     }
@@ -260,22 +260,24 @@ export function FormsAdmin() {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-muted-foreground">
-            Administration
+            {t("Administration")}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Forms</h1>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+            {t("Forms")}
+          </h1>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
             disabled={busy || dirty}
             onClick={() =>
               act("create", {
-                title: "Form baru",
+                title: "New form",
                 description: "",
                 kind: "general",
                 fields: [
                   {
                     id: "name",
-                    label: "Nama pengisi",
+                    label: "Respondent name",
                     type: "text",
                     required: true,
                     options: [],
@@ -285,7 +287,7 @@ export function FormsAdmin() {
             }
           >
             <Plus />
-            Form baru
+            {t("New form")}
           </Button>
         </div>
       </header>
@@ -294,7 +296,7 @@ export function FormsAdmin() {
           role="alert"
           className="rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-sm text-destructive"
         >
-          {error}
+          {t(error)}
         </p>
       )}
       {notice && (
@@ -303,7 +305,7 @@ export function FormsAdmin() {
           className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-primary"
         >
           <Check className="size-4" />
-          {notice}
+          {t(notice)}
         </p>
       )}
       {!ready ? (
@@ -312,7 +314,7 @@ export function FormsAdmin() {
           className="flex min-h-64 items-center justify-center gap-2 rounded-xl border bg-card"
         >
           <Loader2 className="size-4 animate-spin" />
-          Memuat Forms…
+          {t("Loading forms…")}
         </div>
       ) : (
         <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
@@ -321,17 +323,17 @@ export function FormsAdmin() {
               className="hidden text-xs font-semibold text-muted-foreground xl:block"
               htmlFor="form-library"
             >
-              DAFTAR FORM · {list.length}
+              {t("Form library")} · {list.length}
             </label>
             <select
               id="form-library"
-              aria-label="Pilih form"
+              aria-label={t("Select form")}
               className={control + " !mt-0 xl:hidden"}
               disabled={busy || dirty}
               value={selected?.id || ""}
               onChange={(e) => choose(e.target.value)}
             >
-              <option value="">Pilih form…</option>
+              <option value="">{t("Select form…")}</option>
               {list.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.draft.title}
@@ -342,15 +344,15 @@ export function FormsAdmin() {
               <div className="relative my-3">
                 <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
                 <Input
-                  aria-label="Cari form"
-                  placeholder="Cari form…"
+                  aria-label={t("Search forms")}
+                  placeholder={t("Search forms…")}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9"
                 />
               </div>
               <nav
-                aria-label="Daftar form"
+                aria-label={t("Form library")}
                 className="max-h-[65vh] space-y-1 overflow-y-auto"
               >
                 {filtered.map((r) => (
@@ -370,25 +372,27 @@ export function FormsAdmin() {
                       {r.draft.title}
                     </strong>
                     <span className="mt-1 block text-xs text-muted-foreground">
-                      {r.active
-                        ? "Aktif"
-                        : r.published_revision
-                          ? "Dijeda"
-                          : "Draft"}{" "}
+                      {t(
+                        r.active
+                          ? "Active"
+                          : r.published_revision
+                            ? "Paused"
+                            : "Draft",
+                      )}{" "}
                       · v{r.published_revision}
                     </span>
                   </button>
                 ))}
                 {filtered.length === 0 && (
                   <p className="p-3 text-sm text-muted-foreground">
-                    Belum ada form.
+                    {t("No forms yet.")}
                   </p>
                 )}
               </nav>
             </div>
             {dirty && (
               <p className="mt-3 hidden text-xs text-muted-foreground xl:block">
-                Simpan atau batalkan perubahan sebelum berpindah form.
+                {t("Save or discard changes before switching forms.")}
               </p>
             )}
           </aside>
@@ -397,23 +401,24 @@ export function FormsAdmin() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-4 sm:px-5">
                 <div className="min-w-0">
                   <h2 className="break-words font-semibold">
-                    {draft.title || "Form tanpa judul"}
+                    {draft.title || t("Untitled form")}
                   </h2>
                   <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                     {busy ? (
                       <>
                         <Loader2 className="size-3 animate-spin" />
-                        Memproses…
+                        {t("Processing…")}
                       </>
                     ) : dirty ? (
-                      "Perubahan belum tersimpan"
+                      t("Unsaved changes")
                     ) : (
                       <>
                         <Check className="size-3" />
-                        Semua perubahan tersimpan
+                        {t("All changes saved")}
                       </>
                     )}{" "}
-                    · {draft.fields.length}/50 pertanyaan
+                    · {draft.fields.length}
+                    {t("/50 questions")}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -423,16 +428,25 @@ export function FormsAdmin() {
                     disabled={busy}
                     onClick={async () => {
                       const accepted = await confirm({
-                        title: "Hapus form?",
-                        description: `Form “${selected.draft.title}” akan dihapus dari daftar dan tautan pengisiannya dinonaktifkan. Jawaban, lampiran, dan riwayat pencucian tetap tersimpan.${dirty ? " Perubahan draft yang belum disimpan akan dibuang." : ""}`,
-                        confirmLabel: "Hapus form",
+                        title: t("Delete form?"),
+                        description:
+                          selected.draft.title +
+                          " — " +
+                          t(
+                            "The form will be removed and its link disabled. Responses, attachments and cleaning history will be retained.",
+                          ) +
+                          (dirty
+                            ? " " +
+                              t("Unsaved draft changes will be discarded.")
+                            : ""),
+                        confirmLabel: t("Delete form"),
                         destructive: true,
                       });
                       if (accepted) await act("delete");
                     }}
                   >
                     <Trash2 />
-                    Hapus form
+                    {t("Delete form")}
                   </Button>
                   {dirty && (
                     <Button
@@ -446,7 +460,7 @@ export function FormsAdmin() {
                         setError("");
                       }}
                     >
-                      Batalkan perubahan
+                      {t("Discard changes")}
                     </Button>
                   )}
                   <Button
@@ -456,31 +470,31 @@ export function FormsAdmin() {
                     onClick={() => act("save", draft)}
                   >
                     <Save />
-                    Simpan draft
+                    {t("Save draft")}
                   </Button>
                   <Button
                     size="sm"
                     disabled={busy || dirty}
                     onClick={() => act("publish")}
                   >
-                    Terbitkan
+                    {t("Publish")}
                   </Button>
                 </div>
               </div>
               <div
                 className="grid grid-cols-4 border-b bg-card"
                 role="tablist"
-                aria-label="Pengaturan form"
+                aria-label={t("Form settings")}
               >
-                {tabs.map((t) => (
+                {tabs.map((tabItem) => (
                   <button
-                    key={t.key}
-                    id={"tab-" + t.key}
+                    key={tabItem.key}
+                    id={"tab-" + tabItem.key}
                     role="tab"
-                    aria-selected={tab === t.key}
-                    aria-controls={"panel-" + t.key}
-                    tabIndex={tab === t.key ? 0 : -1}
-                    onClick={() => setTab(t.key)}
+                    aria-selected={tab === tabItem.key}
+                    aria-controls={"panel-" + tabItem.key}
+                    tabIndex={tab === tabItem.key ? 0 : -1}
+                    onClick={() => setTab(tabItem.key)}
                     onKeyDown={(e) => {
                       if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
                         e.preventDefault();
@@ -496,14 +510,14 @@ export function FormsAdmin() {
                     }}
                     className={
                       "flex min-h-12 flex-col items-center justify-center gap-1 border-b-2 px-1 py-2 text-[11px] transition-colors sm:flex-row sm:gap-2 sm:text-sm " +
-                      (tab === t.key
+                      (tab === tabItem.key
                         ? "border-primary bg-card font-medium text-primary"
                         : "border-transparent bg-card text-foreground hover:bg-muted/50")
                     }
                   >
-                    <t.icon className="size-4" />
-                    {t.name}
-                    {t.key === "responses" && (
+                    <tabItem.icon className="size-4" />
+                    {t(tabItem.name)}
+                    {tabItem.key === "responses" && (
                       <span className="hidden sm:inline">
                         ({selected.submissions?.length || 0})
                       </span>
@@ -525,7 +539,7 @@ export function FormsAdmin() {
                       onClick={() => setInfoOpen((v) => !v)}
                       className="flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-sm font-medium sm:hidden"
                     >
-                      Judul & deskripsi
+                      {t("Title & description")}
                       <ChevronDown
                         className={
                           "size-4 transition-transform " +
@@ -540,7 +554,7 @@ export function FormsAdmin() {
                       }
                     >
                       <label className="text-sm font-medium">
-                        Judul
+                        {t("Title")}
                         <Input
                           className="mt-1.5"
                           maxLength={150}
@@ -552,7 +566,7 @@ export function FormsAdmin() {
                         />
                       </label>
                       <label className="text-sm font-medium">
-                        Deskripsi
+                        {t("Description")}
                         <textarea
                           className={control}
                           rows={2}
@@ -569,7 +583,7 @@ export function FormsAdmin() {
                       <div className="min-w-0 space-y-3">
                         <div className="flex items-center gap-2 lg:hidden">
                           <select
-                            aria-label="Pilih pertanyaan"
+                            aria-label={t("Select question")}
                             className={control}
                             value={active}
                             onChange={(e) => setActive(Number(e.target.value))}
@@ -581,7 +595,7 @@ export function FormsAdmin() {
                             ))}
                           </select>
                           <Button
-                            aria-label="Pertanyaan sebelumnya"
+                            aria-label={t("Previous question")}
                             size="icon-sm"
                             variant="outline"
                             disabled={active === 0}
@@ -590,7 +604,7 @@ export function FormsAdmin() {
                             <ChevronLeft />
                           </Button>
                           <Button
-                            aria-label="Pertanyaan berikutnya"
+                            aria-label={t("Next question")}
                             size="icon-sm"
                             variant="outline"
                             disabled={active === draft.fields.length - 1}
@@ -601,7 +615,7 @@ export function FormsAdmin() {
                         </div>
                         <ol
                           className="hidden max-h-[470px] space-y-1 overflow-y-auto rounded-lg border p-2 lg:block"
-                          aria-label="Urutan pertanyaan"
+                          aria-label={t("Question order")}
                         >
                           {draft.fields.map((q, i) => (
                             <li key={q.id}>
@@ -621,7 +635,7 @@ export function FormsAdmin() {
                                   {String(i + 1).padStart(2, "0")}
                                 </span>
                                 <span className="min-w-0 break-words">
-                                  {q.label || "Tanpa label"}
+                                  {q.label || t("Untitled question")}
                                   {q.required && (
                                     <span className="ml-1 text-destructive">
                                       *
@@ -641,7 +655,7 @@ export function FormsAdmin() {
                             onClick={() => add()}
                           >
                             <Plus />
-                            Pertanyaan
+                            {t("Questions")}
                           </Button>
                           <Button
                             variant="outline"
@@ -651,7 +665,7 @@ export function FormsAdmin() {
                             onClick={() => add("reference")}
                           >
                             <Database />
-                            Data ERP
+                            {t("ERP data")}
                           </Button>
                           <Button
                             variant="outline"
@@ -665,7 +679,7 @@ export function FormsAdmin() {
                             onClick={() => add("file")}
                           >
                             <Upload />
-                            Lampiran
+                            {t("Attachment")}
                           </Button>
                         </div>
                       </div>
@@ -682,13 +696,13 @@ export function FormsAdmin() {
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <span className="text-xs font-semibold text-muted-foreground">
-                              PERTANYAAN {active + 1}
-                              {f.binding ? " · TERHUBUNG ERP" : ""}
+                              {t("Question")} {active + 1}
+                              {f.binding ? " · " + t("ERP linked") : ""}
                             </span>
                             <div className="flex gap-1">
                               <Button
-                                aria-label="Naik"
-                                title="Pindahkan ke atas"
+                                aria-label={t("Move up")}
+                                title={t("Move question up")}
                                 size="icon-sm"
                                 variant="ghost"
                                 disabled={active === 0}
@@ -697,8 +711,8 @@ export function FormsAdmin() {
                                 <ArrowUp />
                               </Button>
                               <Button
-                                aria-label="Turun"
-                                title="Pindahkan ke bawah"
+                                aria-label={t("Move down")}
+                                title={t("Move question down")}
                                 size="icon-sm"
                                 variant="ghost"
                                 disabled={active === draft.fields.length - 1}
@@ -708,8 +722,8 @@ export function FormsAdmin() {
                               </Button>
                               {!f.binding && (
                                 <Button
-                                  aria-label="Hapus pertanyaan"
-                                  title="Hapus pertanyaan"
+                                  aria-label={t("Delete question")}
+                                  title={t("Delete question")}
                                   size="icon-sm"
                                   variant="ghost"
                                   disabled={draft.fields.length <= 1}
@@ -729,7 +743,7 @@ export function FormsAdmin() {
                             </div>
                           </div>
                           <label className="block text-sm font-medium">
-                            Label
+                            {t("Label")}
                             <Input
                               className="mt-1.5"
                               value={f.label}
@@ -738,9 +752,11 @@ export function FormsAdmin() {
                             />
                           </label>
                           <label className="block text-sm font-medium">
-                            Tipe
+                            {t("Type")}
                             <select
-                              aria-label={"Tipe pertanyaan " + (active + 1)}
+                              aria-label={
+                                t("Question type") + " " + (active + 1)
+                              }
                               className={control}
                               value={f.type}
                               disabled={Boolean(f.binding)}
@@ -754,7 +770,7 @@ export function FormsAdmin() {
                             >
                               {Object.entries(types).map(([value, label]) => (
                                 <option key={value} value={value}>
-                                  {label}
+                                  {t(label)}
                                 </option>
                               ))}
                             </select>
@@ -762,9 +778,9 @@ export function FormsAdmin() {
                           {f.type === "reference" && (
                             <div className="space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
                               <label className="block text-sm font-medium">
-                                Sumber data ERP
+                                {t("ERP data source")}
                                 <select
-                                  aria-label="Sumber data ERP"
+                                  aria-label={t("ERP data source")}
                                   value={f.source || ""}
                                   className={control}
                                   onChange={(e) =>
@@ -774,18 +790,20 @@ export function FormsAdmin() {
                                     })
                                   }
                                 >
-                                  <option value="">Pilih sumber data…</option>
+                                  <option value="">
+                                    {t("Select data source…")}
+                                  </option>
                                   {[
                                     ...new Set(
                                       referenceSources.map((s) => s.group),
                                     ),
                                   ].map((group) => (
-                                    <optgroup key={group} label={group}>
+                                    <optgroup key={group} label={t(group)}>
                                       {referenceSources
                                         .filter((s) => s.group === group)
                                         .map((s) => (
                                           <option key={s.key} value={s.key}>
-                                            {s.label}
+                                            {t(s.label)}
                                           </option>
                                         ))}
                                     </optgroup>
@@ -793,8 +811,9 @@ export function FormsAdmin() {
                                 </select>
                               </label>
                               <p className="text-xs leading-relaxed text-muted-foreground">
-                                Pengisi mencari dan memilih data ERP. Akses
-                                mengikuti izin penerbit dan modul yang aktif.
+                                {t(
+                                  "Respondents search and select ERP records. Access follows the publisher’s permissions and enabled modules.",
+                                )}
                               </p>
                             </div>
                           )}
@@ -806,7 +825,7 @@ export function FormsAdmin() {
                               "Nama Pemeriksa/Penanggung Jawab Verifikasi",
                             ].includes(f.binding || "") && (
                               <label className="block text-sm font-medium">
-                                Pilihan, satu per baris
+                                {t("Options, one per line")}
                                 <textarea
                                   className={control}
                                   rows={5}
@@ -821,19 +840,20 @@ export function FormsAdmin() {
                             )}
                           {f.binding && (
                             <p className="rounded-lg bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">
-                              Terhubung ke pemeriksaan pencucian alat. Label dan
-                              urutan dapat diubah; tipe serta kewajiban
-                              pengisian tetap.
+                              {t(
+                                "Linked to equipment cleaning checks. Labels and order can change; field types and required settings are fixed.",
+                              )}
                             </p>
                           )}
                           {f.type === "file" && (
                             <p className="text-xs text-muted-foreground">
-                              PDF, JPG, PNG · 2 MB per file · 3 MB total per
-                              jawaban.
+                              {t(
+                                "PDF, JPG, PNG · 2 MB per file · 3 MB total per response.",
+                              )}
                             </p>
                           )}
                           <label className="flex cursor-pointer items-center justify-between gap-3 border-t pt-4 text-sm font-medium">
-                            Wajib diisi
+                            {t("Required")}
                             <input
                               className="size-4 accent-primary"
                               type="checkbox"
@@ -852,7 +872,7 @@ export function FormsAdmin() {
                 {tab === "preview" && (
                   <div className="mx-auto max-w-2xl space-y-4">
                     <p className="text-xs text-muted-foreground">
-                      Pratinjau draft · tidak mengirim jawaban
+                      {t("Draft preview · no responses submitted")}
                     </p>
                     <div className="rounded-xl border-t-4 border-t-primary bg-background p-5">
                       <h3 className="break-words text-xl font-semibold">
@@ -882,15 +902,17 @@ export function FormsAdmin() {
                           <div className="rounded-lg border bg-muted/30 p-3">
                             <div className="flex items-center gap-2 text-sm">
                               <Search className="size-4" />
-                              Cari{" "}
-                              {referenceSources
-                                .find((s) => s.key === q.source)
-                                ?.label.toLowerCase() || "data ERP"}
+                              {t("Search")}{" "}
+                              {t(
+                                referenceSources.find((s) => s.key === q.source)
+                                  ?.label || "ERP records",
+                              )}
                               …
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
-                              Pilihan langsung tersedia pada form yang
-                              diterbitkan.
+                              {t(
+                                "Options are available in the published form.",
+                              )}
                             </p>
                           </div>
                         ) : q.type === "textarea" ? (
@@ -906,7 +928,7 @@ export function FormsAdmin() {
                             className={control}
                             disabled
                           >
-                            <option>Pilih…</option>
+                            <option>{t("Select…")}</option>
                             {q.options.map((o, j) => (
                               <option key={j}>{o}</option>
                             ))}
@@ -926,15 +948,15 @@ export function FormsAdmin() {
                 {tab === "responses" && (
                   <section className="space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="font-semibold">Jawaban terbaru</h3>
+                      <h3 className="font-semibold">{t("Recent responses")}</h3>
                       <span className="text-xs text-muted-foreground">
-                        Maksimal 100 jawaban terbaru
+                        {t("Latest 100 responses")}
                       </span>
                     </div>
                     {!selected.submissions?.length && (
                       <div className="flex min-h-44 flex-col items-center justify-center gap-3 text-muted-foreground">
                         <MessageSquare className="size-7" />
-                        <p className="text-sm">Belum ada jawaban.</p>
+                        <p className="text-sm">{t("No responses yet.")}</p>
                       </div>
                     )}
                     {selected.submissions?.map((s) => (
@@ -943,11 +965,14 @@ export function FormsAdmin() {
                         className="min-w-0 rounded-lg border bg-background"
                       >
                         <summary className="cursor-pointer p-4 text-sm font-medium">
-                          {new Date(s.created_at).toLocaleString("id-ID", {
-                            timeZone: "Asia/Jakarta",
-                          })}
+                          {new Date(s.created_at).toLocaleString(
+                            locale === "id" ? "id-ID" : "en-GB",
+                            {
+                              timeZone: "Asia/Jakarta",
+                            },
+                          )}
                           <span className="ml-2 text-xs font-normal text-muted-foreground">
-                            Versi {s.revision}
+                            {t("Revision")} {s.revision}
                           </span>
                         </summary>
                         <dl className="grid min-w-0 divide-y border-t px-4">
@@ -996,15 +1021,19 @@ export function FormsAdmin() {
                           }
                         />
                         <h3 className="font-semibold">
-                          {selected.active
-                            ? "Menerima jawaban"
-                            : "Belum menerima jawaban"}
+                          {t(
+                            selected.active
+                              ? "Accepting responses"
+                              : "Not accepting responses",
+                          )}
                         </h3>
                       </div>
                       <p className="mt-2 text-sm text-muted-foreground">
-                        {selected.active
-                          ? "Tautan dapat diisi tanpa login."
-                          : "Terbitkan form untuk membagikan tautan pengisian."}
+                        {t(
+                          selected.active
+                            ? "Anyone with the link can respond without signing in."
+                            : "Publish the form to share its link.",
+                        )}
                       </p>
                       {selected.active && (
                         <>
@@ -1016,7 +1045,7 @@ export function FormsAdmin() {
                               /forms/{selected.public_token}
                             </span>
                             <Button
-                              aria-label="Salin link"
+                              aria-label={t("Copy link")}
                               size="icon-sm"
                               variant="outline"
                               onClick={async () => {
@@ -1026,10 +1055,10 @@ export function FormsAdmin() {
                                       "/forms/" +
                                       selected.public_token,
                                   );
-                                  setNotice("Tautan disalin.");
+                                  setNotice("Link copied.");
                                 } catch {
                                   setError(
-                                    "Tidak dapat menyalin. Salin alamat melalui Buka form.",
+                                    "Could not copy the link. Open the form and copy its address.",
                                   );
                                 }
                               }}
@@ -1044,20 +1073,20 @@ export function FormsAdmin() {
                               target="_blank"
                               rel="noreferrer"
                             >
-                              Buka form
+                              {t("Open form")}
                             </a>
                             <a
                               className="rounded-lg border px-4 py-2 text-sm"
                               href={"/api/forms/" + selected.id + "/qr"}
                             >
-                              Unduh QR
+                              {t("Download QR")}
                             </a>
                             <Button
                               variant="outline"
                               disabled={busy}
                               onClick={() => act("pause")}
                             >
-                              Jeda
+                              {t("Pause")}
                             </Button>
                           </div>
                         </>
@@ -1065,17 +1094,19 @@ export function FormsAdmin() {
                     </div>
                     {dirty && (
                       <p className="text-sm text-muted-foreground">
-                        Perubahan draft belum terlihat pada tautan. Simpan dan
-                        terbitkan untuk memperbaruinya.
+                        {t(
+                          "Draft changes are not live. Save and publish to update the shared form.",
+                        )}
                       </p>
                     )}
                     <div className="rounded-xl border bg-muted/20 p-4 text-sm">
                       <span className="font-medium">
-                        Versi terbit: {selected.published_revision}
+                        {t("Published revision:")} {selected.published_revision}
                       </span>
                       <p className="mt-1 text-muted-foreground">
-                        Jawaban menyimpan versi form dan label referensi saat
-                        dikirim.
+                        {t(
+                          "Responses retain the form revision and reference labels at submission.",
+                        )}
                       </p>
                     </div>
                   </div>
@@ -1085,10 +1116,11 @@ export function FormsAdmin() {
           ) : (
             <section className="flex min-h-80 flex-col items-center justify-center gap-3 rounded-xl border border-dashed bg-card px-6 text-center">
               <FileText className="size-8 text-primary" />
-              <h2 className="font-semibold">Pilih atau buat form</h2>
+              <h2 className="font-semibold">{t("Select or create a form")}</h2>
               <p className="max-w-sm text-sm text-muted-foreground">
-                Susun pertanyaan, hubungkan data ERP, lalu bagikan tautan
-                pengisian.
+                {t(
+                  "Add questions, connect ERP records, then share the form link.",
+                )}
               </p>
             </section>
           )}

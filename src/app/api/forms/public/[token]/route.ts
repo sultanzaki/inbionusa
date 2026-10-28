@@ -206,7 +206,8 @@ export async function POST(request: Request, { params }: Context) {
         {
           message: result.error.message,
           fields: {
-            [result.error.details]: "Pilih ulang data referensi yang tersedia.",
+            [result.error.details]:
+              "Select an available reference record again.",
           },
         },
         422,

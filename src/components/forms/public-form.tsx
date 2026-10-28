@@ -1,4 +1,5 @@
 "use client";
+import { useLocale } from "@/components/i18n/locale-provider";
 import {
   useEffect,
   useState,
@@ -34,6 +35,7 @@ export function PublicFormPage({
   initialForm: PublicForm | null;
   initialError?: string;
 }) {
+  const { t, locale } = useLocale();
   const hydrated = useSyncExternalStore(
     subscribeHydration,
     clientHydrated,
@@ -91,16 +93,17 @@ export function PublicFormPage({
     );
     for (const [id, file] of Object.entries(files)) {
       if (file.size > 2000000)
-        checked.errors[id] = "Ukuran lampiran maksimal 2 MB.";
-      if (!file.size) checked.errors[id] = "File kosong. Pilih file lain.";
+        checked.errors[id] = "Attachments must be 2 MB or smaller.";
+      if (!file.size)
+        checked.errors[id] = "The file is empty. Choose another file.";
     }
     if (Object.values(files).reduce((sum, f) => sum + f.size, 0) > 3000000) {
       const id = Object.keys(files)[0];
-      if (id) checked.errors[id] = "Ukuran total lampiran maksimal 3 MB.";
+      if (id) checked.errors[id] = "Attachments must total 3 MB or less.";
     }
     if (Object.keys(checked.errors).length) {
       setErrors(checked.errors);
-      setMessage("Periksa bagian yang ditandai sebelum mengirim.");
+      setMessage("Review the highlighted fields before submitting.");
       document.getElementById(Object.keys(checked.errors)[0])?.focus();
       return;
     }
@@ -155,18 +158,10 @@ export function PublicFormPage({
   const progress = required.length
     ? Math.round((completed / required.length) * 100)
     : 0;
-  const errorText = (text: string) =>
-    ({
-      "Required.": "Wajib diisi.",
-      "Upload a file.": "Pilih lampiran.",
-      "Choose an available option.": "Pilih salah satu pilihan yang tersedia.",
-      "Enter a valid number.": "Masukkan angka yang valid.",
-      "Enter a valid date.": "Masukkan tanggal yang valid.",
-      "Enter a valid time.": "Masukkan waktu yang valid.",
-    })[text] || text;
+  const errorText = t;
   return (
     <main
-      lang="id"
+      lang={locale}
       className="min-h-dvh bg-background px-4 py-5 text-foreground sm:px-6 sm:py-8"
     >
       <div className="mx-auto max-w-6xl">
@@ -179,9 +174,9 @@ export function PublicFormPage({
             unoptimized
           />
           <span className="text-sm font-semibold tracking-wide">
-            INBIONUSA
+            {t("INBIONUSA")}
             <span className="ml-3 border-l pl-3 font-normal text-muted-foreground">
-              Forms
+              {t("Forms")}
             </span>
           </span>
         </div>
@@ -190,16 +185,20 @@ export function PublicFormPage({
             <div className="mb-5 flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
               <CheckCheck className="size-7" />
             </div>
-            <h1 className="text-2xl font-semibold">Jawaban berhasil dikirim</h1>
+            <h1 className="text-2xl font-semibold">
+              {t("Response submitted")}
+            </h1>
             <p className="mt-3 text-muted-foreground">
-              {cleaningResult === "pass"
-                ? "Catatan tersimpan. Alat siap digunakan kembali."
-                : cleaningResult === "fail"
-                  ? "Catatan tersimpan. Alat belum siap dan memerlukan tindak lanjut."
-                  : "Data dan lampiran telah disimpan."}
+              {t(
+                cleaningResult === "pass"
+                  ? "Record saved. The equipment is ready for use."
+                  : cleaningResult === "fail"
+                    ? "Record saved. The equipment needs further action before use."
+                    : "Your response and attachments have been saved.",
+              )}
             </p>
             <Button className="mt-6" onClick={() => window.location.reload()}>
-              Isi jawaban baru
+              {t("Submit another response")}
             </Button>
           </section>
         ) : !template ? (
@@ -208,14 +207,14 @@ export function PublicFormPage({
             className="mx-auto max-w-xl rounded-xl border bg-card p-6"
           >
             <AlertCircle className="mb-3 size-6 text-muted-foreground" />
-            <h1 className="font-semibold">Form tidak tersedia</h1>
-            <p className="mt-2 text-sm text-muted-foreground">{message}</p>
+            <h1 className="font-semibold">{t("Form unavailable")}</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{t(message)}</p>
             <Button
               variant="outline"
               className="mt-4"
               onClick={() => location.reload()}
             >
-              Coba lagi
+              {t("Retry")}
             </Button>
           </section>
         ) : (
@@ -232,26 +231,28 @@ export function PublicFormPage({
               <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <ClipboardList className="size-3.5" />
-                  {template.fields.length} pertanyaan
+                  {template.fields.length} {t("Questions").toLowerCase()}
                 </span>
                 <span>
                   <span className="font-semibold text-destructive">*</span>{" "}
-                  Wajib diisi
+                  {t("Required")}
                 </span>
-                <span>Versi {form?.revision}</span>
+                <span>
+                  {t("Revision")} {form?.revision}
+                </span>
               </div>
             </header>
             <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
               <aside className="min-w-0 rounded-xl border bg-card p-4 lg:sticky lg:top-6">
                 <div className="flex items-center justify-between gap-2 text-sm">
-                  <span className="font-medium">Kelengkapan</span>
+                  <span className="font-medium">{t("Progress")}</span>
                   <span className="tabular-nums text-muted-foreground">
                     {completed}/{required.length}
                   </span>
                 </div>
                 <div
                   role="progressbar"
-                  aria-label="Pertanyaan wajib terisi"
+                  aria-label={t("Required questions completed")}
                   aria-valuenow={completed}
                   aria-valuemin={0}
                   aria-valuemax={required.length || 1}
@@ -264,7 +265,7 @@ export function PublicFormPage({
                 </div>
                 {sections.length > 1 && (
                   <nav
-                    aria-label="Bagian form"
+                    aria-label={t("Form sections")}
                     className="mt-4 flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1"
                   >
                     {sections.map((section, i) => (
@@ -283,7 +284,7 @@ export function PublicFormPage({
                             i + 1
                           )}
                         </span>
-                        <span>{section.title}</span>
+                        <span>{t(section.title)}</span>
                       </a>
                     ))}
                   </nav>
@@ -305,7 +306,7 @@ export function PublicFormPage({
                         id={section.id + "-title"}
                         className="text-sm font-semibold sm:text-base"
                       >
-                        {section.title}
+                        {t(section.title)}
                       </h2>
                     </div>
                     <div className="grid min-w-0 gap-x-5 gap-y-6 p-4 sm:grid-cols-2 sm:p-6">
@@ -438,7 +439,7 @@ export function PublicFormPage({
                                     }
                                   >
                                     <Paperclip className="size-4 text-primary" />
-                                    Pilih file
+                                    {t("Choose file")}
                                   </label>
                                   <span className="min-w-0 flex-1 break-all text-xs text-muted-foreground">
                                     {files[f.id]
@@ -446,13 +447,15 @@ export function PublicFormPage({
                                         " · " +
                                         Math.ceil(files[f.id].size / 1000) +
                                         " KB"
-                                      : "Belum ada file"}
+                                      : t("No file selected")}
                                   </span>
                                   {files[f.id] && (
                                     <button
                                       type="button"
                                       disabled={locked}
-                                      aria-label={"Hapus lampiran " + f.label}
+                                      aria-label={
+                                        t("Remove attachment") + " " + f.label
+                                      }
                                       className="rounded p-2 text-muted-foreground hover:bg-muted/30"
                                       onClick={() => {
                                         setFiles((v) => {
@@ -471,8 +474,9 @@ export function PublicFormPage({
                                   )}
                                 </div>
                                 <p className="mt-2 text-xs text-muted-foreground">
-                                  PDF, JPG, PNG · maksimal 2 MB/file, 3 MB
-                                  total.
+                                  {t(
+                                    "PDF, JPG, PNG · up to 2 MB per file, 3 MB total.",
+                                  )}
                                 </p>
                               </>
                             ) : f.type === "select" || isBatch ? (
@@ -525,7 +529,7 @@ export function PublicFormPage({
                                   })
                                 }
                               >
-                                <option value="">Pilih…</option>
+                                <option value="">{t("Select…")}</option>
                                 {options.map((o) => (
                                   <option key={o} value={o}>
                                     {label(o) || o}
@@ -587,7 +591,7 @@ export function PublicFormPage({
                             {f.binding === "Nama Alat" &&
                               options.length === 0 && (
                                 <p className="mt-2 text-xs text-muted-foreground">
-                                  Belum ada alat yang tersedia di ruangan ini.
+                                  {t("No equipment is available in this room.")}
                                 </p>
                               )}
                             {errors[f.id] && (
@@ -610,18 +614,20 @@ export function PublicFormPage({
                     role="alert"
                     className="rounded-lg border border-destructive/30 p-4 text-sm text-destructive"
                   >
-                    {message}
+                    {t(message)}
                   </p>
                 )}
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
                   <p role="status" className="text-xs text-muted-foreground">
                     {!hydrated
-                      ? "Menyiapkan form…"
+                      ? t("Preparing form…")
                       : busy
-                        ? Object.keys(files).length
-                          ? "Mengunggah lampiran dan menyimpan…"
-                          : "Menyimpan jawaban…"
-                        : `${completed} dari ${required.length} pertanyaan wajib terisi`}
+                        ? t(
+                            Object.keys(files).length
+                              ? "Uploading attachments and saving…"
+                              : "Saving response…",
+                          )
+                        : `${completed}/${required.length} ${t("Required questions completed").toLowerCase()}`}
                   </p>
                   <Button
                     type="submit"
@@ -629,7 +635,8 @@ export function PublicFormPage({
                     disabled={!hydrated}
                     className="w-full sm:w-auto"
                   >
-                    Kirim jawaban{!busy && <ArrowUpRight className="size-4" />}
+                    {t("Submit response")}
+                    {!busy && <ArrowUpRight className="size-4" />}
                   </Button>
                 </div>
               </form>

@@ -7,15 +7,15 @@ export function formSections(template: Template) {
         id: "section-" + (i / 8 + 1),
         title:
           template.fields.length <= 8
-            ? "Pengisian form"
-            : "Bagian " + (i / 8 + 1),
+            ? "Complete the form"
+            : "Section " + (i / 8 + 1),
         fields: template.fields.slice(i, i + 8),
       });
     return sections;
   }
   const groups = [
     {
-      title: "Identitas alat",
+      title: "Equipment details",
       bindings: [
         "Tanggal Pencucian",
         "Area Kerja",
@@ -26,7 +26,7 @@ export function formSections(template: Template) {
       ],
     },
     {
-      title: "Pelaksanaan pencucian",
+      title: "Cleaning process",
       bindings: [
         "Waktu Mulai Pencucian",
         "Waktu Selesai Pencucian",
@@ -36,7 +36,7 @@ export function formSections(template: Template) {
       ],
     },
     {
-      title: "Pemeriksaan hasil",
+      title: "Inspection results",
       bindings: [
         "Apakah Pembilasan",
         "Apakah Terdapat Residu",
@@ -47,7 +47,7 @@ export function formSections(template: Template) {
       ],
     },
     {
-      title: "Verifikasi",
+      title: "Verification",
       bindings: ["Nama Pemeriksa", "Apakah Alat Sudah Dinyatakan", "Notes"],
     },
   ];
@@ -65,7 +65,7 @@ export function formSections(template: Template) {
   if (remaining.size)
     sections.push({
       id: "section-additional",
-      title: "Informasi tambahan",
+      title: "Additional information",
       fields: template.fields.filter((f) => remaining.has(f.id)),
     });
   return sections;

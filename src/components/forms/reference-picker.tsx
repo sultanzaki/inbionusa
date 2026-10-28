@@ -1,4 +1,5 @@
 "use client";
+import { useLocale } from "@/components/i18n/locale-provider";
 import { useEffect, useState } from "react";
 import {
   Search,
@@ -26,6 +27,7 @@ export function ReferencePicker({
   invalid?: boolean;
   required?: boolean;
 }) {
+  const { t } = useLocale();
   const [open, setOpen] = useState(false),
     [query, setQuery] = useState(""),
     [offset, setOffset] = useState(0),
@@ -83,7 +85,7 @@ export function ReferencePicker({
           maxLength={150}
           value={query}
           disabled={disabled}
-          placeholder="Cari kode atau nama…"
+          placeholder={t("Search by code or name…")}
           className="h-11 w-full min-w-0 rounded-lg border bg-background pl-9 pr-3 text-base focus:ring-2 focus:ring-primary/30"
           onChange={(e) => {
             setQuery(e.target.value);
@@ -98,7 +100,7 @@ export function ReferencePicker({
           <span className="min-w-0 flex-1 break-words">{selected.label}</span>
           <button
             type="button"
-            aria-label="Hapus pilihan"
+            aria-label={t("Clear selection")}
             disabled={disabled}
             onClick={() => {
               setSelected(null);
@@ -118,17 +120,17 @@ export function ReferencePicker({
               className="flex items-center gap-2 p-3 text-sm text-muted-foreground"
             >
               <Loader2 className="size-4 animate-spin" />
-              Memuat pilihan…
+              {t("Loading options…")}
             </p>
           ) : error ? (
             <div className="p-3 text-sm">
-              <p role="alert">{error}</p>
+              <p role="alert">{t(error)}</p>
               <button
                 type="button"
                 className="mt-2 text-primary underline"
                 onClick={() => setRetry((v) => v + 1)}
               >
-                Coba lagi
+                {t("Retry")}
               </button>
             </div>
           ) : (
@@ -136,11 +138,11 @@ export function ReferencePicker({
               <div
                 className="max-h-56 overflow-y-auto overscroll-contain"
                 role="group"
-                aria-label="Pilihan data ERP"
+                aria-label={t("ERP record options")}
               >
                 {page.items.length === 0 && (
                   <p className="p-3 text-sm text-muted-foreground">
-                    Tidak ada data yang sesuai.
+                    {t("No matching records.")}
                   </p>
                 )}
                 {page.items.map((item) => (
@@ -170,7 +172,7 @@ export function ReferencePicker({
               </div>
               <div className="flex items-center justify-between border-t px-2 py-1">
                 <button
-                  aria-label="Pilihan sebelumnya"
+                  aria-label={t("Previous options")}
                   type="button"
                   disabled={disabled || offset === 0}
                   onClick={() => {
@@ -180,13 +182,13 @@ export function ReferencePicker({
                   className="flex min-h-9 items-center gap-1 rounded px-2 text-xs disabled:opacity-40"
                 >
                   <ChevronLeft className="size-4" />
-                  Sebelumnya
+                  {t("Previous")}
                 </button>
                 <span className="text-xs text-muted-foreground">
-                  Halaman {Math.floor(offset / 25) + 1}
+                  {t("Page")} {Math.floor(offset / 25) + 1}
                 </span>
                 <button
-                  aria-label="Pilihan berikutnya"
+                  aria-label={t("Next options")}
                   type="button"
                   disabled={disabled || !page.has_more}
                   onClick={() => {
@@ -195,7 +197,7 @@ export function ReferencePicker({
                   }}
                   className="flex min-h-9 items-center gap-1 rounded px-2 text-xs disabled:opacity-40"
                 >
-                  Berikutnya
+                  {t("Next")}
                   <ChevronRight className="size-4" />
                 </button>
               </div>

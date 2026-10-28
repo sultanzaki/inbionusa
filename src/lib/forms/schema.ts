@@ -43,7 +43,7 @@ export const templateSchema = z
         c.addIssue({
           code: "custom",
           path: ["fields", v.fields.indexOf(f), "source"],
-          message: "Pilih sumber data ERP untuk " + f.label,
+          message: "Select an ERP data source for " + f.label,
         });
       if (f.type === "select" && f.options.length === 0)
         c.addIssue({ code: "custom", message: "Add choices for " + f.label });
@@ -72,7 +72,7 @@ export function validateAnswers(
       if (f.type === "select" && !f.options.includes(value))
         errors[f.id] = "Choose an available option.";
       if (f.type === "reference" && !z.uuid().safeParse(value).success)
-        errors[f.id] = "Pilih data ERP yang tersedia.";
+        errors[f.id] = "Choose an available ERP record.";
       if (f.type === "number" && !/^-?\d+(\.\d+)?$/.test(value))
         errors[f.id] = "Enter a valid number.";
       if (f.type === "date" && !z.iso.date().safeParse(value).success)

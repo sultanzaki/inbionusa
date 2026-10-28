@@ -495,9 +495,9 @@ test(
         const siteName = "KBI " + suffix;
         await page.goto(origin + "/dashboard/admin/places");
         await page
-          .getByRole("button", { name: "Tempat baru", exact: true })
+          .getByRole("button", { name: "New site", exact: true })
           .click();
-        await page.getByLabel("Nama tempat", { exact: true }).fill(siteName);
+        await page.getByLabel("Site name", { exact: true }).fill(siteName);
         assert.equal(
           await page
             .getByRole("dialog")
@@ -507,7 +507,7 @@ test(
         );
         await page
           .getByRole("dialog")
-          .getByRole("button", { name: "Simpan", exact: true })
+          .getByRole("button", { name: "Save", exact: true })
           .click();
         await page
           .getByRole("heading", { name: siteName, exact: true })
@@ -518,11 +518,11 @@ test(
           ["Produksi", "production"],
         ]) {
           await page
-            .getByRole("button", { name: "Ruangan baru", exact: true })
+            .getByRole("button", { name: "New room", exact: true })
             .click();
-          await page.getByLabel("Nama ruangan", { exact: true }).fill(name);
+          await page.getByLabel("Room name", { exact: true }).fill(name);
           await page
-            .getByLabel("Jenis ruangan", { exact: true })
+            .getByLabel("Room type", { exact: true })
             .selectOption(kind);
           assert.equal(
             await page
@@ -533,7 +533,7 @@ test(
           );
           await page
             .getByRole("dialog")
-            .getByRole("button", { name: "Simpan", exact: true })
+            .getByRole("button", { name: "Save", exact: true })
             .click();
           await page
             .getByRole("heading", { name: siteName + "/" + name, exact: true })
@@ -541,14 +541,14 @@ test(
         }
         await page
           .getByRole("button", {
-            name: "Edit ruangan " + siteName + "/Lab",
+            name: "Edit room " + siteName + "/Lab",
             exact: true,
           })
           .click();
-        await page.getByLabel("Nama ruangan", { exact: true }).fill("Lab QC");
+        await page.getByLabel("Room name", { exact: true }).fill("Lab QC");
         await page
           .getByRole("dialog")
-          .getByRole("button", { name: "Simpan", exact: true })
+          .getByRole("button", { name: "Save", exact: true })
           .click();
         await page
           .getByRole("heading", { name: siteName + "/Lab QC", exact: true })
@@ -565,10 +565,25 @@ test(
         );
         await page
           .getByRole("button", {
-            name: "Edit ruangan " + siteName + "/Lab QC",
+            name: "Edit room " + siteName + "/Lab QC",
             exact: true,
           })
           .click();
+        await page.evaluate(() => {
+          localStorage.setItem("inb:locale", "id");
+          window.dispatchEvent(new Event("storage"));
+        });
+        await page.getByLabel("Nama ruangan", { exact: true }).waitFor();
+        assert.equal(
+          await page.getByLabel("Nama ruangan", { exact: true }).inputValue(),
+          "Lab QC",
+        );
+        await capture("sites-rooms-mobile-id");
+        await page.evaluate(() => {
+          localStorage.setItem("inb:locale", "en");
+          window.dispatchEvent(new Event("storage"));
+        });
+        await page.getByLabel("Room name", { exact: true }).waitFor();
         await capture("sites-rooms-mobile-edit");
         assert.equal(
           await page.evaluate(
@@ -578,7 +593,7 @@ test(
         );
         await page
           .getByRole("dialog")
-          .getByRole("button", { name: "Batal", exact: true })
+          .getByRole("button", { name: "Cancel", exact: true })
           .click();
         await page.getByRole("dialog").waitFor({ state: "hidden" });
         await page.setViewportSize({ width: 1440, height: 1000 });
@@ -591,20 +606,46 @@ test(
           0,
         );
         await page
-          .getByRole("button", { name: "Form baru", exact: true })
+          .getByRole("button", { name: "New form", exact: true })
           .click();
         await page
-          .getByRole("button", { name: "Lampiran", exact: true })
+          .getByRole("button", { name: "Attachment", exact: true })
           .click();
         await page.getByLabel("Label", { exact: true }).fill("Bukti");
         await page
-          .getByRole("button", { name: "Data ERP", exact: true })
+          .getByRole("button", { name: "ERP data", exact: true })
           .click();
         await page.getByLabel("Label", { exact: true }).fill("Produk terkait");
         await page
-          .getByRole("combobox", { name: "Sumber data ERP", exact: true })
+          .getByRole("combobox", { name: "ERP data source", exact: true })
           .selectOption("products");
-        await page.getByLabel("Wajib diisi", { exact: true }).check();
+        await page.getByLabel("Required", { exact: true }).check();
+        await page.evaluate(() => {
+          localStorage.setItem("inb:locale", "id");
+          window.dispatchEvent(new Event("storage"));
+        });
+        await page
+          .getByRole("tab", { name: "Pertanyaan", exact: true })
+          .waitFor();
+        await page.getByLabel("Sumber data ERP", { exact: true }).waitFor();
+        assert.equal(
+          await page.getByLabel("Label", { exact: true }).inputValue(),
+          "Produk terkait",
+        );
+        assert.equal(
+          await page
+            .getByLabel("Sumber data ERP", { exact: true })
+            .inputValue(),
+          "products",
+        );
+        await capture("forms-editor-id");
+        await page.evaluate(() => {
+          localStorage.setItem("inb:locale", "en");
+          window.dispatchEvent(new Event("storage"));
+        });
+        await page
+          .getByRole("tab", { name: "Questions", exact: true })
+          .waitFor();
         await capture("forms-editor-desktop");
         await page.setViewportSize({ width: 390, height: 844 });
         await capture("forms-editor-mobile");
@@ -616,19 +657,17 @@ test(
         );
         await accessible();
         await page.setViewportSize({ width: 1440, height: 1000 });
-        await page.getByRole("tab", { name: "Pratinjau", exact: true }).click();
+        await page.getByRole("tab", { name: "Preview", exact: true }).click();
         await capture("forms-preview-desktop");
+        await page.getByRole("tab", { name: "Questions", exact: true }).click();
         await page
-          .getByRole("tab", { name: "Pertanyaan", exact: true })
+          .getByRole("button", { name: "Save draft", exact: true })
           .click();
         await page
-          .getByRole("button", { name: "Simpan draft", exact: true })
+          .getByRole("button", { name: "Publish", exact: true })
           .click();
-        await page
-          .getByRole("button", { name: "Terbitkan", exact: true })
-          .click();
-        await page.getByRole("tab", { name: "Bagikan", exact: true }).click();
-        const link = page.getByRole("link", { name: "Buka form", exact: true });
+        await page.getByRole("tab", { name: "Share", exact: true }).click();
+        const link = page.getByRole("link", { name: "Open form", exact: true });
         await link.waitFor();
         const path = await link.getAttribute("href");
         assert.ok(path);
@@ -653,7 +692,25 @@ test(
               publicRequests.push(new URL(r.url()).pathname);
           });
           await publicPage.goto(origin + path);
-          await publicPage.getByLabel(/^Nama pengisi/).waitFor();
+          await publicPage.getByLabel(/^Respondent name/).waitFor();
+          await publicPage
+            .getByRole("button", { name: "Submit response", exact: true })
+            .waitFor();
+          await publicPage.evaluate(() => {
+            localStorage.setItem("inb:locale", "id");
+            window.dispatchEvent(new Event("storage"));
+          });
+          await publicPage
+            .getByRole("button", { name: "Kirim jawaban", exact: true })
+            .waitFor();
+          await publicPage.getByLabel(/^Respondent name/).waitFor();
+          await publicPage.evaluate(() => {
+            localStorage.setItem("inb:locale", "en");
+            window.dispatchEvent(new Event("storage"));
+          });
+          await publicPage
+            .getByRole("button", { name: "Submit response", exact: true })
+            .waitFor();
           assert.equal(
             publicRequests.filter((p) => p === "/api/forms/public/" + token)
               .length,
@@ -684,7 +741,7 @@ test(
             localStorage.setItem("inb-appearance", "dark"),
           );
           await publicPage.reload();
-          await publicPage.getByLabel(/^Nama pengisi/).waitFor();
+          await publicPage.getByLabel(/^Respondent name/).waitFor();
           assert.equal(
             await publicPage.evaluate(() =>
               document.documentElement.classList.contains("dark"),
@@ -702,14 +759,14 @@ test(
           await publicPage.reload();
           await publicPage.setViewportSize({ width: 390, height: 844 });
           await publicPage
-            .getByRole("button", { name: "Kirim jawaban", exact: true })
+            .getByRole("button", { name: "Submit response", exact: true })
             .click();
           await publicPage
-            .getByText("Wajib diisi.", { exact: true })
+            .getByText("Required.", { exact: true })
             .first()
             .waitFor();
           await publicPage
-            .getByLabel(/^Nama pengisi/)
+            .getByLabel(/^Respondent name/)
             .fill("Operator tanpa akun");
           await publicPage
             .getByLabel(/^Produk terkait/)
@@ -744,11 +801,11 @@ test(
             buffer: bytes,
           });
           await publicPage
-            .getByRole("button", { name: "Kirim jawaban", exact: true })
+            .getByRole("button", { name: "Submit response", exact: true })
             .click();
           await publicPage
             .getByRole("heading", {
-              name: "Jawaban berhasil dikirim",
+              name: "Response submitted",
               exact: true,
             })
             .waitFor();
@@ -789,22 +846,22 @@ test(
           assert.match(qr.headers()["content-type"], /image\/png/);
           await page.reload();
           await page
-            .getByRole("button", { name: "Form baru", exact: true })
+            .getByRole("button", { name: "New form", exact: true })
             .waitFor();
           await capture("forms-admin-desktop");
           await accessible();
           await page
-            .getByRole("navigation", { name: "Daftar form", exact: true })
+            .getByRole("navigation", { name: "Form library", exact: true })
             .getByRole("button")
             .first()
             .click();
-          await page.getByRole("tab", { name: /^Jawaban/ }).click();
-          await page.getByText("Jawaban terbaru", { exact: true }).waitFor();
-          await page.getByRole("tab", { name: "Bagikan", exact: true }).click();
-          await page.getByRole("button", { name: "Jeda", exact: true }).click();
+          await page.getByRole("tab", { name: /^Responses/ }).click();
+          await page.getByText("Recent responses", { exact: true }).waitFor();
+          await page.getByRole("tab", { name: "Share", exact: true }).click();
           await page
-            .getByText("Penerimaan jawaban dijeda.", { exact: true })
-            .waitFor();
+            .getByRole("button", { name: "Pause", exact: true })
+            .click();
+          await page.getByText("Responses paused.", { exact: true }).waitFor();
           assert.equal(
             (
               await anonymous.request.get(origin + "/api/forms/public/" + token)
@@ -812,17 +869,17 @@ test(
             404,
           );
           await page
-            .getByRole("button", { name: "Hapus form", exact: true })
+            .getByRole("button", { name: "Delete form", exact: true })
             .click();
           const deleteDialog = page.getByRole("dialog", {
-            name: "Hapus form?",
+            name: "Delete form?",
             exact: true,
           });
           await deleteDialog.waitFor();
-          await submitControl(deleteDialog, "Hapus form");
+          await submitControl(deleteDialog, "Delete form");
           await page
             .getByText(
-              "Form dihapus. Jawaban dan lampiran tetap tersimpan sebagai riwayat.",
+              "Form deleted. Responses and attachments remain in the history.",
               { exact: true },
             )
             .waitFor();
@@ -952,7 +1009,7 @@ test(
             .locator("#" + areaQuestion.id)
             .selectOption(siteName + "/Lab QC");
           await publicPage
-            .getByText("Belum ada alat yang tersedia di ruangan ini.", {
+            .getByText("No equipment is available in this room.", {
               exact: true,
             })
             .waitFor();
@@ -993,12 +1050,12 @@ test(
             animations: "disabled",
           });
           await publicPage
-            .getByRole("button", { name: "Kirim jawaban", exact: true })
+            .getByRole("button", { name: "Submit response", exact: true })
             .click();
           await publicPage.waitForFunction(
             () =>
               document.querySelector("h1")?.textContent ===
-                "Jawaban berhasil dikirim" ||
+                "Response submitted" ||
               Array.from(document.querySelectorAll('[role="alert"]')).some(
                 (el) => Boolean(el.textContent?.trim()),
               ),
@@ -1011,12 +1068,12 @@ test(
           );
           await publicPage
             .getByRole("heading", {
-              name: "Jawaban berhasil dikirim",
+              name: "Response submitted",
               exact: true,
             })
             .waitFor();
           await publicPage
-            .getByText("Catatan tersimpan. Alat siap digunakan kembali.", {
+            .getByText("Record saved. The equipment is ready for use.", {
               exact: true,
             })
             .waitFor();
