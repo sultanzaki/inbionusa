@@ -58,11 +58,6 @@ export async function POST(request: Request, { params }: Context) {
         answers: z.record(z.string(), z.string().max(4000)),
       })
       .parse(JSON.parse(String(multipart.get("data") || "")));
-    const read = await client.rpc("erp_form_public", { p_link: token });
-    if (read.error)
-      return privateJson({ message: "Form unavailable or paused." }, 404);
-    const form = read.data as PublicForm;
-    form.template = templateSchema.parse(form.template);
     const entries: {
       field: string;
       file: File;
@@ -107,13 +102,19 @@ export async function POST(request: Request, { params }: Context) {
         }),
       )
       .digest("hex");
-    const replay = await client.rpc("erp_form_public_receipt", {
+    const prepared = await client.rpc("erp_form_prepare", {
       p_link: token,
       p_request: input.request_key,
       p_hash: hash,
     });
-    if (replay.error) throw Error(replay.error.message);
-    if (replay.data) return privateJson(replay.data);
+    if (prepared.error) {
+      if (["P0002", "42501"].includes(prepared.error.code))
+        return privateJson({ message: "Form unavailable or paused." }, 404);
+      throw Error(prepared.error.message);
+    }
+    if (prepared.data.receipt) return privateJson(prepared.data.receipt);
+    const form = prepared.data.form as PublicForm;
+    form.template = templateSchema.parse(form.template);
     if (
       entries.some(
         (e) =>
@@ -162,22 +163,29 @@ export async function POST(request: Request, { params }: Context) {
           throw Error("File storage is unavailable.");
       }
     }
-    for (const e of entries) {
-      const path =
-        token + "/" + input.request_key + "/" + randomUUID() + "." + e.ext;
-      const result = await client.storage
-        .from("form-attachments")
-        .upload(path, e.bytes, { contentType: e.mime, upsert: false });
-      if (result.error) throw Error("Could not upload file. Retry.");
-      paths.push(path);
-      files.push({
-        field: e.field,
-        path,
-        name: e.file.name.slice(0, 200),
-        mime: e.mime,
-        size: e.file.size,
-      });
+    const uploads = await Promise.allSettled(
+      entries.map(async (e) => {
+        const path =
+          token + "/" + input.request_key + "/" + randomUUID() + "." + e.ext;
+        const result = await client.storage
+          .from("form-attachments")
+          .upload(path, e.bytes, { contentType: e.mime, upsert: false });
+        if (result.error) throw Error("Could not upload file. Retry.");
+        paths.push(path);
+        return {
+          field: e.field,
+          path,
+          name: e.file.name.slice(0, 200),
+          mime: e.mime,
+          size: e.file.size,
+        };
+      }),
+    );
+    for (const result of uploads) {
+      if (result.status === "fulfilled") files.push(result.value);
     }
+    if (uploads.some((r) => r.status === "rejected"))
+      throw Error("Could not upload file. Retry.");
     const result = await client.rpc("erp_form_submit", {
       p_link: token,
       p_revision: input.revision,

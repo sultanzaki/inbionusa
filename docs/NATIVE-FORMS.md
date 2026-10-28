@@ -63,9 +63,19 @@ Upload dilakukan server. Kunci Supabase tidak dikirim ke browser. Bucket dibuat 
 
 Jangan mengubah bucket menjadi publik. Pemeriksaan server menolak upload bila bucket ternyata publik. Tidak ada fitur penghapusan massal atau retensi otomatis pada rilis awal. Backup database tidak menyertakan binary Storage; siapkan backup/retensi Storage tersendiri sesuai kebutuhan perusahaan.
 
+## Kinerja dan pengisian
+
+Migrasi 036 memisahkan pemeriksaan akses dari pemuatan pilihan alat/batch/petugas. Pengecekan replay, submit, dan referensi memakai guard privat yang ringan. Pengiriman normal memakai dua RPC server → database (`erp_form_prepare`, `erp_form_submit`), menggantikan tiga RPC sebelumnya dan empat pembangunan ulang pilihan ERP. Validasi aktif/jeda/hapus, penerbit, modul, versi, referensi, dan replay tetap berlaku saat penyimpanan.
+
+Halaman pengisian menerima data langsung melalui render server di dalam Suspense. Skeleton tampil selama menunggu, tanpa menunggu JavaScript lalu melakukan GET data form lagi. Kontrol pengisian diaktifkan setelah hidrasi agar input pertama tidak tertimpa state awal. Pilihan referensi dicari saat field digunakan; pencarian ditunda 200 ms saat mengetik. Tidak ada cache jangka panjang untuk status alat atau otorisasi. Refresh daftar dan detail admin setelah penyimpanan berjalan bersamaan; daftar admin hanya memuat judul dan metadata. Index tambahan mencakup pemakaian/pencucian alat terbaru dan riwayat jawaban.
+
+Form pencucian dikelompokkan menjadi Identitas alat, Pelaksanaan pencucian, Pemeriksaan hasil, dan Verifikasi. Pertanyaan tambahan tetap tersedia. Form umum dikelompokkan setiap delapan pertanyaan. Bagian dapat diisi tanpa harus melewati wizard. Indikator kelengkapan menghitung field wajib yang sudah memiliki nilai, bukan persetujuan akhir. Pemeriksaan field wajib/format/ukuran lampiran dilakukan sebelum pengiriman dan tetap diulangi server. Tombol kirim menampilkan status penyimpanan; pengiriman ganda ditahan. Pilihan referensi ditutup setelah dipilih, dan lampiran menampilkan nama/ukuran serta tombol hapus sebelum pengiriman.
+
+Upload maksimal tiga file berjalan paralel setelah pemeriksaan bucket privat. Server menunggu seluruh upload selesai, termasuk ketika ada yang gagal, sebelum membersihkan file yang berhasil diunggah dari pengiriman gagal. Riwayat operasional dan ketentuan waktu pencucian tidak diubah.
+
 ## Deployment dan pemeriksaan
 
-Terapkan migrasi 033 setelah 032 dan 034 setelah 033 dan 035 setelah 034, lalu deploy aplikasi. Form umum tidak bergantung pada modul Production. Tautan lama `/dashboard/forms` diarahkan ke lokasi Administration yang baru. Migrasi bersifat tambahan, tidak mengubah catatan produksi lama, dan tidak membuat template aktif otomatis. Tidak perlu environment secret Apps Script untuk form native. Akses Storage menggunakan service role server yang sudah digunakan aplikasi.
+Terapkan migrasi 033 setelah 032 dan 034 setelah 033 dan 035 setelah 034 dan 036 setelah 035, lalu deploy aplikasi. Form umum tidak bergantung pada modul Production. Tautan lama `/dashboard/forms` diarahkan ke lokasi Administration yang baru. Migrasi bersifat tambahan, tidak mengubah catatan produksi lama, dan tidak membuat template aktif otomatis. Tidak perlu environment secret Apps Script untuk form native. Akses Storage menggunakan service role server yang sudah digunakan aplikasi.
 
 Pemeriksaan lokal:
 - `npx tsx --test tests/native-forms.test.ts tests/native-forms-database.test.ts`

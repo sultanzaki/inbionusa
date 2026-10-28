@@ -26,40 +26,45 @@ export function ReferencePicker({
   invalid?: boolean;
   required?: boolean;
 }) {
-  const [query, setQuery] = useState(""),
+  const [open, setOpen] = useState(false),
+    [query, setQuery] = useState(""),
     [offset, setOffset] = useState(0),
     [page, setPage] = useState<ReferencePage>({ items: [], has_more: false }),
-    [loading, setLoading] = useState(true),
+    [loading, setLoading] = useState(false),
     [error, setError] = useState(""),
     [selected, setSelected] = useState<ReferenceOption | null>(null),
     [retry, setRetry] = useState(0);
   useEffect(() => {
+    if (!open) return;
     const abort = new AbortController();
-    const timer = setTimeout(() => {
-      setLoading(true);
-      setError("");
-      fetch(
-        `/api/forms/public/${token}/references?` +
-          new URLSearchParams({ field, q: query, offset: String(offset) }),
-        { cache: "no-store", signal: abort.signal },
-      )
-        .then(async (r) => {
-          const v = await r.json();
-          if (!r.ok) throw Error(v.message);
-          if (!abort.signal.aborted) setPage(v);
-        })
-        .catch((e) => {
-          if (!abort.signal.aborted) setError(e.message);
-        })
-        .finally(() => {
-          if (!abort.signal.aborted) setLoading(false);
-        });
-    }, 250);
+    const timer = setTimeout(
+      () => {
+        setLoading(true);
+        setError("");
+        fetch(
+          `/api/forms/public/${token}/references?` +
+            new URLSearchParams({ field, q: query, offset: String(offset) }),
+          { cache: "no-store", signal: abort.signal },
+        )
+          .then(async (r) => {
+            const v = await r.json();
+            if (!r.ok) throw Error(v.message);
+            if (!abort.signal.aborted) setPage(v);
+          })
+          .catch((e) => {
+            if (!abort.signal.aborted) setError(e.message);
+          })
+          .finally(() => {
+            if (!abort.signal.aborted) setLoading(false);
+          });
+      },
+      query ? 200 : 0,
+    );
     return () => {
       clearTimeout(timer);
       abort.abort();
     };
-  }, [token, field, query, offset, retry]);
+  }, [token, field, query, offset, retry, open]);
   return (
     <div className="min-w-0 space-y-2" aria-busy={loading}>
       <div className="relative">
@@ -68,6 +73,12 @@ export function ReferencePicker({
           id={field}
           aria-invalid={invalid}
           aria-describedby={invalid ? field + "-error" : undefined}
+          onFocus={() => {
+            if (!open) {
+              setLoading(true);
+              setOpen(true);
+            }
+          }}
           type="search"
           maxLength={150}
           value={query}
@@ -99,96 +110,99 @@ export function ReferencePicker({
           </button>
         </div>
       )}
-      <div className="overflow-hidden rounded-lg border bg-background">
-        {loading ? (
-          <p
-            role="status"
-            className="flex items-center gap-2 p-3 text-sm text-muted-foreground"
-          >
-            <Loader2 className="size-4 animate-spin" />
-            Memuat pilihan…
-          </p>
-        ) : error ? (
-          <div className="p-3 text-sm">
-            <p role="alert">{error}</p>
-            <button
-              type="button"
-              className="mt-2 text-primary underline"
-              onClick={() => setRetry((v) => v + 1)}
+      {open && (
+        <div className="overflow-hidden rounded-lg border bg-background">
+          {loading ? (
+            <p
+              role="status"
+              className="flex items-center gap-2 p-3 text-sm text-muted-foreground"
             >
-              Coba lagi
-            </button>
-          </div>
-        ) : (
-          <>
-            <div
-              className="max-h-56 overflow-y-auto overscroll-contain"
-              role="group"
-              aria-label="Pilihan data ERP"
-            >
-              {page.items.length === 0 && (
-                <p className="p-3 text-sm text-muted-foreground">
-                  Tidak ada data yang sesuai.
-                </p>
-              )}
-              {page.items.map((item) => (
-                <label
-                  key={item.id}
-                  className="flex min-w-0 cursor-pointer items-start gap-3 border-b p-3 text-sm last:border-b-0 hover:bg-muted/50"
+              <Loader2 className="size-4 animate-spin" />
+              Memuat pilihan…
+            </p>
+          ) : error ? (
+            <div className="p-3 text-sm">
+              <p role="alert">{error}</p>
+              <button
+                type="button"
+                className="mt-2 text-primary underline"
+                onClick={() => setRetry((v) => v + 1)}
+              >
+                Coba lagi
+              </button>
+            </div>
+          ) : (
+            <>
+              <div
+                className="max-h-56 overflow-y-auto overscroll-contain"
+                role="group"
+                aria-label="Pilihan data ERP"
+              >
+                {page.items.length === 0 && (
+                  <p className="p-3 text-sm text-muted-foreground">
+                    Tidak ada data yang sesuai.
+                  </p>
+                )}
+                {page.items.map((item) => (
+                  <label
+                    key={item.id}
+                    className="flex min-w-0 cursor-pointer items-start gap-3 border-b p-3 text-sm last:border-b-0 hover:bg-muted/50"
+                  >
+                    <input
+                      className="mt-1 shrink-0 accent-primary"
+                      type="radio"
+                      name={field}
+                      value={item.id}
+                      checked={value === item.id}
+                      required={required && !value}
+                      disabled={disabled}
+                      onChange={() => {
+                        setSelected(item);
+                        setOpen(false);
+                        onChange(item.id);
+                      }}
+                    />
+                    <span className="min-w-0 break-words [overflow-wrap:anywhere]">
+                      {item.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <div className="flex items-center justify-between border-t px-2 py-1">
+                <button
+                  aria-label="Pilihan sebelumnya"
+                  type="button"
+                  disabled={disabled || offset === 0}
+                  onClick={() => {
+                    setOffset((v) => Math.max(0, v - 25));
+                    setLoading(true);
+                  }}
+                  className="flex min-h-9 items-center gap-1 rounded px-2 text-xs disabled:opacity-40"
                 >
-                  <input
-                    className="mt-1 shrink-0 accent-primary"
-                    type="radio"
-                    name={field}
-                    value={item.id}
-                    checked={value === item.id}
-                    required={required && !value}
-                    disabled={disabled}
-                    onChange={() => {
-                      setSelected(item);
-                      onChange(item.id);
-                    }}
-                  />
-                  <span className="min-w-0 break-words [overflow-wrap:anywhere]">
-                    {item.label}
-                  </span>
-                </label>
-              ))}
-            </div>
-            <div className="flex items-center justify-between border-t px-2 py-1">
-              <button
-                aria-label="Pilihan sebelumnya"
-                type="button"
-                disabled={disabled || offset === 0}
-                onClick={() => {
-                  setOffset((v) => Math.max(0, v - 25));
-                  setLoading(true);
-                }}
-                className="flex min-h-9 items-center gap-1 rounded px-2 text-xs disabled:opacity-40"
-              >
-                <ChevronLeft className="size-4" />
-                Sebelumnya
-              </button>
-              <span className="text-xs text-muted-foreground">
-                Halaman {Math.floor(offset / 25) + 1}
-              </span>
-              <button
-                aria-label="Pilihan berikutnya"
-                type="button"
-                disabled={disabled || !page.has_more}
-                onClick={() => {
-                  setOffset((v) => v + 25);
-                  setLoading(true);
-                }}
-                className="flex min-h-9 items-center gap-1 rounded px-2 text-xs disabled:opacity-40"
-              >
-                Berikutnya
-                <ChevronRight className="size-4" />
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+                  <ChevronLeft className="size-4" />
+                  Sebelumnya
+                </button>
+                <span className="text-xs text-muted-foreground">
+                  Halaman {Math.floor(offset / 25) + 1}
+                </span>
+                <button
+                  aria-label="Pilihan berikutnya"
+                  type="button"
+                  disabled={disabled || !page.has_more}
+                  onClick={() => {
+                    setOffset((v) => v + 25);
+                    setLoading(true);
+                  }}
+                  className="flex min-h-9 items-center gap-1 rounded px-2 text-xs disabled:opacity-40"
+                >
+                  Berikutnya
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

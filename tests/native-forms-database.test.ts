@@ -16,6 +16,7 @@ before(async () => {
     "033_native_forms",
     "034_general_forms_references",
     "035_forms_delete",
+    "036_forms_performance",
   ]) {
     const sql = await readFile(
       new URL("../src/lib/db/migrations/" + name + ".sql", import.meta.url),
@@ -27,6 +28,7 @@ before(async () => {
         "033_native_forms",
         "034_general_forms_references",
         "035_forms_delete",
+        "036_forms_performance",
       ].includes(name)
     )
       await db.query(sql);
@@ -498,4 +500,65 @@ test("form deletion rejects stale versions and nonadministrators", async () => {
       .rows[0].active,
     true,
   );
+});
+
+test("lean form guards never rebuild full public choices and retain private ACLs", async () => {
+  const f = await referenceFixture();
+  for (const name of [
+    "erp_form_public_receipt",
+    "erp_form_submit",
+    "erp_form_references",
+  ]) {
+    const def = (
+      await db.query(
+        "select prosrc from pg_proc where pronamespace='public'::regnamespace and proname=$1",
+        [name],
+      )
+    ).rows[0].prosrc as string;
+    assert.ok(!def.includes("perform public.erp_form_public(p_link)"), name);
+    assert.ok(def.includes("perform public.erp_form_guard(p_link)"), name);
+  }
+  assert.equal(
+    (
+      await db.query(
+        "select has_function_privilege('service_role','erp_form_guard(uuid)','execute') a",
+      )
+    ).rows[0].a,
+    false,
+  );
+  const request = randomUUID();
+  const prepared = (
+    await db.query("select erp_form_prepare($1,$2,'test') r", [
+      f.form.public_token,
+      request,
+    ])
+  ).rows[0].r;
+  assert.equal(prepared.form.template.title, "Reference checklist");
+  await db.query("select erp_form_submit($1,1,$2,'test',$3,'[]')", [
+    f.form.public_token,
+    request,
+    { record: f.product },
+  ]);
+  const replay = (
+    await db.query("select erp_form_prepare($1,$2,'test') r", [
+      f.form.public_token,
+      request,
+    ])
+  ).rows[0].r;
+  assert.equal(replay.receipt.duplicate, true);
+  assert.equal(replay.form, undefined);
+  const list = await admin(f.token, "list");
+  const row = list.find((r: { id: string }) => r.id === f.form.id);
+  assert.deepEqual(row.draft, { title: "Reference checklist" });
+  assert.equal(row.published, undefined);
+  await admin(f.token, "pause", f.form.id, null, f.form.version);
+  await db.query("savepoint lean_paused");
+  await assert.rejects(
+    db.query("select erp_form_prepare($1,$2,'test')", [
+      f.form.public_token,
+      request,
+    ]),
+    /no_data_found/,
+  );
+  await db.query("rollback to savepoint lean_paused");
 });

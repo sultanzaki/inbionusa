@@ -178,3 +178,29 @@ test("ERP reference fields require a known source and valid UUID choices", () =>
     {},
   );
 });
+
+test("cleaning sections preserve every field, including additional uploads and renamed labels", async () => {
+  const { formSections } = await import("../src/lib/forms/layout");
+  const template = {
+    ...cleaningTemplate,
+    fields: [
+      ...cleaningTemplate.fields.map((f) => ({
+        ...f,
+        label: "Renamed " + f.label,
+      })),
+      {
+        id: "evidence",
+        label: "Evidence",
+        type: "file" as const,
+        required: false,
+        options: [],
+      },
+    ],
+  };
+  const sections = formSections(template);
+  const ids = sections.flatMap((s) => s.fields.map((f) => f.id));
+  assert.equal(sections.length, 5);
+  assert.equal(new Set(ids).size, template.fields.length);
+  assert.deepEqual([...ids].sort(), template.fields.map((f) => f.id).sort());
+  assert.equal(sections[1].fields.filter((f) => f.type === "time").length, 2);
+});

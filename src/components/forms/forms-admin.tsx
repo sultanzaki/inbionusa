@@ -161,8 +161,8 @@ export function FormsAdmin() {
         }),
         v = await r.json();
       if (!r.ok) throw Error(v.message);
-      await load();
       if (action === "delete") {
+        await load();
         setSelected(null);
         setDraft(null);
         setActive(0);
@@ -172,7 +172,7 @@ export function FormsAdmin() {
         );
         return;
       }
-      await load(v.id);
+      await Promise.all([load(), load(v.id)]);
       if (action === "create") {
         setActive(0);
         setTab("questions");

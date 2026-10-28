@@ -112,6 +112,7 @@ test(
     let holdSession: Promise<void> | null = null;
     let observeERPRead: (() => void) | null = null;
     const formFiles = new Map<string, Buffer>();
+    let rejectFormUpload = 0;
     const relay = createServer(async (req, res) => {
       if (
         process.env.TEST_NATIVE_FORMS_ONLY === "1" &&
@@ -138,6 +139,17 @@ test(
           url.startsWith("/storage/v1/object/form-attachments/") &&
           req.method === "POST"
         ) {
+          if (rejectFormUpload > 0 && --rejectFormUpload === 0) {
+            res.writeHead(400, { "content-type": "application/json" });
+            res.end(
+              JSON.stringify({
+                message: "Local fixture rejected upload",
+                statusCode: "400",
+                error: "Upload error",
+              }),
+            );
+            return;
+          }
           formFiles.set(url, Buffer.concat(chunks));
           res.writeHead(200, { "content-type": "application/json" });
           res.end(
@@ -146,6 +158,17 @@ test(
               Id: randomUUID(),
             }),
           );
+          return;
+        }
+        if (
+          url === "/storage/v1/object/form-attachments" &&
+          req.method === "DELETE"
+        ) {
+          const input = JSON.parse(Buffer.concat(chunks).toString());
+          for (const path of input.prefixes || [])
+            formFiles.delete("/storage/v1/object/form-attachments/" + path);
+          res.writeHead(200, { "content-type": "application/json" });
+          res.end("[]");
           return;
         }
         if (
@@ -375,9 +398,9 @@ test(
           animations: "disabled",
         });
       }
-      async function accessible() {
+      async function accessible(target = page) {
         // Evaluate resting UI, rather than the low-opacity frame of an entering panel.
-        await page.evaluate(async () => {
+        await target.evaluate(async () => {
           await document.fonts.ready;
           await Promise.all(
             document
@@ -390,10 +413,10 @@ test(
               .map((a) => a.finished.catch(() => {})),
           );
         });
-        await page.addScriptTag({
+        await target.addScriptTag({
           path: createRequire(import.meta.url).resolve("axe-core/axe.js"),
         });
-        const violations = await page.evaluate(async () => {
+        const violations = await target.evaluate(async () => {
           const axe = (
             window as unknown as {
               axe: {
@@ -531,14 +554,77 @@ test(
         });
         try {
           const publicPage = await anonymous.newPage();
+          publicPage.on("pageerror", (error) =>
+            runtimeErrors.push(error.message),
+          );
+          const publicRequests: string[] = [];
+          publicPage.on("request", (r) => {
+            if (r.method() === "GET")
+              publicRequests.push(new URL(r.url()).pathname);
+          });
           await publicPage.goto(origin + path);
+          await publicPage.getByLabel(/^Nama pengisi/).waitFor();
+          assert.equal(
+            publicRequests.filter((p) => p === "/api/forms/public/" + token)
+              .length,
+            0,
+          );
+          assert.equal(
+            publicRequests.filter((p) => p.includes("/references")).length,
+            0,
+          );
+          await publicPage.setViewportSize({ width: 1280, height: 900 });
+          await publicPage.screenshot({
+            path: artifacts + "/public-form-desktop.png",
+            fullPage: true,
+          });
+          await accessible(publicPage);
+          await publicPage.setViewportSize({ width: 320, height: 740 });
+          assert.equal(
+            await publicPage.evaluate(
+              () => document.documentElement.scrollWidth > innerWidth,
+            ),
+            false,
+          );
+          await publicPage.screenshot({
+            path: artifacts + "/public-form-320.png",
+            fullPage: true,
+          });
+          await publicPage.evaluate(() =>
+            localStorage.setItem("inb-appearance", "dark"),
+          );
+          await publicPage.reload();
+          await publicPage.getByLabel(/^Nama pengisi/).waitFor();
+          assert.equal(
+            await publicPage.evaluate(() =>
+              document.documentElement.classList.contains("dark"),
+            ),
+            true,
+          );
+          await publicPage.screenshot({
+            path: artifacts + "/public-form-dark.png",
+            fullPage: true,
+          });
+          await accessible(publicPage);
+          await publicPage.evaluate(() =>
+            localStorage.setItem("inb-appearance", "light"),
+          );
+          await publicPage.reload();
+          await publicPage.setViewportSize({ width: 390, height: 844 });
+          await publicPage
+            .getByRole("button", { name: "Kirim jawaban", exact: true })
+            .click();
+          await publicPage
+            .getByText("Wajib diisi.", { exact: true })
+            .first()
+            .waitFor();
           await publicPage
             .getByLabel(/^Nama pengisi/)
             .fill("Operator tanpa akun");
           await publicPage
             .getByLabel(/^Produk terkait/)
             .fill("E2E Product 119");
-          await publicPage.getByRole("radio").first().check();
+          await publicPage.getByRole("radio").first().click();
           await publicPage.screenshot({
             path:
               (process.env.TEST_ARTIFACT_DIR || "/tmp") +
@@ -626,6 +712,9 @@ test(
           await page.getByText("Jawaban terbaru", { exact: true }).waitFor();
           await page.getByRole("tab", { name: "Bagikan", exact: true }).click();
           await page.getByRole("button", { name: "Jeda", exact: true }).click();
+          await page
+            .getByText("Penerimaan jawaban dijeda.", { exact: true })
+            .waitFor();
           assert.equal(
             (
               await anonymous.request.get(origin + "/api/forms/public/" + token)
@@ -665,6 +754,71 @@ test(
             1,
           );
           assert.equal(formFiles.size, 1);
+          // A rejected parallel upload must remove the successfully uploaded sibling.
+          const uploadTemplate = {
+            title: "Parallel uploads",
+            description: "",
+            kind: "general",
+            fields: ["a", "b"].map((id) => ({
+              id,
+              label: id,
+              type: "file",
+              required: true,
+              options: [],
+            })),
+          };
+          const uploadForm = await (
+            await page.request.post(origin + "/api/forms", {
+              data: { action: "create", template: uploadTemplate },
+              headers: { origin },
+            })
+          ).json();
+          const uploadDetail = await (
+            await page.request.get(origin + "/api/forms?id=" + uploadForm.id)
+          ).json();
+          const uploadPublish = await page.request.post(origin + "/api/forms", {
+            data: {
+              action: "publish",
+              id: uploadForm.id,
+              version: uploadDetail.version,
+            },
+            headers: { origin },
+          });
+          assert.equal(uploadPublish.status(), 200);
+          rejectFormUpload = 2;
+          const failedUpload = await anonymous.request.post(
+            origin + "/api/forms/public/" + uploadDetail.public_token,
+            {
+              multipart: {
+                data: JSON.stringify({
+                  revision: 1,
+                  request_key: randomUUID(),
+                  answers: {},
+                }),
+                a: {
+                  name: "first.pdf",
+                  mimeType: "application/pdf",
+                  buffer: bytes,
+                },
+                b: {
+                  name: "second.pdf",
+                  mimeType: "application/pdf",
+                  buffer: bytes,
+                },
+              },
+            },
+          );
+          assert.equal(failedUpload.status(), 422);
+          assert.equal(formFiles.size, 1);
+          assert.equal(
+            (
+              await db.query(
+                "select count(*)::int n from erp_form_submissions where form_id=$1",
+                [uploadForm.id],
+              )
+            ).rows[0].n,
+            0,
+          );
           const { cleaningTemplate } =
             await import("../src/lib/forms/cleaning-template");
           const create = await page.request.post(origin + "/api/forms", {
@@ -740,6 +894,20 @@ test(
           await publicPage
             .getByRole("button", { name: "Kirim jawaban", exact: true })
             .click();
+          await publicPage.waitForFunction(
+            () =>
+              document.querySelector("h1")?.textContent ===
+                "Jawaban berhasil dikirim" ||
+              Array.from(document.querySelectorAll('[role="alert"]')).some(
+                (el) => Boolean(el.textContent?.trim()),
+              ),
+          );
+          assert.deepEqual(
+            (await publicPage.getByRole("alert").allTextContents()).filter(
+              (text) => text.trim(),
+            ),
+            [],
+          );
           await publicPage
             .getByRole("heading", {
               name: "Jawaban berhasil dikirim",
