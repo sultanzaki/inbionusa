@@ -4,12 +4,12 @@
 
 Administrator membuka **Administration → Forms** (`/dashboard/admin/forms`). Menu dan tindakan pengelolaan mengikuti hak administrator ERP; pengisian melalui link publik tidak memerlukan akun.
 
-1. Pilih **Form baru** untuk membuat form umum. Tombol pembuatan template pencucian tidak ditampilkan; form pencucian yang sudah ada tetap dapat digunakan.
+1. Pilih **New form** untuk membuat form. Untuk otomatisasi pencucian, buka **Form automation → Record equipment cleaning**. Form pencucian yang sudah ada memakai editor yang sama dan tetap dapat digunakan.
 2. Ubah judul/deskripsi, tambah pertanyaan, pilih tipe, atur wajib isi dan pilihan jawaban. Pertanyaan dapat diurutkan naik/turun. Tipe: teks, paragraf, angka, tanggal, waktu, pilihan tunggal, referensi data ERP, file. Editor menampilkan satu pertanyaan sekaligus. Gunakan daftar urutan di desktop atau pemilih pertanyaan di mobile.
 3. Untuk upload, tambahkan pertanyaan lalu pilih tipe **file**. Maksimal tiga field file, masing-masing satu file. PDF, JPG dan PNG didukung; maksimal 2 MB per file dan 3 MB gabungan.
-4. **Simpan draft**, lalu **Terbitkan**. Tombol penerbitan dinonaktifkan selama masih ada perubahan yang belum disimpan.
-5. Buka tab **Bagikan**, kemudian **Salin link**, **Buka form**, atau **Unduh QR** untuk membagikan. Halaman pengisian berada di `/forms/<token>` dan dapat digunakan tanpa login.
-6. Tab **Pratinjau** menampilkan draft tanpa mengirim data. Jawaban terbaru dan file tersedia di tab **Jawaban**. **Jeda** menghentikan penerimaan melalui link tersebut tanpa menghapus jawaban.
+4. **Save draft**, lalu **Publish**. Tombol penerbitan dinonaktifkan selama masih ada perubahan yang belum disimpan.
+5. Buka tab **Share**, kemudian **Copy link**, **Open form**, atau **Download QR** untuk membagikan. Halaman pengisian berada di `/forms/<token>` dan dapat digunakan tanpa login.
+6. Tab **Preview** menampilkan draft tanpa mengirim data. Jawaban terbaru dan file tersedia di tab **Responses**. **Pause** menghentikan penerimaan melalui link tersebut tanpa menghapus jawaban.
 
 Perubahan draft tidak memengaruhi form yang sedang diterbitkan. Menerbitkan ulang menaikkan versi; setiap jawaban menyimpan salinan template dan versinya. Pengiriman yang memakai versi lama ditolak agar pengguna memuat ulang. Pengiriman ulang dengan ID dan isi yang sama tidak menggandakan jawaban.
 
@@ -23,18 +23,18 @@ Tambahkan **Data ERP**, atau pilih tipe **Referensi data ERP**, kemudian pilih *
 
 Sumber yang tersedia setelah pemeriksaan struktur database:
 
-| Kelompok | Sumber |
-| --- | --- |
-| Master data & Administration | Produk, satuan, pengguna aktif |
-| Production | Peralatan, perintah produksi, catatan hasil produksi, pencucian alat |
-| Warehouse | Batch/lot produk, gudang, lokasi/area, palet, pergerakan stok/DO, stock opname, transfer gudang, retur |
-| Purchase | Bahan baku, lot bahan baku, pemasok, purchase order |
-| Sales | Pelanggan, quotation, sales order |
-| CRM | Peluang penjualan, aktivitas, permintaan sampel |
-| Quality | Inspeksi produk, inspeksi bahan masuk, COA, spesifikasi bahan |
-| Documents | Dokumen produk, dokumen bahan/pemasok |
-| Service | Nomor kasus layanan |
-| Finance | Nomor dokumen tagihan, nomor pembayaran |
+| Kelompok                     | Sumber                                                                                                 |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Master data & Administration | Produk, satuan, pengguna aktif                                                                         |
+| Production                   | Peralatan, perintah produksi, catatan hasil produksi, pencucian alat                                   |
+| Warehouse                    | Batch/lot produk, gudang, lokasi/area, palet, pergerakan stok/DO, stock opname, transfer gudang, retur |
+| Purchase                     | Bahan baku, lot bahan baku, pemasok, purchase order                                                    |
+| Sales                        | Pelanggan, quotation, sales order                                                                      |
+| CRM                          | Peluang penjualan, aktivitas, permintaan sampel                                                        |
+| Quality                      | Inspeksi produk, inspeksi bahan masuk, COA, spesifikasi bahan                                          |
+| Documents                    | Dokumen produk, dokumen bahan/pemasok                                                                  |
+| Service                      | Nomor kasus layanan                                                                                    |
+| Finance                      | Nomor dokumen tagihan, nomor pembayaran                                                                |
 
 Referensi hanya mengekspos identitas: ID dan label kode/nama/nomor/tanggal sesuai sumber. Tidak ada harga, saldo, rekening bank, kontak pribadi, file dokumen, password, sesi, audit mentah, atau komposisi BOM. Tabel teknis, counter, tabel relasi/baris transaksi, dan tabel keamanan tidak menjadi pilihan referensi mandiri. Deviasi/CAPA yang dapat terkait BOM dilindungi tidak diekspos melalui referensi umum ini.
 
@@ -46,7 +46,13 @@ Tempat dan ruangan dikelola melalui **Administration → Sites & rooms**. Piliha
 
 ## Pencucian alat
 
-Pertanyaan sistem pada template pencucian boleh diganti labelnya dan diurutkan, tetapi tidak boleh dihapus, dibuat opsional, atau diganti tipenya. Binding internal tetap menghubungkan jawaban dengan pemeriksaan alat. Pertanyaan tambahan, termasuk file, boleh ditambahkan.
+Semua form memakai editor yang sama. Field pencucian dapat dihapus, diganti tipenya, dibuat opsional, diberi label baru dan diurutkan seperti field lainnya. Buka **Form automation → Record equipment cleaning** untuk mengaktifkan pembaruan status alat. Pada setiap pertanyaan, **Use answer for** memetakan jawabannya ke data pencucian. Pengaturan **Answer meanings** memetakan pilihan buatan pengguna (misalnya Approved/Hold) ke makna operasional.
+
+Draft dengan pemetaan pencucian belum lengkap tetap dapat disimpan. Saat **Publish**, aplikasi memeriksa satu field untuk setiap data operasional wajib, tipe/sumber referensinya, kewajiban pengisian, serta makna setiap pilihan. Pemeriksaan kesiapan harus menyediakan jawaban lulus dan gagal. Catatan, bahan pembersih, dan tindakan koreksi tidak wajib menjadi field tersendiri. Pemetaan yang belum lengkap dijelaskan per field; versi terbit sebelumnya tetap berjalan.
+
+Alat, ruangan dan petugas dapat memakai tipe **ERP data reference**, sama dengan form umum. Petugas pencucian dibatasi pada pengguna Produksi yang aktif dan alat yang sedang dipakai tidak tersedia. Form lama dengan dropdown bawaan tetap bekerja; **Use ERP reference** mengubah pertanyaan tersebut ke pemilih referensi standar. Nama pertanyaan tidak menentukan integrasi; pemetaan internal tetap stabil.
+
+Pilihan **Save response only** menonaktifkan otomatisasi pada versi yang diterbitkan berikutnya. Memilih referensi alat pada form umum tidak mengubah status alat.
 
 - Pilihan alat, area, dan petugas berasal dari ERP. Pemilihan menggunakan ID, sehingga nama yang sama tidak menyebabkan pencocokan ambigu.
 - Area mengikuti alat yang dipilih. Nomor batch dipilih dari pemakaian terakhir alat, termasuk nomor order/record serta lot hasilnya. Tanda `-` mengikuti aturan nonproduk yang sudah ada.
@@ -71,7 +77,7 @@ Migrasi 036 memisahkan pemeriksaan akses dari pemuatan pilihan alat/batch/petuga
 
 Halaman pengisian menerima data langsung melalui render server di dalam Suspense. Skeleton tampil selama menunggu, tanpa menunggu JavaScript lalu melakukan GET data form lagi. Kontrol pengisian diaktifkan setelah hidrasi agar input pertama tidak tertimpa state awal. Pilihan referensi dicari saat field digunakan; pencarian ditunda 200 ms saat mengetik. Tidak ada cache jangka panjang untuk status alat atau otorisasi. Refresh daftar dan detail admin setelah penyimpanan berjalan bersamaan; daftar admin hanya memuat judul dan metadata. Index tambahan mencakup pemakaian/pencucian alat terbaru dan riwayat jawaban.
 
-Form pencucian dikelompokkan menjadi Identitas alat, Pelaksanaan pencucian, Pemeriksaan hasil, dan Verifikasi. Pertanyaan tambahan tetap tersedia. Form umum dikelompokkan setiap delapan pertanyaan. Bagian dapat diisi tanpa harus melewati wizard. Indikator kelengkapan menghitung field wajib yang sudah memiliki nilai, bukan persetujuan akhir. Pemeriksaan field wajib/format/ukuran lampiran dilakukan sebelum pengiriman dan tetap diulangi server. Tombol kirim menampilkan status penyimpanan; pengiriman ganda ditahan. Pilihan referensi ditutup setelah dipilih, dan lampiran menampilkan nama/ukuran serta tombol hapus sebelum pengiriman.
+Semua form, termasuk pencucian, mengikuti urutan editor dan dikelompokkan setiap delapan pertanyaan. Saran nomor batch tampil sebagai datalist pada field teks; field tidak diubah diam-diam menjadi dropdown. Bagian dapat diisi tanpa harus melewati wizard. Indikator kelengkapan menghitung field wajib yang sudah memiliki nilai, bukan persetujuan akhir. Pemeriksaan field wajib/format/ukuran lampiran dilakukan sebelum pengiriman dan tetap diulangi server. Tombol kirim menampilkan status penyimpanan; pengiriman ganda ditahan. Pilihan referensi ditutup setelah dipilih, dan lampiran menampilkan nama/ukuran serta tombol hapus sebelum pengiriman.
 
 Upload maksimal tiga file berjalan paralel setelah pemeriksaan bucket privat. Server menunggu seluruh upload selesai, termasuk ketika ada yang gagal, sebelum membersihkan file yang berhasil diunggah dari pengiriman gagal. Riwayat operasional dan ketentuan waktu pencucian tidak diubah.
 
@@ -80,9 +86,16 @@ Upload maksimal tiga file berjalan paralel setelah pemeriksaan bucket privat. Se
 Terapkan migrasi 033 setelah 032 dan 034 setelah 033 dan 035 setelah 034 dan 036 setelah 035 dan 037 setelah 036, lalu deploy aplikasi. Form umum tidak bergantung pada modul Production. Tautan lama `/dashboard/forms` diarahkan ke lokasi Administration yang baru. Migrasi bersifat tambahan, tidak mengubah catatan produksi lama, dan tidak membuat template aktif otomatis. Tidak perlu environment secret Apps Script untuk form native. Akses Storage menggunakan service role server yang sudah digunakan aplikasi.
 
 Pemeriksaan lokal:
+
 - `npx tsx --test tests/native-forms.test.ts tests/native-forms-database.test.ts`
 - `TEST_NATIVE_FORMS_ONLY=1 npm run test:e2e`
 
 Tes browser memakai adapter Storage lokal untuk menguji alur API upload dan otorisasi; pengaturan Storage cloud perlu diverifikasi saat deployment. Halaman admin menampilkan maksimal 100 jawaban terbaru per form pada versi awal; seluruh jawaban tetap tersimpan. Form builder belum mencakup conditional sections, rumus, tanda tangan, multi-select, atau pengisian offline.
 
 Status pemeriksaan pengembangan: tes unit dan database untuk validasi, versi, replay, hak akses dan pemilihan ID telah lulus. Tes browser mencakup pembuatan/penerbitan form, pengiriman PDF tanpa login, unduhan admin, QR, jeda form dan pencucian alat. Adapter Storage dipakai pada tes browser. Bucket cloud privat juga telah diuji terpisah melalui upload PDF, penolakan akses publik, unduhan bertempo dan penghapusan file uji.
+
+## Integrasi pencucian yang dapat dikonfigurasi (039)
+
+Tidak ada perubahan pada jawaban, template terbit, atau riwayat pencucian yang sudah ada. Migrasi 039 hanya menambahkan jalur referensi per field serta memperbarui fungsi pencarian/validasi referensi. Versi form, replay request, lampiran privat dan transaksi atomik tetap dipakai. Makna jawaban dinormalisasi sebelum pemeriksaan lulus/gagal; teks jawaban asli dan pemetaan disimpan dalam snapshot, sedangkan riwayat alat memakai nilai operasional yang konsisten. Nilai referensi ERP divalidasi kembali dalam transaksi yang sama sebelum data menjadi permanen.
+
+Verifikasi 039: 25 uji Forms, 6 uji Equipment, 8 uji Places, dan 53 uji unit umum lulus. Alur browser membuktikan penghapusan/penggantian field bawaan, penyimpanan draft dengan pemetaan belum lengkap, penolakan publish tanpa mengganti versi terbit, pilihan Approved/Hold, pemilih referensi standar, serta pergantian bahasa di editor mobile/desktop. Migrasi sudah diterapkan ke production; fingerprint isi 97 tabel publik identik sebelum dan sesudah migrasi.

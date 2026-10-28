@@ -4,7 +4,7 @@ import { erpRpc, erpError } from "@/lib/erp/server";
 import { privateJson } from "@/lib/api-response";
 import { sameOrigin } from "@/lib/erp/origin";
 import { templateSchema } from "@/lib/forms/schema";
-import { assertCleaningBindings } from "@/lib/forms/cleaning-template";
+import { cleaningIntegrationIssues } from "@/lib/forms/cleaning-template";
 import { z } from "zod";
 export async function GET(request: Request) {
   if (!(await requireUser()))
@@ -51,7 +51,6 @@ export async function POST(request: Request) {
       .parse(JSON.parse(text));
     if (["create", "save"].includes(v.action) && !v.template)
       throw Error("Provide the form fields.");
-    if (v.template) assertCleaningBindings(v.template);
     if (v.action === "publish") {
       const r = await erpRpc("erp_forms_admin", {
         p_action: "detail",
@@ -59,7 +58,15 @@ export async function POST(request: Request) {
       });
       if (r.error) return erpError(r.error);
       const t = templateSchema.parse(r.data.draft);
-      assertCleaningBindings(t);
+      const issues = cleaningIntegrationIssues(t);
+      if (issues.length)
+        return privateJson(
+          {
+            message: "Complete cleaning integration before publishing.",
+            integration_errors: issues,
+          },
+          422,
+        );
     }
     const { data, error } = await erpRpc("erp_form_command", {
       p_action: v.action,

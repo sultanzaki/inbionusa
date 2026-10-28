@@ -8,6 +8,8 @@ import {
 import {
   cleaningTemplate,
   assertCleaningBindings,
+  cleaningIntegrationIssues,
+  cleaningTargets,
 } from "../src/lib/forms/cleaning-template";
 import {
   cleaningPayload,
@@ -60,7 +62,7 @@ test("form validation highlights required fields, invalid choices and missing at
   );
   assert.equal(uploadType(new TextEncoder().encode("%PDF-1.7"))?.ext, "pdf");
 });
-test("cleaning bindings survive renamed labels but cannot be removed", () => {
+test("cleaning mappings survive renamed labels and are validated at publication", () => {
   assert.doesNotThrow(() =>
     assertCleaningBindings({
       ...cleaningTemplate,
@@ -199,10 +201,13 @@ test("cleaning sections preserve every field, including additional uploads and r
   };
   const sections = formSections(template);
   const ids = sections.flatMap((s) => s.fields.map((f) => f.id));
-  assert.equal(sections.length, 5);
+  assert.equal(sections.length, 3);
   assert.equal(new Set(ids).size, template.fields.length);
   assert.deepEqual([...ids].sort(), template.fields.map((f) => f.id).sort());
-  assert.equal(sections[1].fields.filter((f) => f.type === "time").length, 2);
+  assert.deepEqual(
+    ids,
+    template.fields.map((f) => f.id),
+  );
 });
 
 test("single-choice validation identifies empty or repeated options at the affected field", () => {
@@ -249,4 +254,127 @@ test("oversized forms are rejected before a save request", () => {
     })),
   });
   assert.equal(result.success, false);
+});
+
+test("cleaning drafts allow deleting, changing types and making questions optional; publishing checks mappings", () => {
+  const draft = {
+    ...cleaningTemplate,
+    fields: cleaningTemplate.fields
+      .filter((f) => f.binding !== "Tanggal Pencucian")
+      .map((f) => ({ ...f, required: false })),
+  };
+  assert.equal(templateSchema.safeParse(draft).success, true);
+  assert.ok(
+    cleaningIntegrationIssues(draft).some((i) =>
+      i.message.includes("Cleaning date"),
+    ),
+  );
+  const minimal = {
+    ...cleaningTemplate,
+    fields: cleaningTemplate.fields.filter(
+      (f) => cleaningTargets.find((t) => t.binding === f.binding)?.required,
+    ),
+  };
+  assert.doesNotThrow(() => assertCleaningBindings(minimal));
+});
+test("custom cleaning answer labels retain pass and fail semantics and cannot publish unmapped answers", async () => {
+  const ready = cleaningTemplate.fields.find(
+    (f) => f.binding === "Apakah Alat Sudah Dinyatakan Siap Digunakan Kembali?",
+  )!;
+  const field = {
+    ...ready,
+    id: "release_check",
+    label: "Release this equipment?",
+    options: ["Approved", "Hold"],
+    value_map: {
+      Approved: "Siap digunakan kembali",
+      Hold: "Belum siap digunakan kembali",
+    },
+  };
+  const template = {
+    ...cleaningTemplate,
+    fields: cleaningTemplate.fields.map((f) => (f.id === ready.id ? field : f)),
+  };
+  assert.doesNotThrow(() => assertCleaningBindings(template));
+  assert.ok(
+    cleaningIntegrationIssues({
+      ...template,
+      fields: template.fields.map((f) =>
+        f.id === field.id
+          ? { ...field, options: ["Approved"], value_map: field.value_map }
+          : f,
+      ),
+    }).some((i) => i.message.includes("passing and failing")),
+  );
+  assert.ok(
+    cleaningIntegrationIssues({
+      ...template,
+      fields: template.fields.map((f) =>
+        f.id === field.id ? { ...field, value_map: {} } : f,
+      ),
+    }).some((i) => i.message.includes("meaning")),
+  );
+  const { inspectionPassed } =
+    await import("../src/lib/integrations/equipment-form");
+  const form: PublicForm = {
+    template,
+    revision: 1,
+    areas: [{ id: "area", name: "KBI/Lab", kind: "laboratory" }],
+    equipment: [
+      { id: "asset", name: "Mixer", area: "KBI/Lab", state: "dirty" },
+    ],
+    staff: [{ id: "staff", name: "Operator" }],
+  };
+  const answers = Object.fromEntries(
+    template.fields.map((f) => [f.id, f.options[0] || "Recorded"]),
+  );
+  for (const f of template.fields) {
+    if (f.binding === "Nama Alat") answers[f.id] = "asset";
+    if (f.binding === "Area Kerja") answers[f.id] = "KBI/Lab";
+    if (
+      ["Nama Petugas", "Nama Pemeriksa/Penanggung Jawab Verifikasi"].includes(
+        f.binding || "",
+      )
+    )
+      answers[f.id] = "staff";
+    if (f.type === "date") answers[f.id] = "2026-10-28";
+    if (f.type === "time") answers[f.id] = "09:00";
+  }
+  assert.equal(inspectionPassed(cleaningPayload(form, answers).fields), true);
+  answers.release_check = "Hold";
+  assert.equal(inspectionPassed(cleaningPayload(form, answers).fields), false);
+});
+test("mapped ERP identities use the standard reference type and general forms ignore cleaning automation metadata", () => {
+  const template = {
+    ...cleaningTemplate,
+    fields: cleaningTemplate.fields.map((f) => {
+      const t = cleaningTargets.find((t) => t.binding === f.binding);
+      return t?.source
+        ? { ...f, type: "reference" as const, source: t.source, options: [] }
+        : f;
+    }),
+  };
+  assert.doesNotThrow(() => assertCleaningBindings(template));
+  const invalid = {
+    ...template,
+    fields: template.fields.map((f) =>
+      f.binding === "Nama Alat" ? { ...f, source: "products" as const } : f,
+    ),
+  };
+  assert.ok(
+    cleaningIntegrationIssues(invalid).some(
+      (i) =>
+        i.fieldId ===
+        template.fields.find((f) => f.binding === "Nama Alat")!.id,
+    ),
+  );
+  const form: PublicForm = {
+    template: { ...template, kind: "general" },
+    revision: 1,
+    equipment: [],
+    staff: [],
+  };
+  assert.ok(
+    resolvedTemplate(form).fields.every((f) => f.binding === undefined),
+  );
 });

@@ -25,6 +25,9 @@ export const fieldSchema = z.object({
     .default([]),
   source: z.enum(referenceKeys).optional(),
   binding: z.string().max(200).optional(),
+  value_map: z
+    .record(z.string().trim().max(300), z.string().max(300))
+    .optional(),
 });
 export const templateSchema = z
   .object({
@@ -67,6 +70,11 @@ export const templateSchema = z
   });
 export type Template = z.infer<typeof templateSchema>;
 export type FormField = Template["fields"][number];
+export function answerMeaning(field: FormField, value: string): string {
+  return field.value_map && Object.hasOwn(field.value_map, value)
+    ? field.value_map[value]
+    : value;
+}
 export function validateAnswers(
   template: Template,
   raw: Record<string, unknown>,

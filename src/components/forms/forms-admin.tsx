@@ -32,6 +32,11 @@ import {
   type Template,
   type FormField,
 } from "@/lib/forms/schema";
+import { FormAutomation, FieldAutomation } from "./form-automation";
+import {
+  cleaningIntegrationIssues,
+  type IntegrationIssue,
+} from "@/lib/forms/cleaning-template";
 import { referenceSources } from "@/lib/forms/references";
 type RecordForm = {
   id: string;
@@ -91,6 +96,9 @@ export function FormsAdmin() {
     [tab, setTab] = useState<(typeof tabs)[number]["key"]>("questions"),
     [search, setSearch] = useState(""),
     [invalidFields, setInvalidFields] = useState<string[]>([]),
+    [integrationErrors, setIntegrationErrors] = useState<IntegrationIssue[]>(
+      [],
+    ),
     [infoOpen, setInfoOpen] = useState(false);
   const dirty = Boolean(
     selected &&
@@ -178,6 +186,16 @@ export function FormsAdmin() {
   }, [allowed]);
   async function act(action: string, template?: Template) {
     if (mutating.current) return;
+    if (action === "publish" && draft) {
+      const issues = cleaningIntegrationIssues(draft);
+      setIntegrationErrors(issues);
+      if (issues.length) {
+        setTab("questions");
+        setInvalidFields(issues.flatMap((i) => (i.fieldId ? [i.fieldId] : [])));
+        setError("Complete cleaning integration before publishing.");
+        return;
+      }
+    }
     if (template) {
       const checked = templateSchema.safeParse(template);
       if (!checked.success) {
@@ -226,7 +244,14 @@ export function FormsAdmin() {
           }),
         }),
         v = await r.json();
-      if (!r.ok) throw Error(v.message);
+      if (!r.ok) {
+        if (v.integration_errors) {
+          setIntegrationErrors(v.integration_errors);
+          setTab("questions");
+        }
+        throw Error(v.message);
+      }
+      setIntegrationErrors([]);
       saved = true;
       pendingRequest.current = null;
       if (action === "delete") {
@@ -274,6 +299,7 @@ export function FormsAdmin() {
         ),
       });
     setNotice("");
+    setIntegrationErrors([]);
   }
   function add(type: FormField["type"] = "text") {
     if (!draft || draft.fields.length >= 50) return;
@@ -312,6 +338,8 @@ export function FormsAdmin() {
   async function choose(id: string) {
     if (dirty || busy || !id) return;
     setDetailLoading(true);
+    setIntegrationErrors([]);
+    setInvalidFields([]);
     setBusy(true);
     setError("");
     setNotice("");
@@ -674,6 +702,16 @@ export function FormsAdmin() {
                         />
                       </label>
                     </div>
+                    <FormAutomation
+                      template={draft}
+                      disabled={busy}
+                      issues={integrationErrors}
+                      onChange={(next) => {
+                        setDraft(next);
+                        setIntegrationErrors([]);
+                        setNotice("");
+                      }}
+                    />
                     <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
                       <div className="min-w-0 space-y-3">
                         <div className="flex items-center gap-2 lg:hidden">
@@ -815,7 +853,7 @@ export function FormsAdmin() {
                               >
                                 <ArrowDown />
                               </Button>
-                              {!f.binding && (
+                              {
                                 <Button
                                   aria-label={t("Delete question")}
                                   title={t("Delete question")}
@@ -834,7 +872,7 @@ export function FormsAdmin() {
                                 >
                                   <Trash2 />
                                 </Button>
-                              )}
+                              }
                             </div>
                           </div>
                           <label className="block text-sm font-medium">
@@ -854,12 +892,12 @@ export function FormsAdmin() {
                               }
                               className={control}
                               value={f.type}
-                              disabled={Boolean(f.binding)}
                               onChange={(e) =>
                                 field({
                                   type: e.target.value as FormField["type"],
                                   source: undefined,
                                   options: [],
+                                  value_map: undefined,
                                 })
                               }
                             >
@@ -912,33 +950,28 @@ export function FormsAdmin() {
                               </p>
                             </div>
                           )}
-                          {f.type === "select" &&
-                            ![
-                              "Area Kerja",
-                              "Nama Alat",
-                              "Nama Petugas",
-                              "Nama Pemeriksa/Penanggung Jawab Verifikasi",
-                            ].includes(f.binding || "") && (
-                              <label className="block text-sm font-medium">
-                                {t("Options, one per line")}
-                                <textarea
-                                  className={control}
-                                  rows={5}
-                                  value={f.options.join("\n")}
-                                  onChange={(e) =>
-                                    field({
-                                      options: e.target.value.split("\n"),
-                                    })
-                                  }
-                                />
-                              </label>
-                            )}
-                          {f.binding && (
-                            <p className="rounded-lg bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">
-                              {t(
-                                "Linked to equipment cleaning checks. Labels and order can change; field types and required settings are fixed.",
-                              )}
-                            </p>
+                          {f.type === "select" && (
+                            <label className="block text-sm font-medium">
+                              {t("Options, one per line")}
+                              <textarea
+                                aria-label={t("Options, one per line")}
+                                className={control}
+                                rows={5}
+                                value={f.options.join("\n")}
+                                onChange={(e) =>
+                                  field({
+                                    options: e.target.value.split("\n"),
+                                  })
+                                }
+                              />
+                            </label>
+                          )}
+                          {draft.kind === "equipment_cleaning" && (
+                            <FieldAutomation
+                              field={f}
+                              disabled={busy}
+                              onChange={field}
+                            />
                           )}
                           {f.type === "file" && (
                             <p className="text-xs text-muted-foreground">
@@ -953,7 +986,6 @@ export function FormsAdmin() {
                               className="size-4 accent-primary"
                               type="checkbox"
                               checked={f.required}
-                              disabled={Boolean(f.binding)}
                               onChange={(e) =>
                                 field({ required: e.target.checked })
                               }

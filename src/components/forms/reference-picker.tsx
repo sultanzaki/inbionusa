@@ -18,6 +18,7 @@ export function ReferencePicker({
   disabled,
   invalid,
   required,
+  selectedLabel,
 }: {
   token: string;
   field: string;
@@ -26,6 +27,7 @@ export function ReferencePicker({
   disabled?: boolean;
   invalid?: boolean;
   required?: boolean;
+  selectedLabel?: string;
 }) {
   const { t } = useLocale();
   const [open, setOpen] = useState(false),
@@ -67,6 +69,12 @@ export function ReferencePicker({
       abort.abort();
     };
   }, [token, field, query, offset, retry, open]);
+  const displaySelected =
+    selected?.id === value
+      ? selected
+      : value && selectedLabel
+        ? { id: value, label: selectedLabel }
+        : null;
   return (
     <div className="min-w-0 space-y-2" aria-busy={loading}>
       <div className="relative">
@@ -98,10 +106,12 @@ export function ReferencePicker({
           }}
         />
       </div>
-      {value && selected && (
+      {value && displaySelected && (
         <div className="flex min-w-0 items-center gap-2 rounded-lg bg-primary/10 p-3 text-sm text-primary">
           <Check className="size-4 shrink-0" />
-          <span className="min-w-0 flex-1 break-words">{selected.label}</span>
+          <span className="min-w-0 flex-1 break-words">
+            {displaySelected.label}
+          </span>
           <button
             type="button"
             aria-label={t("Clear selection")}

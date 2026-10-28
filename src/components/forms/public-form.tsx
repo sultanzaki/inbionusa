@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { formSections } from "@/lib/forms/layout";
+import type { FormField } from "@/lib/forms/schema";
 import { validateAnswers } from "@/lib/forms/schema";
 import { Button } from "@/components/ui/button";
 import type { PublicForm } from "@/lib/forms/public";
@@ -166,6 +167,31 @@ export function PublicFormPage({
     () => (template ? formSections(template) : []),
     [template],
   );
+  function changeAnswer(field: FormField, value: string) {
+    setValues((previous) => {
+      const next = { ...previous, [field.id]: value };
+      if (template?.kind !== "equipment_cleaning") return next;
+      const area = template.fields.find((f) => f.binding === "Area Kerja"),
+        equipment = template.fields.find((f) => f.binding === "Nama Alat"),
+        batch = template.fields.find((f) =>
+          f.binding?.startsWith("Batch Number Produksi"),
+        );
+      if (field.binding === "Nama Alat") {
+        const asset = form?.equipment.find((e) => e.id === value);
+        if (area && asset)
+          next[area.id] =
+            area.type === "reference"
+              ? form?.areas?.find((a) => a.name === asset.area)?.id || ""
+              : asset.area;
+        if (batch) delete next[batch.id];
+      }
+      if (field.binding === "Area Kerja") {
+        if (equipment) delete next[equipment.id];
+        if (batch) delete next[batch.id];
+      }
+      return next;
+    });
+  }
   const filled = (id: string) => Boolean(values[id]?.trim() || files[id]);
   const required = template?.fields.filter((f) => f.required) || [];
   const completed = required.filter((f) => filled(f.id)).length;
@@ -355,7 +381,11 @@ export function PublicFormPage({
                               !areaField ||
                               !values[areaField.id] ||
                               equipmentById.get(id)?.area ===
-                                values[areaField.id],
+                                (areaField.type === "reference"
+                                  ? form?.areas?.find(
+                                      (a) => a.id === values[areaField.id],
+                                    )?.name
+                                  : values[areaField.id]),
                           );
                         }
                         const label = (id: string) =>
@@ -400,12 +430,19 @@ export function PublicFormPage({
                                 token={token}
                                 field={f.id}
                                 value={values[f.id] || ""}
+                                selectedLabel={
+                                  f.binding === "Area Kerja"
+                                    ? form?.areas?.find(
+                                        (a) => a.id === values[f.id],
+                                      )?.name
+                                    : f.binding === "Nama Alat"
+                                      ? equipmentById.get(values[f.id])?.name
+                                      : staffById.get(values[f.id])?.name
+                                }
                                 disabled={locked}
                                 required={f.required}
                                 invalid={Boolean(errors[f.id])}
-                                onChange={(id) =>
-                                  setValues((v) => ({ ...v, [f.id]: id }))
-                                }
+                                onChange={(id) => changeAnswer(f, id)}
                               />
                             ) : f.type === "file" ? (
                               <>
@@ -500,7 +537,7 @@ export function PublicFormPage({
                                   )}
                                 </p>
                               </>
-                            ) : f.type === "select" || isBatch ? (
+                            ) : f.type === "select" ? (
                               <select
                                 id={f.id}
                                 required={f.required}
@@ -517,37 +554,7 @@ export function PublicFormPage({
                                     : "")
                                 }
                                 onChange={(e) =>
-                                  setValues((v) => {
-                                    const n = { ...v, [f.id]: e.target.value };
-                                    if (f.binding === "Nama Alat") {
-                                      const eq = form?.equipment.find(
-                                          (x) => x.id === e.target.value,
-                                        ),
-                                        area = template.fields.find(
-                                          (x) => x.binding === "Area Kerja",
-                                        ),
-                                        batch = template.fields.find((x) =>
-                                          x.binding?.startsWith(
-                                            "Batch Number Produksi",
-                                          ),
-                                        );
-                                      if (area && eq) n[area.id] = eq.area;
-                                      if (batch) delete n[batch.id];
-                                    }
-                                    if (f.binding === "Area Kerja") {
-                                      const eq = template.fields.find(
-                                        (x) => x.binding === "Nama Alat",
-                                      );
-                                      if (eq) delete n[eq.id];
-                                      const batch = template.fields.find((x) =>
-                                        x.binding?.startsWith(
-                                          "Batch Number Produksi",
-                                        ),
-                                      );
-                                      if (batch) delete n[batch.id];
-                                    }
-                                    return n;
-                                  })
+                                  changeAnswer(f, e.target.value)
                                 }
                               >
                                 <option value="">{t("Select…")}</option>
@@ -588,6 +595,7 @@ export function PublicFormPage({
                                 required={f.required}
                                 disabled={locked}
                                 type={f.type}
+                                list={isBatch ? f.id + "-options" : undefined}
                                 step={f.type === "number" ? "any" : undefined}
                                 maxLength={4000}
                                 value={values[f.id] || ""}
@@ -609,8 +617,31 @@ export function PublicFormPage({
                                 }
                               />
                             )}
+                            {isBatch && f.type === "text" && (
+                              <datalist id={f.id + "-options"}>
+                                {options.map((option) => (
+                                  <option key={option} value={option} />
+                                ))}
+                              </datalist>
+                            )}
                             {f.binding === "Nama Alat" &&
-                              options.length === 0 && (
+                              !form?.equipment.some((e) => {
+                                const area = template.fields.find(
+                                  (field) => field.binding === "Area Kerja",
+                                );
+                                const selectedArea = area && values[area.id];
+                                const areaName =
+                                  area?.type === "reference"
+                                    ? form.areas?.find(
+                                        (a) => a.id === selectedArea,
+                                      )?.name
+                                    : selectedArea;
+                                return (
+                                  e.state !== "in_use" &&
+                                  e.state !== "inactive" &&
+                                  (!areaName || e.area === areaName)
+                                );
+                              }) && (
                                 <p className="mt-2 text-xs text-muted-foreground">
                                   {t("No equipment is available in this room.")}
                                 </p>

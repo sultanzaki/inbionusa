@@ -2729,3 +2729,76 @@ Object.assign(messages, {
   "The form is too large. Reduce the number or length of options.":
     "Formulir terlalu besar. Kurangi jumlah atau panjang pilihan.",
 });
+
+Object.assign(messages, {
+  "Form automation": "Otomatisasi formulir",
+  "Equipment cleaning": "Pencucian alat",
+  "On submission": "Saat dikirim",
+  "Save response only": "Simpan jawaban saja",
+  "Record equipment cleaning": "Catat pencucian alat",
+  "Map questions and answer meanings to update equipment readiness. Validation runs before publishing.":
+    "Petakan pertanyaan dan makna jawaban untuk memperbarui kesiapan alat. Pemetaan diperiksa sebelum formulir diterbitkan.",
+  "Use answer for": "Gunakan jawaban untuk",
+  "Response only": "Jawaban saja",
+  "Use ERP reference": "Gunakan referensi ERP",
+  "Answer meanings": "Makna jawaban",
+  "Meaning of": "Makna jawaban",
+  "Select meaning…": "Pilih makna…",
+  "Complete cleaning integration before publishing.":
+    "Lengkapi pemetaan pencucian sebelum menerbitkan formulir.",
+  "Cleaning date": "Tanggal pencucian",
+  "Work area": "Area kerja",
+  "Last processed product or material": "Produk atau bahan terakhir diproses",
+  "Production batch": "Batch produksi",
+  "Cleaning operator": "Petugas pencucian",
+  "Start time": "Waktu mulai",
+  "Finish time": "Waktu selesai",
+  "Contamination category": "Jenis potensi najis",
+  Rinsing: "Pembilasan",
+  Residue: "Residu",
+  "Drying and storage": "Pengeringan dan penyimpanan",
+  "Cleaning outcome": "Hasil pencucian",
+  "Corrective action": "Tindakan perbaikan",
+  Inspector: "Pemeriksa",
+  "Ready for reuse": "Siap digunakan kembali",
+  Light: "Ringan",
+  Moderate: "Sedang",
+  Heavy: "Berat",
+  Water: "Pencucian Najis Ringan (Air)",
+  "Water and soap": "Pencucian Najis Sedang (Air + Sabun)",
+  "Water and soil": "Pencucian Najis Berat (Air + Tanah)",
+  "Rinsed according to SOP": "Ya, sesuai prosedur",
+  "Not performed": "Tidak",
+  "Not applicable under SOP": "Tidak berlaku sesuai SOP",
+  "No visible residue": "Tidak ditemukan residu yang terlihat",
+  "Residue found": "Ditemukan residu",
+  "Not yet confirmed": "Belum dapat dipastikan",
+  "Visually clean": "Bersih secara visual",
+  "Not clean": "Belum bersih",
+  "Abnormal condition or damage":
+    "Terdapat kondisi tidak normal atau kerusakan",
+  "Dried and stored according to SOP":
+    "Sudah dikeringkan dan disimpan sesuai prosedur",
+  "Handled according to SOP; not yet stored":
+    "Sudah ditangani sesuai prosedur, tetapi belum disimpan",
+  "Handling incomplete": "Belum selesai ditangani",
+  "Complete; inspection criteria met":
+    "Selesai dan memenuhi kriteria pemeriksaan",
+  "Complete; follow-up required":
+    "Selesai, tetapi memerlukan tindakan lanjutan",
+  Incomplete: "Belum selesai",
+  "Not ready for reuse": "Belum siap digunakan kembali",
+});
+
+Object.assign(messages, {
+  "an ERP reference to equipment": "referensi ERP ke peralatan",
+  "an ERP reference to locations": "referensi ERP ke ruangan",
+  "an ERP reference to staff": "referensi ERP ke pengguna",
+  "text or textarea": "teks singkat atau paragraf",
+  select: "pilihan tunggal",
+});
+
+Object.assign(messages, {
+  "Answer meanings apply only to single-choice cleaning checks.":
+    "Pemetaan makna jawaban hanya berlaku untuk pemeriksaan pencucian dengan pilihan tunggal.",
+});

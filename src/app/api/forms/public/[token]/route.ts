@@ -12,6 +12,7 @@ import {
   cleaningPayload,
   type PublicForm,
 } from "@/lib/forms/public";
+import { assertCleaningBindings } from "@/lib/forms/cleaning-template";
 import { inspectionPassed } from "@/lib/integrations/equipment-form";
 export const maxDuration = 60;
 type Context = { params: Promise<{ token: string }> };
@@ -116,6 +117,7 @@ export async function POST(request: Request, { params }: Context) {
     if (prepared.data.receipt) return privateJson(prepared.data.receipt);
     const form = prepared.data.form as PublicForm;
     form.template = templateSchema.parse(form.template);
+    assertCleaningBindings(form.template);
     if (
       entries.some(
         (e) =>
@@ -144,8 +146,13 @@ export async function POST(request: Request, { params }: Context) {
       ? Object.fromEntries(
           form.template.fields.map((f) => [
             f.id,
-            f.binding && cleaning.fields[f.binding] !== undefined
-              ? cleaning.fields[f.binding]
+            f.type !== "reference" &&
+            [
+              "Nama Alat",
+              "Nama Petugas",
+              "Nama Pemeriksa/Penanggung Jawab Verifikasi",
+            ].includes(f.binding || "")
+              ? cleaning.fields[f.binding!]
               : checked.answers[f.id],
           ]),
         )

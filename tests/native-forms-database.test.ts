@@ -19,6 +19,7 @@ before(async () => {
     "036_forms_performance",
     "037_sites_rooms",
     "038_forms_rooms_integrity",
+    "039_form_automation_references",
   ]) {
     const sql = await readFile(
       new URL("../src/lib/db/migrations/" + name + ".sql", import.meta.url),
@@ -32,6 +33,7 @@ before(async () => {
         "035_forms_delete",
         "036_forms_performance",
         "038_forms_rooms_integrity",
+        "039_form_automation_references",
       ].includes(name)
     )
       await db.query(sql);
@@ -661,6 +663,169 @@ test("administration retries create and save exactly once and retain audit attri
     (
       await db.query(
         "select has_function_privilege('anon','erp_form_command(text,text,uuid,uuid,jsonb,integer)','execute') a",
+      )
+    ).rows[0].a,
+    false,
+  );
+});
+
+test("mapped cleaning uses standard reference fields, preserves custom answers and updates equipment readiness", async () => {
+  const f = await fixture();
+  const actor = (
+    await db.query("select user_id from sessions where token=$1", [f.token])
+  ).rows[0].user_id;
+  const { cleaningTemplate, cleaningTargets, assertCleaningBindings } =
+    await import("../src/lib/forms/cleaning-template");
+  const { cleaningPayload } = await import("../src/lib/forms/public");
+  const { inspectionPassed } =
+    await import("../src/lib/integrations/equipment-form");
+  const template = {
+    ...cleaningTemplate,
+    fields: cleaningTemplate.fields
+      .filter(
+        (field) =>
+          cleaningTargets.find((t) => t.binding === field.binding)?.required,
+      )
+      .map((field) => {
+        const target = cleaningTargets.find(
+          (t) => t.binding === field.binding,
+        )!;
+        return {
+          ...field,
+          id: "mapped_" + field.id,
+          label: "Custom " + target.label,
+          ...(target.source
+            ? { type: "reference" as const, source: target.source, options: [] }
+            : {}),
+          ...(target.label === "Ready for reuse"
+            ? {
+                options: ["Approved", "Hold"],
+                value_map: {
+                  Approved: "Siap digunakan kembali",
+                  Hold: "Belum siap digunakan kembali",
+                },
+              }
+            : {}),
+        };
+      }),
+  };
+  assertCleaningBindings(template);
+  const asset = await insert(
+    "insert into erp_equipment(code,name,location_id) values($1,'Mapped mixer',$2)",
+    [randomUUID(), f.location],
+  );
+  const created = await admin(f.token, "create", null, template);
+  await admin(f.token, "publish", created.id, null, 1);
+  const form = await admin(f.token, "detail", created.id);
+  const publicForm = (
+    await db.query("select erp_form_public($1) r", [form.public_token])
+  ).rows[0].r;
+  const day = (await db.query("select erp_today()::text d")).rows[0].d;
+  const answers = Object.fromEntries(
+    template.fields.map((field) => [field.id, field.options[0] || "Recorded"]),
+  );
+  for (const field of template.fields) {
+    if (field.binding === "Nama Alat") answers[field.id] = asset;
+    if (field.binding === "Area Kerja") answers[field.id] = f.location;
+    if (field.source === "staff") answers[field.id] = actor;
+    if (field.type === "date") answers[field.id] = day;
+    if (field.type === "time") answers[field.id] = "00:00";
+    if (field.binding?.startsWith("Batch Number Produksi"))
+      answers[field.id] = "-";
+    if (field.binding?.startsWith("Produk/Bahan/"))
+      answers[field.id] = "Solvent";
+  }
+  const submit = async () => {
+    const payload = cleaningPayload(publicForm, answers);
+    return (
+      await db.query("select erp_form_submit($1,1,$2,$3,$4,'[]',$5,$6) r", [
+        form.public_token,
+        randomUUID(),
+        "a".repeat(64),
+        answers,
+        payload,
+        inspectionPassed(payload.fields),
+      ])
+    ).rows[0].r;
+  };
+  const first = await submit();
+  assert.equal(first.cleaning_result, "pass");
+  assert.equal(
+    (await db.query("select state from erp_equipment where id=$1", [asset]))
+      .rows[0].state,
+    "ready",
+  );
+  const saved = (
+    await db.query(
+      "select answers,reference_data from erp_form_submissions where id=$1",
+      [first.id],
+    )
+  ).rows[0];
+  const ready = template.fields.find(
+    (field) =>
+      field.binding === "Apakah Alat Sudah Dinyatakan Siap Digunakan Kembali?",
+  )!;
+  const equipment = template.fields.find(
+    (field) => field.binding === "Nama Alat",
+  )!;
+  assert.equal(saved.answers[ready.id], "Approved");
+  assert.equal(saved.reference_data[equipment.id].id, asset);
+  answers[ready.id] = "Hold";
+  for (const field of template.fields)
+    if (field.type === "time") answers[field.id] = "00:01";
+  assert.equal((await submit()).cleaning_result, "fail");
+  assert.equal(
+    (await db.query("select state from erp_equipment where id=$1", [asset]))
+      .rows[0].state,
+    "repair",
+  );
+});
+
+test("cleaning reference choices exclude nonproduction staff and equipment in use while general references remain general", async () => {
+  const f = await fixture(),
+    actor = (
+      await db.query("select user_id from sessions where token=$1", [f.token])
+    ).rows[0].user_id;
+  const viewer = await insert(
+    "insert into users(username,password_hash,role,nama_lengkap) values($1,'test','viewer','Reference viewer')",
+    [randomUUID()],
+  );
+  const asset = await insert(
+    "insert into erp_equipment(code,name,location_id,state) values($1,'Occupied mixer',$2,'in_use')",
+    [randomUUID(), f.location],
+  );
+  const template = {
+    kind: "equipment_cleaning",
+    fields: [
+      {
+        id: "operator",
+        type: "reference",
+        binding: "Nama Petugas",
+        source: "staff",
+      },
+      {
+        id: "asset",
+        type: "reference",
+        binding: "Nama Alat",
+        source: "equipment",
+      },
+    ],
+  };
+  const read = async (kind: string, field: string, id: string) =>
+    (
+      await db.query(
+        "select erp_form_field_reference_rows($1,$2,$3,'',0,$4) r",
+        [actor, { ...template, kind }, field, id],
+      )
+    ).rows[0].r.items;
+  assert.deepEqual(await read("equipment_cleaning", "operator", viewer), []);
+  assert.equal((await read("general", "operator", viewer)).length, 1);
+  assert.deepEqual(await read("equipment_cleaning", "asset", asset), []);
+  assert.equal((await read("general", "asset", asset)).length, 1);
+  assert.equal(
+    (
+      await db.query(
+        "select has_function_privilege('service_role','erp_form_field_reference_rows(uuid,jsonb,text,text,integer,uuid)','execute') a",
       )
     ).rows[0].a,
     false,

@@ -1128,6 +1128,136 @@ test(
             headers: { origin },
           });
           assert.equal(publish.status(), 200, await publish.text());
+          // Cleaning uses the same editable controls as general forms.
+          await page.setViewportSize({ width: 390, height: 844 });
+          await page.reload();
+          await page
+            .getByLabel("Select form", { exact: true })
+            .selectOption(created.id);
+          await page.getByLabel("Select question", { exact: true }).waitFor();
+          await page
+            .getByLabel("Select question", { exact: true })
+            .selectOption("19");
+          await page
+            .getByRole("button", { name: "Delete question", exact: true })
+            .click();
+          for (const index of [1, 2, 5, 17]) {
+            await page
+              .getByLabel("Select question", { exact: true })
+              .selectOption(String(index));
+            await page
+              .getByRole("button", { name: "Use ERP reference", exact: true })
+              .click();
+            assert.equal(
+              await page
+                .getByLabel("Question type " + (index + 1), { exact: true })
+                .inputValue(),
+              "reference",
+            );
+          }
+          await page
+            .getByLabel("Select question", { exact: true })
+            .selectOption("18");
+          await page
+            .getByLabel("Label", { exact: true })
+            .fill("Ready to operate?");
+          await page
+            .getByLabel("Options, one per line", { exact: true })
+            .fill("Approved\nHold");
+          await page
+            .getByLabel("Meaning of Approved", { exact: true })
+            .selectOption("Siap digunakan kembali");
+          await page
+            .getByLabel("Meaning of Hold", { exact: true })
+            .selectOption("Belum siap digunakan kembali");
+          await accessible();
+          assert.equal(
+            await page.evaluate(
+              () => document.documentElement.scrollWidth > innerWidth,
+            ),
+            false,
+          );
+          await capture("forms-editor-cleaning-mapping-mobile");
+          await page.setViewportSize({ width: 1440, height: 1000 });
+          await capture("forms-editor-cleaning-mapping-desktop");
+          await page.evaluate(() => {
+            localStorage.setItem("inb:locale", "id");
+            window.dispatchEvent(new Event("storage"));
+          });
+          await page
+            .getByLabel("Gunakan jawaban untuk", { exact: true })
+            .waitFor();
+          assert.equal(
+            await page
+              .getByLabel("Makna jawaban Approved", { exact: true })
+              .inputValue(),
+            "Siap digunakan kembali",
+          );
+          await capture("forms-editor-cleaning-mapping-id");
+          await page.evaluate(() => {
+            localStorage.setItem("inb:locale", "en");
+            window.dispatchEvent(new Event("storage"));
+          });
+          await page.getByLabel("Use answer for", { exact: true }).waitFor();
+          await page.setViewportSize({ width: 390, height: 844 });
+          await page
+            .getByRole("button", { name: "Save draft", exact: true })
+            .click();
+          await page.getByText("Changes saved.", { exact: true }).waitFor();
+          await page
+            .getByRole("button", { name: "Publish", exact: true })
+            .click();
+          await page.getByText("Form published.", { exact: true }).waitFor();
+          // Removing a mapped required field is a valid draft, not a valid publication.
+          await page
+            .getByLabel("Select question", { exact: true })
+            .selectOption("0");
+          await page
+            .getByRole("button", { name: "Delete question", exact: true })
+            .click();
+          await page
+            .getByRole("button", { name: "Save draft", exact: true })
+            .click();
+          await page.getByText("Changes saved.", { exact: true }).waitFor();
+          await page
+            .getByRole("button", { name: "Publish", exact: true })
+            .click();
+          await page
+            .getByText("Map a question to Cleaning date.", { exact: true })
+            .waitFor();
+          const stillPublished = await (
+            await page.request.get(origin + "/api/forms?id=" + created.id)
+          ).json();
+          assert.equal(stillPublished.published_revision, 2);
+          assert.ok(
+            stillPublished.published.fields.some(
+              (field: { binding: string }) =>
+                field.binding === "Tanggal Pencucian",
+            ),
+          );
+          await page
+            .getByRole("button", { name: "Questions", exact: true })
+            .click();
+          await page.getByLabel("Label", { exact: true }).fill("Cleaning date");
+          await page
+            .getByLabel("Use answer for", { exact: true })
+            .selectOption("Tanggal Pencucian");
+          await page
+            .getByRole("button", { name: "Save draft", exact: true })
+            .click();
+          await page.getByText("Changes saved.", { exact: true }).waitFor();
+          await page
+            .getByRole("button", { name: "Publish", exact: true })
+            .click();
+          await page.getByText("Form published.", { exact: true }).waitFor();
+          assert.equal(
+            await page.evaluate(
+              () => document.documentElement.scrollWidth > innerWidth,
+            ),
+            false,
+          );
+          await capture("cleaning-editor-mobile");
+          await accessible();
           const cleanForm = await (
             await page.request.get(origin + "/api/forms?id=" + created.id)
           ).json();
@@ -1144,18 +1274,19 @@ test(
           ).rows[0].id;
           const date = (await db.query("select erp_today()::text d")).rows[0].d;
           await publicPage.goto(origin + "/forms/" + cleanForm.public_token);
-          const areaQuestion = cleaningTemplate.fields.find(
-            (f) => f.binding === "Area Kerja",
+          const areaQuestion = cleanForm.published.fields.find(
+            (f: { binding: string }) => f.binding === "Area Kerja",
           )!;
           await publicPage
             .locator("#" + areaQuestion.id)
-            .selectOption(siteName + "/Lab QC");
+            .fill(siteName + "/Lab QC");
+          await publicPage.getByRole("radio").first().click();
           await publicPage
             .getByText("No equipment is available in this room.", {
               exact: true,
             })
             .waitFor();
-          for (const f of cleaningTemplate.fields) {
+          for (const f of cleanForm.published.fields) {
             let value = "Tidak ada";
             if (f.type === "date") value = date;
             if (f.type === "time") value = "00:00";
@@ -1174,11 +1305,16 @@ test(
             )
               value = "Solvent";
             const input = publicPage.locator("#" + f.id);
-            if (
-              f.type === "select" ||
-              f.binding?.startsWith("Batch Number Produksi")
-            )
-              await input.selectOption(value);
+            if (f.type === "reference") {
+              const query =
+                f.binding === "Area Kerja"
+                  ? loc.name
+                  : f.binding === "Nama Alat"
+                    ? "NATIVE-" + suffix
+                    : username;
+              await input.fill(query);
+              await publicPage.getByRole("radio").first().click();
+            } else if (f.type === "select") await input.selectOption(value);
             else await input.fill(value);
           }
           assert.ok(
@@ -1233,10 +1369,10 @@ test(
               [created.id],
             )
           ).rows[0].answers;
-          const assetField = cleaningTemplate.fields.find(
-            (f) => f.binding === "Nama Alat",
+          const assetField = cleanForm.published.fields.find(
+            (f: { binding: string }) => f.binding === "Nama Alat",
           )!;
-          assert.equal(stored[assetField.id], "NATIVE-" + suffix);
+          assert.match(stored[assetField.id], new RegExp("NATIVE-" + suffix));
         } finally {
           await anonymous.close();
         }

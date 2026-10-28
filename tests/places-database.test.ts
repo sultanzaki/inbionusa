@@ -11,7 +11,7 @@ before(async () => {
   await db.connect();
   const dir = new URL("../src/lib/db/migrations/", import.meta.url);
   for (const file of (await readdir(dir))
-    .filter((f) => /^0(3[0-8])_.*\.sql$/.test(f))
+    .filter((f) => /^0(3[0-9])_.*\.sql$/.test(f))
     .sort())
     await db.query(await readFile(new URL(file, dir), "utf8"));
   await db.query(
@@ -44,9 +44,13 @@ async function save(token: string, action: string, p: Record<string, unknown>) {
     ])
   ).rows[0].r;
 }
-async function list(token: string) {
-  return (await db.query("select erp_places_admin($1,'list') r", [token]))
-    .rows[0].r;
+async function list(token: string, site = "") {
+  return (
+    await db.query("select erp_places_admin($1,'list',$2) r", [
+      token,
+      { site_id: site },
+    ])
+  ).rows[0].r;
 }
 async function create(token: string) {
   const name = "KBI " + randomUUID().slice(0, 8);
@@ -64,7 +68,7 @@ test("sites and typed rooms require names only, keep unique identity and work wi
     "update erp_modules set state='disabled' where key='warehouse'",
   );
   const { name, site, room } = await create(f.token);
-  const data = await list(f.token);
+  const data = await list(f.token, site.id);
   const lab = data.rooms.find((r: { id: string }) => r.id === room.id);
   assert.equal(lab.name, name + "/Lab");
   assert.equal(lab.room_kind, "laboratory");

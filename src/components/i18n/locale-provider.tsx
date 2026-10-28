@@ -68,6 +68,40 @@ export function translate(text: string, lang: Locale): string {
     const match = normalized.match(pattern);
     if (match) return format(match[1]);
   }
+  const automationPatterns: [RegExp, (value: string) => string][] = [
+    [
+      /^Map a question to (.+)\.$/,
+      (value) => `Petakan pertanyaan ke ${translate(value, lang)}.`,
+    ],
+    [
+      /^Map only one question to (.+)\.$/,
+      (value) => `Petakan satu pertanyaan saja ke ${translate(value, lang)}.`,
+    ],
+    [
+      /^Make (.+) required for cleaning automation\.$/,
+      (value) =>
+        `Jadikan ${translate(value, lang)} wajib diisi untuk otomatisasi pencucian.`,
+    ],
+    [
+      /^Include passing and failing answers for (.+)\.$/,
+      (value) =>
+        `Sediakan jawaban lulus dan gagal untuk ${translate(value, lang)}.`,
+    ],
+    [
+      /^Choose a supported cleaning target for (.+)\.$/,
+      (value) => `Pilih pemetaan pencucian yang tersedia untuk ${value}.`,
+    ],
+  ];
+  for (const [pattern, format] of automationPatterns) {
+    const match = normalized.match(pattern);
+    if (match) return format(match[1]);
+  }
+  const meaning = normalized.match(/^Map the meaning of “(.+)” for (.+)\.$/);
+  if (meaning)
+    return `Petakan makna jawaban “${meaning[1]}” untuk ${translate(meaning[2], lang)}.`;
+  const type = normalized.match(/^Use (.+) for (.+)\.$/);
+  if (type)
+    return `Gunakan ${translate(type[1], lang)} untuk ${translate(type[2], lang)}.`;
   const section = normalized.match(/^Section (\d+)$/);
   if (section) return `Bagian ${section[1]}`;
   const step = normalized.match(/^Step (\d+) of (\d+)$/);

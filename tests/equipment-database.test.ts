@@ -44,6 +44,7 @@ before(async () => {
     "036_forms_performance",
     "037_sites_rooms",
     "038_forms_rooms_integrity",
+    "039_form_automation_references",
   ])
     await db.query(
       await readFile(
