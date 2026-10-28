@@ -2,6 +2,7 @@ import type { Template } from "./schema";
 export type PublicForm = {
   template: Template;
   revision: number;
+  areas?: { id: string; name: string; kind: string }[];
   equipment: {
     id: string;
     name: string;
@@ -19,7 +20,13 @@ export function resolvedTemplate(form: PublicForm): Template {
       ...f,
       options:
         f.binding === "Area Kerja"
-          ? [...new Set(form.equipment.map((e) => e.area))]
+          ? [
+              ...new Set(
+                form.areas
+                  ? form.areas.map((a) => a.name)
+                  : form.equipment.map((e) => e.area),
+              ),
+            ]
           : f.binding === "Nama Alat"
             ? form.equipment
                 .filter((e) => e.state !== "in_use")

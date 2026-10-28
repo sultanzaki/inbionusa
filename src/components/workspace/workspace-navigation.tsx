@@ -100,8 +100,6 @@ export function useWorkspaceGroups() {
               ["Inventory by warehouse", "/dashboard/warehouse/inventory"],
               ["Pallet tracking", "/dashboard/warehouse/pallets"],
               ["Warehouse transfers", "/dashboard/warehouse/transfers"],
-              ["Warehouses", "/dashboard/warehouse/sites"],
-              ["Storage locations", "/dashboard/warehouse/locations"],
               ["Stock", "/dashboard/warehouse?view=stock"],
               ["Movements", "/dashboard/warehouse?view=movements"],
               ["Stock counts", "/dashboard/warehouse?view=counts"],
@@ -222,7 +220,6 @@ export function useWorkspaceGroups() {
           ? [
               ["Product series", "/dashboard/admin/settings?view=series"],
               ["Units & conversions", "/dashboard/admin/settings?view=catalog"],
-              ["Locations", "/dashboard/admin/settings?view=locations"],
             ]
           : []),
       ],
@@ -236,11 +233,9 @@ export function useWorkspaceGroups() {
             links: [
               ["Users", "/dashboard/admin/users"],
               ["Forms", "/dashboard/admin/forms"],
+              ["Sites & rooms", "/dashboard/admin/places"],
               ["Access", "/dashboard/admin/settings?view=access"],
-              [
-                "Warehouse access",
-                "/dashboard/admin/settings/warehouse-access",
-              ],
+              ["Site access", "/dashboard/admin/settings/warehouse-access"],
               ["Module settings", "/dashboard/admin/settings?view=modules"],
               ["Audit log", "/dashboard/admin/audit-log"],
             ],

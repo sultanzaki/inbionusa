@@ -584,6 +584,12 @@ export function PublicFormPage({
                                 }
                               />
                             )}
+                            {f.binding === "Nama Alat" &&
+                              options.length === 0 && (
+                                <p className="mt-2 text-xs text-muted-foreground">
+                                  Belum ada alat yang tersedia di ruangan ini.
+                                </p>
+                              )}
                             {errors[f.id] && (
                               <p
                                 id={f.id + "-error"}

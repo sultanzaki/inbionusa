@@ -141,41 +141,45 @@ const c = (
 const identity = [c("label", "Reference"), c("state", "Status")];
 export const workCommands: Record<string, WorkCommand> = {
   save_warehouse: {
-    label: "New warehouse",
-    editLabel: "Edit warehouse",
-    help: "Warehouses contain storage locations. Existing stock history stays linked to its original locations.",
+    label: "New site",
+    editLabel: "Edit site",
+    help: "Sites contain warehouse, laboratory and production rooms.",
     module: "warehouse",
     fields: [
-      text("code", "Code"),
-      text("name", "Warehouse name"),
+      text("name", "Site name"),
       area("address", "Address", false),
       bool("active", "Active", true),
     ],
   },
   save_warehouse_location: {
-    label: "Storage location",
-    editLabel: "Edit location",
-    help: "Create a rack or bin inside an existing warehouse. Locations with stock history cannot be reassigned.",
+    label: "New room",
+    editLabel: "Edit room",
+    help: "Add a named room inside a site.",
     module: "warehouse",
     fields: [
-      ref("warehouse_id", "Warehouse", "warehouses"),
-      text("code", "Location code"),
-      text("name", "Location name"),
-      text("bin", "Rack / bin", false),
+      ref("warehouse_id", "Site", "warehouses"),
+      text("room_name", "Room name"),
+      select("room_kind", "Room type", [
+        "warehouse",
+        "laboratory",
+        "production",
+        "office",
+        "other",
+      ]),
       bool("active", "Active", true),
     ],
   },
   set_warehouse_access: {
-    label: "Warehouse access",
+    label: "Site access",
     help: "Restricted access limits this user to the warehouses listed below. Module permissions still apply; administrators retain full access.",
     module: "warehouse",
     confirm: true,
     fields: [
       ref("user_id", "User", "staff"),
-      bool("restricted", "Restrict to assigned warehouses", true),
+      bool("restricted", "Restrict to assigned sites", true),
       {
-        ...lines("warehouses", "Assigned warehouses", [
-          ref("warehouse_id", "Warehouse", "warehouses"),
+        ...lines("warehouses", "Assigned sites", [
+          ref("warehouse_id", "Site", "warehouses"),
           bool("read", "Read", true),
           bool("write", "Operate"),
           bool("approve", "Approve"),
@@ -862,34 +866,34 @@ export const workCollections: Record<string, WorkCollection> = {
   },
 
   warehouses: {
-    title: "Warehouses",
-    singular: "Warehouse",
+    title: "Sites",
+    singular: "Site",
     module: "warehouse",
     description: "Storage sites, locations and warehouse access.",
     create: "save_warehouse",
     actions: ["save_warehouse"],
     columns: [
-      c("label", "Warehouse"),
+      c("label", "Site"),
       c("address", "Address"),
       c("state", "Status"),
     ],
   },
   locations: {
-    title: "Storage locations",
-    singular: "Location",
+    title: "Rooms",
+    singular: "Room",
     module: "warehouse",
     description: "Racks and bins by warehouse.",
     create: "save_warehouse_location",
     actions: ["save_warehouse_location"],
     columns: [
       c("label", "Location"),
-      c("warehouse", "Warehouse"),
+      c("warehouse", "Site"),
       c("bin", "Rack / bin"),
       c("state", "Status"),
     ],
   },
   warehouse_access: {
-    title: "Warehouse access",
+    title: "Site access",
     singular: "Access assignment",
     module: "warehouse",
     description:
@@ -944,7 +948,7 @@ export const workCollections: Record<string, WorkCollection> = {
       c("target_quantity", "Planned", "number"),
       c("actual_quantity", "Produced", "number"),
       c("yield_percent", "Yield (%)", "number"),
-      c("warehouse", "Warehouse"),
+      c("warehouse", "Site"),
       c("planned_date", "Planned date", "date"),
     ],
   },
@@ -1109,11 +1113,7 @@ export const workCollections: Record<string, WorkCollection> = {
       "dispatch_pallet_delivery",
       "retire_pallet",
     ],
-    columns: [
-      ...identity,
-      c("warehouse", "Warehouse"),
-      c("location", "Location"),
-    ],
+    columns: [...identity, c("warehouse", "Site"), c("location", "Location")],
   },
   sample_requests: {
     title: "Customer samples",
@@ -1184,7 +1184,7 @@ export const workCollections: Record<string, WorkCollection> = {
     columns: [
       c("label", "Stock"),
       c("state", "Quality"),
-      c("warehouse", "Warehouse"),
+      c("warehouse", "Site"),
       c("on_hand", "On hand", "number"),
       c("reserved", "Reserved", "number"),
       c("available", "Available", "number"),
@@ -1202,7 +1202,7 @@ export const workCollections: Record<string, WorkCollection> = {
     columns: [
       c("label", "Stock"),
       c("state", "Quality"),
-      c("warehouse", "Warehouse"),
+      c("warehouse", "Site"),
       c("on_hand", "On hand", "number"),
       c("reserved", "Reserved", "number"),
       c("available", "Available", "number"),
@@ -1229,8 +1229,8 @@ workCommands.save_deviation.states = ["open", "investigating"];
 workCommands.save_capa.states = ["open", "in_progress"];
 export const workPaths: Record<string, string> = {
   material_lots: "quality/material-lots",
-  warehouses: "warehouse/sites",
-  locations: "warehouse/locations",
+  warehouses: "admin/places",
+  locations: "admin/places",
   warehouse_access: "admin/settings/warehouse-access",
   formulas: "production/formulas",
   manufacturing_orders: "production/orders",

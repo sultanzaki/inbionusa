@@ -492,6 +492,96 @@ test(
         await db.query(
           "update erp_modules set state='active' where key='production'",
         );
+        const siteName = "KBI " + suffix;
+        await page.goto(origin + "/dashboard/admin/places");
+        await page
+          .getByRole("button", { name: "Tempat baru", exact: true })
+          .click();
+        await page.getByLabel("Nama tempat", { exact: true }).fill(siteName);
+        assert.equal(
+          await page
+            .getByRole("dialog")
+            .getByLabel(/code|kode/i)
+            .count(),
+          0,
+        );
+        await page
+          .getByRole("dialog")
+          .getByRole("button", { name: "Simpan", exact: true })
+          .click();
+        await page
+          .getByRole("heading", { name: siteName, exact: true })
+          .waitFor();
+        for (const [name, kind] of [
+          ["Lab", "laboratory"],
+          ["Gudang", "warehouse"],
+          ["Produksi", "production"],
+        ]) {
+          await page
+            .getByRole("button", { name: "Ruangan baru", exact: true })
+            .click();
+          await page.getByLabel("Nama ruangan", { exact: true }).fill(name);
+          await page
+            .getByLabel("Jenis ruangan", { exact: true })
+            .selectOption(kind);
+          assert.equal(
+            await page
+              .getByRole("dialog")
+              .getByLabel(/code|kode/i)
+              .count(),
+            0,
+          );
+          await page
+            .getByRole("dialog")
+            .getByRole("button", { name: "Simpan", exact: true })
+            .click();
+          await page
+            .getByRole("heading", { name: siteName + "/" + name, exact: true })
+            .waitFor();
+        }
+        await page
+          .getByRole("button", {
+            name: "Edit ruangan " + siteName + "/Lab",
+            exact: true,
+          })
+          .click();
+        await page.getByLabel("Nama ruangan", { exact: true }).fill("Lab QC");
+        await page
+          .getByRole("dialog")
+          .getByRole("button", { name: "Simpan", exact: true })
+          .click();
+        await page
+          .getByRole("heading", { name: siteName + "/Lab QC", exact: true })
+          .waitFor();
+        await capture("sites-rooms-desktop");
+        await accessible();
+        await page.setViewportSize({ width: 390, height: 844 });
+        await capture("sites-rooms-mobile");
+        assert.equal(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth > innerWidth,
+          ),
+          false,
+        );
+        await page
+          .getByRole("button", {
+            name: "Edit ruangan " + siteName + "/Lab QC",
+            exact: true,
+          })
+          .click();
+        await capture("sites-rooms-mobile-edit");
+        assert.equal(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth > innerWidth,
+          ),
+          false,
+        );
+        await page
+          .getByRole("dialog")
+          .getByRole("button", { name: "Batal", exact: true })
+          .click();
+        await page.getByRole("dialog").waitFor({ state: "hidden" });
+        await page.setViewportSize({ width: 1440, height: 1000 });
         await page.goto(origin + "/dashboard/forms");
         await page.waitForURL("**/dashboard/admin/forms");
         assert.equal(
@@ -855,6 +945,17 @@ test(
           ).rows[0].id;
           const date = (await db.query("select erp_today()::text d")).rows[0].d;
           await publicPage.goto(origin + "/forms/" + cleanForm.public_token);
+          const areaQuestion = cleaningTemplate.fields.find(
+            (f) => f.binding === "Area Kerja",
+          )!;
+          await publicPage
+            .locator("#" + areaQuestion.id)
+            .selectOption(siteName + "/Lab QC");
+          await publicPage
+            .getByText("Belum ada alat yang tersedia di ruangan ini.", {
+              exact: true,
+            })
+            .waitFor();
           for (const f of cleaningTemplate.fields) {
             let value = "Tidak ada";
             if (f.type === "date") value = date;

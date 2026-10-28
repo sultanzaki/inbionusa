@@ -11,6 +11,7 @@ export function proxy(request: NextRequest) {
   if (
     pathname === "/login" ||
     pathname.startsWith("/forms/") ||
+    pathname === "/api/places" ||
     pathname === "/api/forms" ||
     pathname.startsWith("/api/forms/") ||
     pathname === "/api/integrations/equipment-cleaning" ||

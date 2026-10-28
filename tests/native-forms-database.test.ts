@@ -17,6 +17,7 @@ before(async () => {
     "034_general_forms_references",
     "035_forms_delete",
     "036_forms_performance",
+    "037_sites_rooms",
   ]) {
     const sql = await readFile(
       new URL("../src/lib/db/migrations/" + name + ".sql", import.meta.url),

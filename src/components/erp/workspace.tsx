@@ -98,12 +98,6 @@ const sections: Record<
       action: "save_conversion",
     },
     {
-      key: "locations",
-      label: "Locations",
-      create: "Add location",
-      action: "save_location",
-    },
-    {
       key: "access",
       label: "Access",
       create: "Set access",

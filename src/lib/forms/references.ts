@@ -49,15 +49,15 @@ export const referenceSources = [
   },
   {
     key: "warehouses",
-    label: "Gudang",
-    group: "Warehouse",
-    module: "warehouse",
+    label: "Tempat",
+    group: "Master data",
+    module: null,
   },
   {
     key: "locations",
-    label: "Lokasi penyimpanan / area",
-    group: "Warehouse",
-    module: "warehouse",
+    label: "Ruangan",
+    group: "Master data",
+    module: null,
   },
   {
     key: "pallets",

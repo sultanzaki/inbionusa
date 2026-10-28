@@ -42,6 +42,8 @@ Setiap field hanya dapat mencari sumber yang dipilih pada versi form yang telah 
 
 Pengaturan referensi umum bersifat mandiri per pertanyaan. Cascade khusus area → alat → batch tetap tersedia pada template pencucian; konfigurasi cascade bebas antarsumber belum termasuk.
 
+Tempat dan ruangan dikelola melalui **Administration → Sites & rooms**. Pilihan Area Kerja mencakup seluruh ruangan aktif pada tempat aktif, termasuk ruangan tanpa alat. Label memakai `Tempat/Ruangan`, misalnya `KBI/Lab`. Lihat [panduan tempat dan ruangan](SITES-AND-ROOMS.md).
+
 ## Pencucian alat
 
 Pertanyaan sistem pada template pencucian boleh diganti labelnya dan diurutkan, tetapi tidak boleh dihapus, dibuat opsional, atau diganti tipenya. Binding internal tetap menghubungkan jawaban dengan pemeriksaan alat. Pertanyaan tambahan, termasuk file, boleh ditambahkan.
@@ -75,7 +77,7 @@ Upload maksimal tiga file berjalan paralel setelah pemeriksaan bucket privat. Se
 
 ## Deployment dan pemeriksaan
 
-Terapkan migrasi 033 setelah 032 dan 034 setelah 033 dan 035 setelah 034 dan 036 setelah 035, lalu deploy aplikasi. Form umum tidak bergantung pada modul Production. Tautan lama `/dashboard/forms` diarahkan ke lokasi Administration yang baru. Migrasi bersifat tambahan, tidak mengubah catatan produksi lama, dan tidak membuat template aktif otomatis. Tidak perlu environment secret Apps Script untuk form native. Akses Storage menggunakan service role server yang sudah digunakan aplikasi.
+Terapkan migrasi 033 setelah 032 dan 034 setelah 033 dan 035 setelah 034 dan 036 setelah 035 dan 037 setelah 036, lalu deploy aplikasi. Form umum tidak bergantung pada modul Production. Tautan lama `/dashboard/forms` diarahkan ke lokasi Administration yang baru. Migrasi bersifat tambahan, tidak mengubah catatan produksi lama, dan tidak membuat template aktif otomatis. Tidak perlu environment secret Apps Script untuk form native. Akses Storage menggunakan service role server yang sudah digunakan aplikasi.
 
 Pemeriksaan lokal:
 - `npx tsx --test tests/native-forms.test.ts tests/native-forms-database.test.ts`
