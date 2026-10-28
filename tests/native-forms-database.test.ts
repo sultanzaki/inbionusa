@@ -14,13 +14,15 @@ before(async () => {
     "031_equipment_form_import",
     "032_equipment_form_batch_field",
     "033_native_forms",
+    "034_general_forms_references",
   ]) {
     const sql = await readFile(
       new URL("../src/lib/db/migrations/" + name + ".sql", import.meta.url),
       "utf8",
     );
     await db.query(sql);
-    if (name === "033_native_forms") await db.query(sql);
+    if (name === "033_native_forms" || name === "034_general_forms_references")
+      await db.query(sql);
   }
 });
 after(() => db.end());
@@ -219,4 +221,201 @@ test("native equipment and staff IDs disambiguate duplicate names", async () => 
       .rows[0].state,
     "ready",
   );
+});
+
+async function referenceFixture(source = "products") {
+  const f = await fixture();
+  const created = await admin(f.token, "create", null, {
+    title: "Reference checklist",
+    description: "",
+    kind: "general",
+    fields: [
+      {
+        id: "record",
+        label: "ERP record",
+        type: "reference",
+        source,
+        required: true,
+        options: [],
+      },
+    ],
+  });
+  await admin(f.token, "publish", created.id, null, 1);
+  const form = await admin(f.token, "detail", created.id);
+  return { ...f, form };
+}
+test("every catalog source has a valid whitelisted identity projection", async () => {
+  const { referenceSources } = await import("../src/lib/forms/references");
+  const f = await referenceFixture();
+  const owner = (
+    await db.query("select owner_id from erp_forms where id=$1", [f.form.id])
+  ).rows[0].owner_id;
+  for (const source of referenceSources) {
+    const result = (
+      await db.query("select erp_form_reference_rows($1,$2) r", [
+        owner,
+        source.key,
+      ])
+    ).rows[0].r;
+    assert.ok(Array.isArray(result.items), source.key);
+    assert.ok(result.items.length <= 25, source.key);
+    for (const row of result.items)
+      assert.deepEqual(Object.keys(row).sort(), ["id", "label"]);
+  }
+});
+test("general forms publish with Production disabled; only configured references are queryable", async () => {
+  const f = await fixture();
+  await db.query(
+    "update erp_modules set state='disabled' where key='production'",
+  );
+  const created = await admin(f.token, "create", null, {
+    title: "General",
+    description: "",
+    kind: "general",
+    fields: [
+      {
+        id: "record",
+        label: "Produk",
+        type: "reference",
+        source: "products",
+        required: true,
+        options: [],
+      },
+    ],
+  });
+  await admin(f.token, "publish", created.id, null, 1);
+  const form = await admin(f.token, "detail", created.id);
+  assert.equal(
+    (await db.query("select erp_form_public($1) r", [form.public_token]))
+      .rows[0].r.template.title,
+    "General",
+  );
+  const page = (
+    await db.query("select erp_form_references($1,'record',$2,0) r", [
+      form.public_token,
+      "INDOSTER",
+    ])
+  ).rows[0].r;
+  assert.ok(page.items.some((p: { id: string }) => p.id === f.product));
+  await db.query("savepoint invalid_reference");
+  await assert.rejects(
+    db.query("select erp_form_references($1,'users')", [form.public_token]),
+    /insufficient_privilege/,
+  );
+  await db.query("rollback to savepoint invalid_reference");
+  assert.equal(
+    (
+      await db.query(
+        "select has_function_privilege('anon','erp_form_references(uuid,text,text,integer)','execute') a",
+      )
+    ).rows[0].a,
+    false,
+  );
+  assert.equal(
+    (
+      await db.query(
+        "select has_function_privilege('service_role','erp_form_reference_rows(uuid,text,text,integer,uuid)','execute') a",
+      )
+    ).rows[0].a,
+    false,
+  );
+});
+test("reference submissions validate live IDs and retain labels and identities after master data rename", async () => {
+  const f = await referenceFixture();
+  const key = randomUUID();
+  const submit = (id: string, request = key) =>
+    db.query("select erp_form_submit($1,1,$2,$3,$4,'[]') r", [
+      f.form.public_token,
+      request,
+      request,
+      { record: id },
+    ]);
+  await db.query("savepoint bad_id");
+  await assert.rejects(submit(randomUUID()), /no longer available/);
+  await db.query("rollback to savepoint bad_id");
+  const saved = (await submit(f.product)).rows[0].r;
+  const row = (
+    await db.query(
+      "select answers,reference_data from erp_form_submissions where id=$1",
+      [saved.id],
+    )
+  ).rows[0];
+  assert.match(row.answers.record, /INDOSTER 01/);
+  assert.equal(row.reference_data.record.id, f.product);
+  assert.equal(row.reference_data.record.source, "products");
+  await db.query("update master_produk set nama_produk='Renamed' where id=$1", [
+    f.product,
+  ]);
+  assert.deepEqual(
+    (
+      await db.query(
+        "select answers,reference_data from erp_form_submissions where id=$1",
+        [saved.id],
+      )
+    ).rows[0],
+    row,
+  );
+  assert.equal((await submit(f.product)).rows[0].r.duplicate, true);
+});
+test("public references honor module disablement and publisher deactivation", async () => {
+  const f = await referenceFixture("equipment");
+  await db.query(
+    "update erp_modules set state='disabled' where key='production'",
+  );
+  await db.query("savepoint disabled_source");
+  await assert.rejects(
+    db.query("select erp_form_references($1,'record')", [f.form.public_token]),
+    /Module unavailable/,
+  );
+  await db.query("rollback to savepoint disabled_source");
+  await db.query(
+    "update users set is_active=false where id=(select owner_id from erp_forms where id=$1)",
+    [f.form.id],
+  );
+  await db.query("savepoint inactive_owner");
+  await assert.rejects(
+    db.query("select erp_form_public($1)", [f.form.public_token]),
+    /insufficient_privilege/,
+  );
+  await db.query("rollback to savepoint inactive_owner");
+});
+
+test("reference search paginates deterministically and keeps published source isolated from draft edits", async () => {
+  const f = await referenceFixture("products");
+  const prefix = "REFPAGE-" + randomUUID();
+  for (let i = 0; i < 31; i++)
+    await db.query(
+      "insert into master_produk(kode_produk,nama_produk,kategori,satuan,tipe_kemasan) values($1,$2,'Chemical','kg','Bag')",
+      [randomUUID(), prefix + String(i).padStart(2, "0")],
+    );
+  const read = async (offset: number) =>
+    (
+      await db.query("select erp_form_references($1,'record',$2,$3) r", [
+        f.form.public_token,
+        prefix,
+        offset,
+      ])
+    ).rows[0].r;
+  const first = await read(0),
+    second = await read(25);
+  assert.equal(first.items.length, 25);
+  assert.equal(first.has_more, true);
+  assert.equal(second.items.length, 6);
+  assert.equal(second.has_more, false);
+  assert.equal(
+    new Set([...first.items, ...second.items].map((r: { id: string }) => r.id))
+      .size,
+    31,
+  );
+  await admin(
+    f.token,
+    "save",
+    f.form.id,
+    {
+      ...f.form.draft,
+      fields: [{ ...f.form.draft.fields[0], source: "equipment" }],
+    },
+    f.form.version,
+  );
+  assert.deepEqual(await read(0), first);
 });

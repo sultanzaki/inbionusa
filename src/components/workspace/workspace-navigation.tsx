@@ -51,9 +51,6 @@ export function useWorkspaceGroups() {
             links: [
               ["Production orders", "/dashboard/production/orders"],
               ["Equipment & cleaning", "/dashboard/production/equipment"],
-              ...(user && canAction(user, "manage_users")
-                ? [["Forms", "/dashboard/forms"]]
-                : []),
               ["Formulas & BOM", "/dashboard/production/formulas"],
               ["Production records", "/dashboard/production"],
             ],
@@ -238,6 +235,7 @@ export function useWorkspaceGroups() {
             icon: Settings2,
             links: [
               ["Users", "/dashboard/admin/users"],
+              ["Forms", "/dashboard/admin/forms"],
               ["Access", "/dashboard/admin/settings?view=access"],
               [
                 "Warehouse access",

@@ -1,6 +1,4 @@
-import { FormsAdmin } from "@/components/forms/forms-admin";
-import type { Metadata } from "next";
-export const metadata: Metadata = { title: "Forms | INBIONUSA" };
+import { redirect } from "next/navigation";
 export default function Page() {
-  return <FormsAdmin />;
+  redirect("/dashboard/admin/forms");
 }

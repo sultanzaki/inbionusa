@@ -1,0 +1,213 @@
+export const referenceSources = [
+  {
+    key: "products",
+    label: "Produk",
+    group: "Master data",
+    module: null,
+  },
+  {
+    key: "units",
+    label: "Satuan",
+    group: "Master data",
+    module: null,
+  },
+  {
+    key: "staff",
+    label: "Pengguna aktif",
+    group: "Administration",
+    module: null,
+  },
+  {
+    key: "equipment",
+    label: "Peralatan",
+    group: "Production",
+    module: "production",
+  },
+  {
+    key: "manufacturing_orders",
+    label: "Perintah produksi",
+    group: "Production",
+    module: "production",
+  },
+  {
+    key: "production_records",
+    label: "Catatan hasil produksi",
+    group: "Production",
+    module: "production",
+  },
+  {
+    key: "cleaning",
+    label: "Pencucian alat",
+    group: "Production",
+    module: "production",
+  },
+  {
+    key: "lots",
+    label: "Batch / lot produk",
+    group: "Warehouse",
+    module: "warehouse",
+  },
+  {
+    key: "warehouses",
+    label: "Gudang",
+    group: "Warehouse",
+    module: "warehouse",
+  },
+  {
+    key: "locations",
+    label: "Lokasi penyimpanan / area",
+    group: "Warehouse",
+    module: "warehouse",
+  },
+  {
+    key: "pallets",
+    label: "Palet",
+    group: "Warehouse",
+    module: "warehouse",
+  },
+  {
+    key: "movements",
+    label: "Pergerakan stok / delivery order",
+    group: "Warehouse",
+    module: "warehouse",
+  },
+  {
+    key: "counts",
+    label: "Stock opname",
+    group: "Warehouse",
+    module: "warehouse",
+  },
+  {
+    key: "transfers",
+    label: "Transfer gudang",
+    group: "Warehouse",
+    module: "warehouse",
+  },
+  {
+    key: "returns",
+    label: "Retur",
+    group: "Warehouse",
+    module: "warehouse",
+  },
+  {
+    key: "materials",
+    label: "Bahan baku",
+    group: "Purchase",
+    module: "purchase",
+  },
+  {
+    key: "material_lots",
+    label: "Lot bahan baku",
+    group: "Purchase",
+    module: "purchase",
+  },
+  {
+    key: "suppliers",
+    label: "Pemasok",
+    group: "Purchase",
+    module: "purchase",
+  },
+  {
+    key: "purchase_orders",
+    label: "Purchase order",
+    group: "Purchase",
+    module: "purchase",
+  },
+  {
+    key: "customers",
+    label: "Pelanggan",
+    group: "Sales",
+    module: "sales",
+  },
+  {
+    key: "quotes",
+    label: "Quotation",
+    group: "Sales",
+    module: "sales",
+  },
+  {
+    key: "orders",
+    label: "Sales order",
+    group: "Sales",
+    module: "sales",
+  },
+  {
+    key: "opportunities",
+    label: "Peluang penjualan",
+    group: "CRM",
+    module: "crm",
+  },
+  {
+    key: "activities",
+    label: "Aktivitas CRM",
+    group: "CRM",
+    module: "crm",
+  },
+  {
+    key: "samples",
+    label: "Permintaan sampel",
+    group: "CRM",
+    module: "crm",
+  },
+  {
+    key: "inspections",
+    label: "Inspeksi produk",
+    group: "Quality",
+    module: "quality",
+  },
+  {
+    key: "incoming_inspections",
+    label: "Inspeksi bahan masuk",
+    group: "Quality",
+    module: "quality",
+  },
+  {
+    key: "certificates",
+    label: "Certificate of Analysis",
+    group: "Quality",
+    module: "quality",
+  },
+  {
+    key: "material_specs",
+    label: "Spesifikasi bahan",
+    group: "Quality",
+    module: "quality",
+  },
+  {
+    key: "product_documents",
+    label: "Dokumen produk",
+    group: "Documents",
+    module: "documents",
+  },
+  {
+    key: "controlled_documents",
+    label: "Dokumen bahan / pemasok",
+    group: "Documents",
+    module: "documents",
+  },
+  {
+    key: "cases",
+    label: "Kasus layanan",
+    group: "Service",
+    module: "service",
+  },
+  {
+    key: "billing",
+    label: "Dokumen tagihan",
+    group: "Finance",
+    module: "finance",
+  },
+  {
+    key: "payments",
+    label: "Pembayaran",
+    group: "Finance",
+    module: "finance",
+  },
+] as const;
+export type ReferenceSource = (typeof referenceSources)[number]["key"];
+export const referenceKeys = referenceSources.map((s) => s.key) as [
+  ReferenceSource,
+  ...ReferenceSource[],
+];
+export type ReferenceOption = { id: string; label: string };
+export type ReferencePage = { items: ReferenceOption[]; has_more: boolean };

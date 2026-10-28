@@ -188,6 +188,21 @@ export async function POST(request: Request, { params }: Context) {
       p_cleaning: cleaning,
       p_pass: cleaning ? inspectionPassed(cleaning.fields) : null,
     });
+    if (
+      result.error?.details &&
+      form.template.fields.some(
+        (f) => f.id === result.error.details && f.type === "reference",
+      )
+    )
+      return privateJson(
+        {
+          message: result.error.message,
+          fields: {
+            [result.error.details]: "Pilih ulang data referensi yang tersedia.",
+          },
+        },
+        422,
+      );
     if (result.error)
       throw Error(
         result.error.code === "P0001"

@@ -2,16 +2,41 @@
 
 ## Pemakaian
 
-Administrator membuka **Production → Forms**. Menu dan tindakan pengelolaan mengikuti hak administrator ERP; pengisian melalui link publik tidak memerlukan akun.
+Administrator membuka **Administration → Forms** (`/dashboard/admin/forms`). Menu dan tindakan pengelolaan mengikuti hak administrator ERP; pengisian melalui link publik tidak memerlukan akun.
 
 1. Pilih **Form baru** untuk template umum, atau **Template pencucian** untuk template yang terhubung ke alat.
-2. Ubah judul/deskripsi, tambah pertanyaan, pilih tipe, atur wajib isi dan pilihan jawaban. Pertanyaan dapat diurutkan naik/turun. Tipe awal: teks, paragraf, angka, tanggal, waktu, pilihan tunggal, file.
+2. Ubah judul/deskripsi, tambah pertanyaan, pilih tipe, atur wajib isi dan pilihan jawaban. Pertanyaan dapat diurutkan naik/turun. Tipe: teks, paragraf, angka, tanggal, waktu, pilihan tunggal, referensi data ERP, file. Editor menampilkan satu pertanyaan sekaligus. Gunakan daftar urutan di desktop atau pemilih pertanyaan di mobile.
 3. Untuk upload, tambahkan pertanyaan lalu pilih tipe **file**. Maksimal tiga field file, masing-masing satu file. PDF, JPG dan PNG didukung; maksimal 2 MB per file dan 3 MB gabungan.
 4. **Simpan draft**, lalu **Terbitkan**. Tombol penerbitan dinonaktifkan selama masih ada perubahan yang belum disimpan.
-5. **Salin link**, **Buka form**, atau **Unduh QR** untuk membagikan. Halaman pengisian berada di `/forms/<token>` dan dapat digunakan tanpa login.
-6. Jawaban terbaru dan file tersedia di halaman admin form. **Jeda** menghentikan penerimaan melalui link tersebut tanpa menghapus jawaban.
+5. Buka tab **Bagikan**, kemudian **Salin link**, **Buka form**, atau **Unduh QR** untuk membagikan. Halaman pengisian berada di `/forms/<token>` dan dapat digunakan tanpa login.
+6. Tab **Pratinjau** menampilkan draft tanpa mengirim data. Jawaban terbaru dan file tersedia di tab **Jawaban**. **Jeda** menghentikan penerimaan melalui link tersebut tanpa menghapus jawaban.
 
 Perubahan draft tidak memengaruhi form yang sedang diterbitkan. Menerbitkan ulang menaikkan versi; setiap jawaban menyimpan salinan template dan versinya. Pengiriman yang memakai versi lama ditolak agar pengguna memuat ulang. Pengiriman ulang dengan ID dan isi yang sama tidak menggandakan jawaban.
+
+## Referensi data ERP
+
+Tambahkan **Data ERP**, atau pilih tipe **Referensi data ERP**, kemudian pilih **Sumber data ERP**. Pilihan dikelompokkan berdasarkan modul. Pencarian pada tautan pengisian menggunakan kode/nama dengan pagination 25 pilihan per halaman; seluruh data tidak diunduh sekaligus.
+
+Sumber yang tersedia setelah pemeriksaan struktur database:
+
+| Kelompok | Sumber |
+| --- | --- |
+| Master data & Administration | Produk, satuan, pengguna aktif |
+| Production | Peralatan, perintah produksi, catatan hasil produksi, pencucian alat |
+| Warehouse | Batch/lot produk, gudang, lokasi/area, palet, pergerakan stok/DO, stock opname, transfer gudang, retur |
+| Purchase | Bahan baku, lot bahan baku, pemasok, purchase order |
+| Sales | Pelanggan, quotation, sales order |
+| CRM | Peluang penjualan, aktivitas, permintaan sampel |
+| Quality | Inspeksi produk, inspeksi bahan masuk, COA, spesifikasi bahan |
+| Documents | Dokumen produk, dokumen bahan/pemasok |
+| Service | Nomor kasus layanan |
+| Finance | Nomor dokumen tagihan, nomor pembayaran |
+
+Referensi hanya mengekspos identitas: ID dan label kode/nama/nomor/tanggal sesuai sumber. Tidak ada harga, saldo, rekening bank, kontak pribadi, file dokumen, password, sesi, audit mentah, atau komposisi BOM. Tabel teknis, counter, tabel relasi/baris transaksi, dan tabel keamanan tidak menjadi pilihan referensi mandiri. Deviasi/CAPA yang dapat terkait BOM dilindungi tidak diekspos melalui referensi umum ini.
+
+Setiap field hanya dapat mencari sumber yang dipilih pada versi form yang telah diterbitkan. Akses modul dan lokasi mengikuti penerbit. Modul yang dinonaktifkan membuat sumber terkait tidak tersedia; akun penerbit yang dinonaktifkan menonaktifkan tautan. Pada submit, server memvalidasi ulang ID lalu menyimpan ID, sumber, dan label saat pengiriman dalam `reference_data`. Label historis tidak ikut berubah saat master data diganti nama. Form umum hanya mencatat referensi; memilih SO/DO/batch tidak mengubah transaksi tersebut.
+
+Pengaturan referensi umum bersifat mandiri per pertanyaan. Cascade khusus area → alat → batch tetap tersedia pada template pencucian; konfigurasi cascade bebas antarsumber belum termasuk.
 
 ## Pencucian alat
 
@@ -36,7 +61,7 @@ Jangan mengubah bucket menjadi publik. Pemeriksaan server menolak upload bila bu
 
 ## Deployment dan pemeriksaan
 
-Terapkan migrasi 033 setelah 032 lalu deploy aplikasi. Migrasi bersifat tambahan, tidak mengubah catatan produksi lama, dan tidak membuat template aktif otomatis. Tidak perlu environment secret Apps Script untuk form native. Akses Storage menggunakan service role server yang sudah digunakan aplikasi.
+Terapkan migrasi 033 setelah 032 dan 034 setelah 033, lalu deploy aplikasi. Form umum tidak bergantung pada modul Production. Tautan lama `/dashboard/forms` diarahkan ke lokasi Administration yang baru. Migrasi bersifat tambahan, tidak mengubah catatan produksi lama, dan tidak membuat template aktif otomatis. Tidak perlu environment secret Apps Script untuk form native. Akses Storage menggunakan service role server yang sudah digunakan aplikasi.
 
 Pemeriksaan lokal:
 - `npx tsx --test tests/native-forms.test.ts tests/native-forms-database.test.ts`

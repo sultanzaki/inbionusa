@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { referenceKeys } from "./references";
 export const fieldSchema = z.object({
   id: z.string().regex(/^[a-z][a-z0-9_]{0,59}$/),
   label: z.string().trim().min(1).max(300),
@@ -10,6 +11,7 @@ export const fieldSchema = z.object({
     "time",
     "select",
     "file",
+    "reference",
   ]),
   required: z.boolean(),
   options: z
@@ -21,6 +23,7 @@ export const fieldSchema = z.object({
       z.array(z.string().trim().min(1).max(300)).max(50),
     )
     .default([]),
+  source: z.enum(referenceKeys).optional(),
   binding: z.string().max(200).optional(),
 });
 export const templateSchema = z
@@ -35,9 +38,16 @@ export const templateSchema = z
       c.addIssue({ code: "custom", message: "Field IDs must be unique." });
     if (v.fields.filter((f) => f.type === "file").length > 3)
       c.addIssue({ code: "custom", message: "Maximum three upload fields." });
-    for (const f of v.fields)
+    for (const f of v.fields) {
+      if (f.type === "reference" && !f.source)
+        c.addIssue({
+          code: "custom",
+          path: ["fields", v.fields.indexOf(f), "source"],
+          message: "Pilih sumber data ERP untuk " + f.label,
+        });
       if (f.type === "select" && f.options.length === 0)
         c.addIssue({ code: "custom", message: "Add choices for " + f.label });
+    }
   });
 export type Template = z.infer<typeof templateSchema>;
 export type FormField = Template["fields"][number];
@@ -61,6 +71,8 @@ export function validateAnswers(
       if (value.length > 4000) errors[f.id] = "Maximum 4,000 characters.";
       if (f.type === "select" && !f.options.includes(value))
         errors[f.id] = "Choose an available option.";
+      if (f.type === "reference" && !z.uuid().safeParse(value).success)
+        errors[f.id] = "Pilih data ERP yang tersedia.";
       if (f.type === "number" && !/^-?\d+(\.\d+)?$/.test(value))
         errors[f.id] = "Enter a valid number.";
       if (f.type === "date" && !z.iso.date().safeParse(value).success)

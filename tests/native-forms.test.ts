@@ -141,3 +141,40 @@ test("form choices tolerate a trailing empty line from the editor", () => {
   });
   assert.deepEqual(result.fields[0].options, ["Yes", "No"]);
 });
+
+test("ERP reference fields require a known source and valid UUID choices", () => {
+  const field = {
+    id: "batch",
+    label: "Batch",
+    type: "reference",
+    required: true,
+    options: [],
+  };
+  const template = {
+    title: "General",
+    description: "",
+    kind: "general",
+    fields: [field],
+  };
+  assert.equal(templateSchema.safeParse(template).success, false);
+  assert.equal(
+    templateSchema.safeParse({
+      ...template,
+      fields: [{ ...field, source: "sessions" }],
+    }).success,
+    false,
+  );
+  const parsed = templateSchema.parse({
+    ...template,
+    fields: [{ ...field, source: "lots" }],
+  });
+  assert.ok(validateAnswers(parsed, { batch: "fake" }, []).errors.batch);
+  assert.deepEqual(
+    validateAnswers(
+      parsed,
+      { batch: "01823b1f-ec3a-4b0c-b30b-5491564d972b" },
+      [],
+    ).errors,
+    {},
+  );
+});

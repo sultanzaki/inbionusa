@@ -69,6 +69,9 @@ test("advanced reads preserve authorized collection totals and row identities", 
           "audit_log",
           "users",
           "series",
+          // This compatibility fixture stops at migration 027. Equipment has
+          // dedicated database coverage after its migration 030 is installed.
+          "work_equipment",
         ].includes(e),
     )) {
       const legacy = (

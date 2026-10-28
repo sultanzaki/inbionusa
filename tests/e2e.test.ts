@@ -368,7 +368,10 @@ test(
           await page.evaluate(() => window.scrollTo(0, 0));
         await page.screenshot({
           path: `${artifacts}/${name}.png`,
-          fullPage: name.includes("dashboard") || name.includes("login"),
+          fullPage:
+            name.includes("dashboard") ||
+            name.includes("login") ||
+            name.includes("forms-editor"),
           animations: "disabled",
         });
       }
@@ -467,25 +470,45 @@ test(
           "update erp_modules set state='active' where key='production'",
         );
         await page.goto(origin + "/dashboard/forms");
+        await page.waitForURL("**/dashboard/admin/forms");
         await page
           .getByRole("button", { name: "Form baru", exact: true })
           .click();
         await page
-          .getByRole("button", {
-            name: "Tambah pertanyaan / upload",
-            exact: true,
-          })
+          .getByRole("button", { name: "Lampiran", exact: true })
           .click();
-        await page.getByLabel("Label", { exact: true }).nth(1).fill("Bukti");
+        await page.getByLabel("Label", { exact: true }).fill("Bukti");
         await page
-          .getByRole("combobox", { name: "Tipe pertanyaan 2", exact: true })
-          .selectOption("file");
+          .getByRole("button", { name: "Data ERP", exact: true })
+          .click();
+        await page.getByLabel("Label", { exact: true }).fill("Produk terkait");
+        await page
+          .getByRole("combobox", { name: "Sumber data ERP", exact: true })
+          .selectOption("products");
+        await page.getByLabel("Wajib diisi", { exact: true }).check();
+        await capture("forms-editor-desktop");
+        await page.setViewportSize({ width: 390, height: 844 });
+        await capture("forms-editor-mobile");
+        assert.equal(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth > innerWidth,
+          ),
+          false,
+        );
+        await accessible();
+        await page.setViewportSize({ width: 1440, height: 1000 });
+        await page.getByRole("tab", { name: "Pratinjau", exact: true }).click();
+        await capture("forms-preview-desktop");
+        await page
+          .getByRole("tab", { name: "Pertanyaan", exact: true })
+          .click();
         await page
           .getByRole("button", { name: "Simpan draft", exact: true })
           .click();
         await page
           .getByRole("button", { name: "Terbitkan", exact: true })
           .click();
+        await page.getByRole("tab", { name: "Bagikan", exact: true }).click();
         const link = page.getByRole("link", { name: "Buka form", exact: true });
         await link.waitFor();
         const path = await link.getAttribute("href");
@@ -506,6 +529,29 @@ test(
           await publicPage
             .getByLabel(/^Nama pengisi/)
             .fill("Operator tanpa akun");
+          await publicPage
+            .getByLabel(/^Produk terkait/)
+            .fill("E2E Product 119");
+          await publicPage.getByRole("radio").first().check();
+          await publicPage.screenshot({
+            path:
+              (process.env.TEST_ARTIFACT_DIR || "/tmp") +
+              "/forms-reference-mobile.png",
+            fullPage: true,
+          });
+          assert.equal(
+            await publicPage.evaluate(
+              () => document.documentElement.scrollWidth > innerWidth,
+            ),
+            false,
+          );
+          const forbiddenReference = await anonymous.request.get(
+            origin +
+              "/api/forms/public/" +
+              token +
+              "/references?field=not_configured",
+          );
+          assert.equal(forbiddenReference.status(), 403);
           const { PDFDocument } = await import("pdf-lib");
           const pdf = await PDFDocument.create();
           pdf.addPage();
@@ -532,6 +578,13 @@ test(
           ).rows[0];
           assert.equal(submission.files.length, 1);
           assert.equal(submission.answers.name, "Operator tanpa akun");
+          const reference = Object.values(submission.reference_data) as {
+            label: string;
+            source: string;
+          }[];
+          assert.equal(reference.length, 1);
+          assert.match(reference[0].label, /E2E Product 119/);
+          assert.equal(reference[0].source, "products");
           assert.equal(formFiles.size, 1);
           assert.equal(
             (
@@ -559,11 +612,13 @@ test(
           await capture("forms-admin-desktop");
           await accessible();
           await page
-            .getByRole("navigation", { name: "Forms", exact: true })
+            .getByRole("navigation", { name: "Daftar form", exact: true })
             .getByRole("button")
             .first()
             .click();
+          await page.getByRole("tab", { name: /^Jawaban/ }).click();
           await page.getByText("Jawaban terbaru", { exact: true }).waitFor();
+          await page.getByRole("tab", { name: "Bagikan", exact: true }).click();
           await page.getByRole("button", { name: "Jeda", exact: true }).click();
           assert.equal(
             (

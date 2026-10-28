@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import type { PublicForm } from "@/lib/forms/public";
+import { ReferencePicker } from "./reference-picker";
 import { resolvedTemplate } from "@/lib/forms/public";
 export function PublicFormPage({ token }: { token: string }) {
   const [form, setForm] = useState<PublicForm | null>(null),
@@ -54,6 +55,9 @@ export function PublicFormPage({ token }: { token: string }) {
       const v = await r.json();
       if (!r.ok) {
         setErrors(v.fields || {});
+        const first = Object.keys(v.fields || {})[0];
+        if (first)
+          requestAnimationFrame(() => document.getElementById(first)?.focus());
         throw Error(v.message);
       }
       setCleaningResult(v.cleaning_result || "");
@@ -158,7 +162,19 @@ export function PublicFormPage({ token }: { token: string }) {
                         <span className="ml-1 text-destructive">*</span>
                       )}
                     </label>
-                    {f.type === "file" ? (
+                    {f.type === "reference" ? (
+                      <ReferencePicker
+                        token={token}
+                        field={f.id}
+                        value={values[f.id] || ""}
+                        disabled={busy}
+                        required={f.required}
+                        invalid={Boolean(errors[f.id])}
+                        onChange={(id) =>
+                          setValues((v) => ({ ...v, [f.id]: id }))
+                        }
+                      />
+                    ) : f.type === "file" ? (
                       <>
                         <input
                           id={f.id}
