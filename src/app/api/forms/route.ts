@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { requireUser } from "@/lib/auth";
 import { erpRpc, erpError } from "@/lib/erp/server";
 import { privateJson } from "@/lib/api-response";
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
           "delete",
         ]),
         id: z.uuid().optional(),
+        request_key: z.uuid().optional(),
         version: z.number().int().optional(),
         template: templateSchema.optional(),
       })
@@ -59,8 +61,9 @@ export async function POST(request: Request) {
       const t = templateSchema.parse(r.data.draft);
       assertCleaningBindings(t);
     }
-    const { data, error } = await erpRpc("erp_forms_admin", {
+    const { data, error } = await erpRpc("erp_form_command", {
       p_action: v.action,
+      p_request: v.request_key ?? randomUUID(),
       p_id: v.id ?? null,
       p_version: v.version ?? null,
       p_template: v.template ?? null,
@@ -68,7 +71,14 @@ export async function POST(request: Request) {
     return error ? erpError(error) : privateJson(data);
   } catch (e) {
     return privateJson(
-      { message: e instanceof Error ? e.message : "Review form fields." },
+      {
+        message:
+          e instanceof z.ZodError
+            ? "Review form fields."
+            : e instanceof Error
+              ? e.message
+              : "Review form fields.",
+      },
       422,
     );
   }

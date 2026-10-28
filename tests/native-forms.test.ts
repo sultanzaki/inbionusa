@@ -204,3 +204,49 @@ test("cleaning sections preserve every field, including additional uploads and r
   assert.deepEqual([...ids].sort(), template.fields.map((f) => f.id).sort());
   assert.equal(sections[1].fields.filter((f) => f.type === "time").length, 2);
 });
+
+test("single-choice validation identifies empty or repeated options at the affected field", () => {
+  const check = (options: string[]) =>
+    templateSchema.safeParse({
+      title: "Checklist",
+      description: "",
+      kind: "general",
+      fields: [
+        {
+          id: "choice",
+          label: "Condition",
+          type: "select",
+          required: true,
+          options,
+        },
+      ],
+    });
+  for (const options of [[], ["Ready", " Ready "]]) {
+    const result = check(options);
+    assert.equal(result.success, false);
+    if (!result.success)
+      assert.ok(
+        result.error.issues.some(
+          (i) => i.path.join(".") === "fields.0.options",
+        ),
+      );
+  }
+});
+test("oversized forms are rejected before a save request", () => {
+  const result = templateSchema.safeParse({
+    title: "Large",
+    description: "",
+    kind: "general",
+    fields: Array.from({ length: 20 }, (_, i) => ({
+      id: "f" + i,
+      label: "Question",
+      type: "select",
+      required: false,
+      options: Array.from(
+        { length: 30 },
+        (_, j) => String(j) + "x".repeat(200),
+      ),
+    })),
+  });
+  assert.equal(result.success, false);
+});

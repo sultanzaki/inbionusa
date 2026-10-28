@@ -89,6 +89,10 @@ export function ReferencePicker({
           className="h-11 w-full min-w-0 rounded-lg border bg-background pl-9 pr-3 text-base focus:ring-2 focus:ring-primary/30"
           onChange={(e) => {
             setQuery(e.target.value);
+            if (value) {
+              setSelected(null);
+              onChange("");
+            }
             setOffset(0);
             setLoading(true);
           }}

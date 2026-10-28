@@ -2704,3 +2704,28 @@ Object.assign(messages, {
   "Unsaved draft changes will be discarded.":
     "Perubahan draf yang belum disimpan akan dibuang.",
 });
+
+Object.assign(messages, {
+  "Enter a site name of up to 100 characters without /.":
+    "Isi nama tempat tanpa tanda /, maksimal 100 karakter.",
+  "The site changed. Reload before saving.":
+    "Tempat telah berubah. Muat ulang sebelum menyimpan.",
+  "Resolve stock and open operations before deactivating this site.":
+    "Selesaikan stok dan kegiatan aktif sebelum menonaktifkan tempat.",
+  "Enter a room name of up to 100 characters without /.":
+    "Isi nama ruangan tanpa tanda /, maksimal 100 karakter.",
+  "Choose an active site.": "Pilih tempat yang aktif.",
+  "The room changed. Reload before saving.":
+    "Ruangan telah berubah. Muat ulang sebelum menyimpan.",
+  "Create a new room for a different site. Room history stays at its original site.":
+    "Buat ruangan baru untuk tempat berbeda. Riwayat ruangan tetap pada tempat asal.",
+  "Resolve stock and open operations before deactivating this room.":
+    "Selesaikan stok dan kegiatan aktif sebelum menonaktifkan ruangan.",
+  "Changes were saved, but the view could not refresh. Reload this page.":
+    "Perubahan tersimpan, tetapi tampilan tidak dapat dimuat ulang. Muat ulang halaman ini.",
+  "Administrator access is required to manage forms.":
+    "Pengelolaan formulir memerlukan akses administrator.",
+  "Review the search and page number.": "Periksa pencarian dan nomor halaman.",
+  "The form is too large. Reduce the number or length of options.":
+    "Formulir terlalu besar. Kurangi jumlah atau panjang pilihan.",
+});

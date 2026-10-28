@@ -113,6 +113,8 @@ test(
     let observeERPRead: (() => void) | null = null;
     const formFiles = new Map<string, Buffer>();
     let rejectFormUpload = 0;
+    let loseFormSubmitResponse = false;
+    let pausePreparedForm = false;
     const relay = createServer(async (req, res) => {
       if (
         process.env.TEST_NATIVE_FORMS_ONLY === "1" &&
@@ -266,6 +268,34 @@ test(
             : Buffer.concat(parts),
         },
       );
+      if (
+        pausePreparedForm &&
+        req.url === "/rest/v1/rpc/erp_form_prepare" &&
+        response.ok
+      ) {
+        pausePreparedForm = false;
+        const { p_link } = JSON.parse(Buffer.concat(parts).toString());
+        await db.query(
+          "select erp_forms_admin((select token from sessions where user_id=$2 order by expires_at desc limit 1),'pause',id,null,version) from erp_forms where public_token=$1",
+          [p_link, user.id],
+        );
+      }
+      if (
+        loseFormSubmitResponse &&
+        req.url === "/rest/v1/rpc/erp_form_submit" &&
+        response.ok
+      ) {
+        loseFormSubmitResponse = false;
+        await response.arrayBuffer();
+        res.writeHead(503, { "content-type": "application/json" });
+        res.end(
+          JSON.stringify({
+            code: "PGRST_LOST_RESPONSE",
+            message: "Local fixture lost the response after commit",
+          }),
+        );
+        return;
+      }
       res.writeHead(
         response.status,
         Object.fromEntries(response.headers.entries()),
@@ -646,6 +676,23 @@ test(
         await page
           .getByRole("tab", { name: "Questions", exact: true })
           .waitFor();
+        await page
+          .getByRole("link", { name: "Sites & rooms", exact: true })
+          .click();
+        await page
+          .getByRole("dialog", { name: "Discard your changes?", exact: true })
+          .waitFor();
+        await capture("forms-unsaved-navigation");
+        await page
+          .getByRole("dialog")
+          .getByRole("button", { name: "Back", exact: true })
+          .click();
+        await page.getByRole("dialog").waitFor({ state: "hidden" });
+        assert.ok(page.url().endsWith("/dashboard/admin/forms"));
+        assert.equal(
+          await page.getByLabel("Label", { exact: true }).inputValue(),
+          "Produk terkait",
+        );
         await capture("forms-editor-desktop");
         await page.setViewportSize({ width: 390, height: 844 });
         await capture("forms-editor-mobile");
@@ -772,11 +819,28 @@ test(
             .getByLabel(/^Produk terkait/)
             .fill("E2E Product 119");
           await publicPage.getByRole("radio").first().click();
+          // Typing a new search must invalidate the previous selected identity.
+          await publicPage
+            .getByLabel(/^Produk terkait/)
+            .fill("E2E Product 118");
+          assert.equal(
+            await publicPage
+              .getByRole("button", { name: "Clear selection", exact: true })
+              .count(),
+            0,
+          );
+          await publicPage.getByRole("radio").first().click();
+          await publicPage
+            .getByLabel(/^Produk terkait/)
+            .fill("E2E Product 119");
+          await publicPage.getByRole("radio").first().click();
+          await accessible(publicPage);
           await publicPage.screenshot({
             path:
               (process.env.TEST_ARTIFACT_DIR || "/tmp") +
               "/forms-reference-mobile.png",
             fullPage: true,
+            animations: "disabled",
           });
           assert.equal(
             await publicPage.evaluate(
@@ -800,6 +864,7 @@ test(
             mimeType: "application/pdf",
             buffer: bytes,
           });
+          loseFormSubmitResponse = true;
           await publicPage
             .getByRole("button", { name: "Submit response", exact: true })
             .click();
@@ -825,6 +890,22 @@ test(
           assert.match(reference[0].label, /E2E Product 119/);
           assert.equal(reference[0].source, "products");
           assert.equal(formFiles.size, 1);
+          assert.ok(
+            formFiles.has(
+              "/storage/v1/object/form-attachments/" + submission.files[0].path,
+            ),
+            "Committed evidence must survive a lost response",
+          );
+          assert.equal(loseFormSubmitResponse, false);
+          assert.equal(
+            (
+              await db.query(
+                "select count(*)::int n from erp_form_submissions where form_id=$1",
+                [record],
+              )
+            ).rows[0].n,
+            1,
+          );
           assert.equal(
             (
               await anonymous.request.get(
@@ -850,11 +931,29 @@ test(
             .waitFor();
           await capture("forms-admin-desktop");
           await accessible();
+          let releaseDetail!: () => void;
+          const detailGate = new Promise<void>((resolve) => {
+            releaseDetail = resolve;
+          });
+          await page.route("**/api/forms?id=*", async (route) => {
+            const response = await route.fetch();
+            await detailGate;
+            await route.fulfill({ response });
+          });
           await page
             .getByRole("navigation", { name: "Form library", exact: true })
             .getByRole("button")
             .first()
             .click();
+          await page
+            .getByRole("status", { name: "Loading form…", exact: true })
+            .waitFor();
+          await capture("forms-detail-loading");
+          releaseDetail();
+          await page
+            .getByRole("status", { name: "Loading form…", exact: true })
+            .waitFor({ state: "hidden" });
+          await page.unroute("**/api/forms?id=*");
           await page.getByRole("tab", { name: /^Responses/ }).click();
           await page.getByText("Recent responses", { exact: true }).waitFor();
           await page.getByRole("tab", { name: "Share", exact: true }).click();
@@ -957,6 +1056,49 @@ test(
           );
           assert.equal(failedUpload.status(), 422);
           assert.equal(formFiles.size, 1);
+          assert.equal(
+            (
+              await db.query(
+                "select count(*)::int n from erp_form_submissions where form_id=$1",
+                [uploadForm.id],
+              )
+            ).rows[0].n,
+            0,
+          );
+          pausePreparedForm = true;
+          const pausedDuringUpload = await anonymous.request.post(
+            origin + "/api/forms/public/" + uploadDetail.public_token,
+            {
+              multipart: {
+                data: JSON.stringify({
+                  revision: 1,
+                  request_key: randomUUID(),
+                  answers: {},
+                }),
+                a: {
+                  name: "paused.pdf",
+                  mimeType: "application/pdf",
+                  buffer: bytes,
+                },
+                b: {
+                  name: "paused-second.pdf",
+                  mimeType: "application/pdf",
+                  buffer: bytes,
+                },
+              },
+            },
+          );
+          assert.equal(
+            pausedDuringUpload.status(),
+            404,
+            await pausedDuringUpload.text(),
+          );
+          assert.equal(pausePreparedForm, false);
+          assert.equal(
+            formFiles.size,
+            1,
+            "A paused submission must clean up only its uncommitted upload",
+          );
           assert.equal(
             (
               await db.query(

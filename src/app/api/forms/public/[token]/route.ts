@@ -33,6 +33,7 @@ export async function POST(request: Request, { params }: Context) {
   const client = createAdminClient(),
     paths: string[] = [];
   let committed = false;
+  let outcomeUnknown = false;
   try {
     const reader = request.body?.getReader();
     if (!reader) throw Error("Empty submission.");
@@ -186,7 +187,7 @@ export async function POST(request: Request, { params }: Context) {
     }
     if (uploads.some((r) => r.status === "rejected"))
       throw Error("Could not upload file. Retry.");
-    const result = await client.rpc("erp_form_submit", {
+    const submission = {
       p_link: token,
       p_revision: input.revision,
       p_request: input.request_key,
@@ -195,7 +196,24 @@ export async function POST(request: Request, { params }: Context) {
       p_files: files,
       p_cleaning: cleaning,
       p_pass: cleaning ? inspectionPassed(cleaning.fields) : null,
-    });
+    };
+    // A lost response can follow a committed transaction. Retry the same idempotent
+    // request, and never delete evidence while its commit outcome is uncertain.
+    outcomeUnknown = true;
+    let result = await client.rpc("erp_form_submit", submission);
+    const transportFailure = Boolean(
+      result.error && !/^[0-9A-Z]{5}$/.test(result.error.code),
+    );
+    if (transportFailure)
+      result = await client.rpc("erp_form_submit", submission);
+    if (
+      !result.error ||
+      (!transportFailure && /^[0-9A-Z]{5}$/.test(result.error.code))
+    )
+      outcomeUnknown = false;
+
+    if (result.error && ["P0002", "42501"].includes(result.error.code))
+      return privateJson({ message: "Form unavailable or paused." }, 404);
     if (
       result.error?.details &&
       form.template.fields.some(
@@ -218,8 +236,11 @@ export async function POST(request: Request, { params }: Context) {
           ? result.error.message
           : "Could not save the form. Retry.",
       );
-    if (!result.data.duplicate) committed = true;
-    return privateJson(result.data);
+    committed =
+      !result.data.duplicate || result.data.attachments_committed === true;
+    const receipt = { ...result.data };
+    delete receipt.attachments_committed;
+    return privateJson(receipt);
   } catch (e) {
     return privateJson(
       {
@@ -233,7 +254,11 @@ export async function POST(request: Request, { params }: Context) {
       422,
     );
   } finally {
-    if (!committed && paths.length) {
+    if (outcomeUnknown && paths.length)
+      console.error(
+        "Form submission outcome unknown; retain attachments for reconciliation.",
+      );
+    if (!committed && !outcomeUnknown && paths.length) {
       try {
         await client.storage.from("form-attachments").remove(paths);
       } catch {

@@ -1,6 +1,8 @@
 "use client";
+import { useUser } from "@/app/(dashboard)/user-context";
+import { canAction } from "@/lib/types";
 import { useLocale } from "@/components/i18n/locale-provider";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -71,12 +73,18 @@ const tabs = [
 ] as const;
 export function FormsAdmin() {
   const { t, locale } = useLocale();
+  const { user } = useUser();
+  const allowed = Boolean(user && canAction(user, "manage_users"));
   const confirm = useConfirm();
+  const mutating = useRef(false);
+  const leaving = useRef(false);
+  const pendingRequest = useRef<{ key: string; payload: string } | null>(null);
   const [list, setList] = useState<RecordForm[]>([]),
     [ready, setReady] = useState(false),
     [selected, setSelected] = useState<RecordForm | null>(null),
     [draft, setDraft] = useState<Template | null>(null),
     [busy, setBusy] = useState(false),
+    [detailLoading, setDetailLoading] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
     [active, setActive] = useState(0),
@@ -92,11 +100,54 @@ export function FormsAdmin() {
   useEffect(() => {
     if (!dirty) return;
     const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
+      if (!leaving.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    const navigate = async (event: MouseEvent) => {
+      const link =
+        event.target instanceof Element
+          ? (event.target.closest("a[href]") as HTMLAnchorElement | null)
+          : null;
+      if (
+        !link ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey ||
+        link.target === "_blank" ||
+        link.hasAttribute("download")
+      )
+        return;
+      const url = new URL(link.href);
+      if (
+        url.origin === location.origin &&
+        url.pathname === location.pathname &&
+        url.search === location.search
+      )
+        return;
+      event.preventDefault();
+      event.stopPropagation();
+      const discard = await confirm({
+        title: t("Discard your changes?"),
+        description: t("You have unsaved changes."),
+        confirmLabel: t("Discard changes"),
+      });
+      if (discard) {
+        leaving.current = true;
+        location.assign(url.href);
+      }
     };
     window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [dirty]);
+    document.addEventListener("click", navigate, true);
+    return () => {
+      window.removeEventListener("beforeunload", handler);
+      document.removeEventListener("click", navigate, true);
+    };
+  }, [dirty, confirm, t]);
+
   async function load(id?: string) {
     const r = await fetch("/api/forms" + (id ? "?id=" + id : ""), {
         cache: "no-store",
@@ -109,6 +160,7 @@ export function FormsAdmin() {
     } else setList(v);
   }
   useEffect(() => {
+    if (!allowed) return;
     const abort = new AbortController();
     fetch("/api/forms", { cache: "no-store", signal: abort.signal })
       .then(async (r) => {
@@ -123,9 +175,9 @@ export function FormsAdmin() {
         if (!abort.signal.aborted) setReady(true);
       });
     return () => abort.abort();
-  }, []);
+  }, [allowed]);
   async function act(action: string, template?: Template) {
-    if (busy) return;
+    if (mutating.current) return;
     if (template) {
       const checked = templateSchema.safeParse(template);
       if (!checked.success) {
@@ -146,23 +198,37 @@ export function FormsAdmin() {
       }
       template = checked.data;
     }
+    mutating.current = true;
+    let saved = false;
     setBusy(true);
     setError("");
     setNotice("");
     setInvalidFields([]);
     try {
+      const payload = {
+        action,
+        id: selected?.id,
+        version: selected?.version,
+        template,
+      };
+      const serialized = JSON.stringify(payload);
+      if (pendingRequest.current?.payload !== serialized)
+        pendingRequest.current = {
+          key: crypto.randomUUID(),
+          payload: serialized,
+        };
       const r = await fetch("/api/forms", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            action,
-            id: selected?.id,
-            version: selected?.version,
-            template,
+            ...payload,
+            request_key: pendingRequest.current.key,
           }),
         }),
         v = await r.json();
       if (!r.ok) throw Error(v.message);
+      saved = true;
+      pendingRequest.current = null;
       if (action === "delete") {
         await load();
         setSelected(null);
@@ -187,8 +253,15 @@ export function FormsAdmin() {
             : "Changes saved.",
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save. Retry.");
+      setError(
+        saved
+          ? "Changes were saved, but the view could not refresh. Reload this page."
+          : e instanceof Error
+            ? e.message
+            : "Could not save. Retry.",
+      );
     } finally {
+      mutating.current = false;
       setBusy(false);
     }
   }
@@ -238,6 +311,7 @@ export function FormsAdmin() {
   }
   async function choose(id: string) {
     if (dirty || busy || !id) return;
+    setDetailLoading(true);
     setBusy(true);
     setError("");
     setNotice("");
@@ -248,6 +322,7 @@ export function FormsAdmin() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load the form.");
     } finally {
+      setDetailLoading(false);
       setBusy(false);
     }
   }
@@ -255,6 +330,12 @@ export function FormsAdmin() {
   const filtered = list.filter((r) =>
     r.draft.title.toLowerCase().includes(search.toLowerCase()),
   );
+  if (!allowed)
+    return (
+      <p className="text-sm text-muted-foreground">
+        {t("Administrator access is required to manage forms.")}
+      </p>
+    );
   return (
     <div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -396,7 +477,21 @@ export function FormsAdmin() {
               </p>
             )}
           </aside>
-          {draft && selected ? (
+          {detailLoading ? (
+            <section
+              role="status"
+              aria-label={t("Loading form…")}
+              className="min-h-80 space-y-5 rounded-xl border bg-card p-5"
+            >
+              <span className="sr-only">{t("Loading form…")}</span>
+              {[1, 2, 3].map((n) => (
+                <div
+                  key={n}
+                  className="h-20 animate-pulse rounded-lg bg-muted/20 motion-reduce:animate-none"
+                />
+              ))}
+            </section>
+          ) : draft && selected ? (
             <section className="min-w-0 overflow-hidden rounded-xl border bg-card">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-4 sm:px-5">
                 <div className="min-w-0">

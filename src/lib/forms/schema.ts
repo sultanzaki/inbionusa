@@ -38,6 +38,12 @@ export const templateSchema = z
       c.addIssue({ code: "custom", message: "Field IDs must be unique." });
     if (v.fields.filter((f) => f.type === "file").length > 3)
       c.addIssue({ code: "custom", message: "Maximum three upload fields." });
+    if (JSON.stringify(v).length > 60000)
+      c.addIssue({
+        code: "custom",
+        message:
+          "The form is too large. Reduce the number or length of options.",
+      });
     for (const f of v.fields) {
       if (f.type === "reference" && !f.source)
         c.addIssue({
@@ -45,8 +51,18 @@ export const templateSchema = z
           path: ["fields", v.fields.indexOf(f), "source"],
           message: "Select an ERP data source for " + f.label,
         });
+      if (f.type === "select" && new Set(f.options).size !== f.options.length)
+        c.addIssue({
+          code: "custom",
+          path: ["fields", v.fields.indexOf(f), "options"],
+          message: "Use distinct options for " + f.label,
+        });
       if (f.type === "select" && f.options.length === 0)
-        c.addIssue({ code: "custom", message: "Add choices for " + f.label });
+        c.addIssue({
+          code: "custom",
+          path: ["fields", v.fields.indexOf(f), "options"],
+          message: "Add choices for " + f.label,
+        });
     }
   });
 export type Template = z.infer<typeof templateSchema>;

@@ -50,6 +50,19 @@ export function PublicFormPage({
     [done, setDone] = useState(false),
     [cleaningResult, setCleaningResult] = useState("");
   const locked = !hydrated || busy;
+  const hasUnsavedAnswers =
+    !done &&
+    (Object.values(values).some((v) => v.trim()) ||
+      Object.keys(files).length > 0);
+  useEffect(() => {
+    if (!hasUnsavedAnswers) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [hasUnsavedAnswers]);
   const equipmentById = useMemo(
     () => new Map(form?.equipment.map((e) => [e.id, e]) || []),
     [form],
@@ -62,6 +75,7 @@ export function PublicFormPage({
     update: (previous: Record<string, string>) => Record<string, string>,
   ) {
     const next = update(values);
+    setMessage("");
     updateValues(next);
     if (form) {
       const checked = validateAnswers(
@@ -416,6 +430,7 @@ export function PublicFormPage({
                                     }
                                     onChange={(e) => {
                                       const file = e.target.files?.[0];
+                                      setMessage("");
                                       setFiles((v) => {
                                         const next = { ...v };
                                         if (file) next[f.id] = file;
@@ -458,8 +473,14 @@ export function PublicFormPage({
                                       }
                                       className="rounded p-2 text-muted-foreground hover:bg-muted/30"
                                       onClick={() => {
+                                        setMessage("");
                                         setFiles((v) => {
                                           const next = { ...v };
+                                          delete next[f.id];
+                                          return next;
+                                        });
+                                        setErrors((previous) => {
+                                          const next = { ...previous };
                                           delete next[f.id];
                                           return next;
                                         });

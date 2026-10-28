@@ -11,10 +11,12 @@ before(async () => {
   await db.connect();
   const dir = new URL("../src/lib/db/migrations/", import.meta.url);
   for (const file of (await readdir(dir))
-    .filter((f) => /^0(3[0-7])_.*\.sql$/.test(f))
+    .filter((f) => /^0(3[0-8])_.*\.sql$/.test(f))
     .sort())
     await db.query(await readFile(new URL(file, dir), "utf8"));
-  await db.query(await readFile(new URL("037_sites_rooms.sql", dir), "utf8"));
+  await db.query(
+    await readFile(new URL("038_forms_rooms_integrity.sql", dir), "utf8"),
+  );
 });
 after(() => db.end());
 beforeEach(() => db.query("begin"));
@@ -161,7 +163,7 @@ test("site and room renames retain equipment, stock foreign keys and reject stal
       room_name: "Old",
       room_kind: "warehouse",
     }),
-    /berubah/,
+    /changed/,
   );
   await db.query("rollback to savepoint stale_room");
 });
@@ -229,7 +231,7 @@ test("busy rooms and their parent sites cannot be deactivated; nonadmins cannot 
       room_name: "Lab",
       active: false,
     }),
-    /kegiatan aktif/,
+    /open operations/,
   );
   await db.query("rollback to savepoint busy_room");
   await db.query("savepoint busy_site");
@@ -240,7 +242,7 @@ test("busy rooms and their parent sites cannot be deactivated; nonadmins cannot 
       name: "Closed",
       active: false,
     }),
-    /kegiatan aktif/,
+    /open operations/,
   );
   await db.query("rollback to savepoint busy_site");
   const viewer = await fixture("viewer");
@@ -294,4 +296,178 @@ test("room references expose paths without internal codes and site access is ret
     ).rows[0].a,
     true,
   );
+});
+
+test("completed production awaiting closure keeps its room and site active", async () => {
+  const f = await fixture(),
+    { site, room } = await create(f.token);
+  const unit = (
+    await db.query(
+      "insert into erp_units(code,name) values($1,'Audit unit') returning id",
+      [randomUUID().slice(0, 8)],
+    )
+  ).rows[0].id;
+  const product = (
+    await db.query(
+      "insert into master_produk(kode_produk,nama_produk,kategori,satuan,tipe_kemasan) values($1,'Audit product','Chemical','kg','Bag') returning id",
+      [randomUUID()],
+    )
+  ).rows[0].id;
+  const formula = (
+    await db.query(
+      "insert into erp_formulas(root_id,number,title,revision,product_id,output_quantity,unit_id,lines,effective_date,created_by) values(gen_random_uuid(),$1,'Audit formula',1,$2,1,$3,'[{}]',erp_today(),$4) returning id",
+      [randomUUID(), product, unit, f.actor],
+    )
+  ).rows[0].id;
+  const order = (
+    await db.query(
+      "insert into erp_manufacturing_orders(number,formula_id,formula_snapshot,product_id,target_quantity,unit_id,planned_date,location_id,created_by,state) values($1,$2,'{}',$3,1,$4,erp_today(),$5,$6,'completed') returning id",
+      [randomUUID(), formula, product, unit, room.id, f.actor],
+    )
+  ).rows[0].id;
+  for (const [table, id] of [
+    ["erp_locations", room.id],
+    ["erp_warehouses", site.id],
+  ]) {
+    await db.query("savepoint legacy_write");
+    await assert.rejects(
+      db.query(`update ${table} set active=false where id=$1`, [id]),
+      /open operations/,
+    );
+    await db.query("rollback to savepoint legacy_write");
+  }
+  for (const [action, p] of [
+    [
+      "save_warehouse_location",
+      {
+        id: room.id,
+        version: 1,
+        warehouse_id: site.id,
+        room_name: "Lab",
+        active: false,
+      },
+    ],
+    [
+      "save_warehouse",
+      { id: site.id, version: 1, name: "Closed", active: false },
+    ],
+  ] as const) {
+    await db.query("savepoint unfinished");
+    await assert.rejects(save(f.token, action, p), /open operations/);
+    await db.query("rollback to savepoint unfinished");
+  }
+  await db.query(
+    "update erp_manufacturing_orders set state='closed' where id=$1",
+    [order],
+  );
+  await save(f.token, "save_warehouse_location", {
+    id: room.id,
+    version: 1,
+    warehouse_id: site.id,
+    room_name: "Lab",
+    active: false,
+  });
+});
+
+test("equipment references reject inactive rooms and sites at lookup and submission", async () => {
+  const f = await fixture(),
+    { site, room } = await create(f.token);
+  await db.query(
+    "update erp_modules set state='active' where key='production'",
+  );
+  const asset = (
+    await db.query(
+      "insert into erp_equipment(code,name,location_id) values($1,'Audit mixer',$2) returning id",
+      [randomUUID(), room.id],
+    )
+  ).rows[0].id;
+  const read = async () =>
+    (
+      await db.query(
+        "select erp_form_reference_rows($1,'equipment','',0,$2) r",
+        [f.actor, asset],
+      )
+    ).rows[0].r.items;
+  assert.equal((await read()).length, 1);
+  const form = (
+    await db.query("select erp_forms_admin($1,'create',null,$2) r", [
+      f.token,
+      {
+        title: "Equipment reference",
+        description: "",
+        kind: "general",
+        fields: [
+          {
+            id: "asset",
+            label: "Equipment",
+            type: "reference",
+            source: "equipment",
+            required: true,
+            options: [],
+          },
+        ],
+      },
+    ])
+  ).rows[0].r;
+  await db.query("select erp_forms_admin($1,'publish',$2,null,1)", [
+    f.token,
+    form.id,
+  ]);
+  const link = (
+    await db.query("select public_token from erp_forms where id=$1", [form.id])
+  ).rows[0].public_token;
+  await save(f.token, "save_warehouse_location", {
+    id: room.id,
+    version: 1,
+    warehouse_id: site.id,
+    room_name: "Lab",
+    active: false,
+  });
+  assert.deepEqual(await read(), []);
+  await db.query("savepoint unavailable_asset");
+  await assert.rejects(
+    db.query("select erp_form_submit($1,1,$2,'audit',$3,'[]')", [
+      link,
+      randomUUID(),
+      { asset },
+    ]),
+    /no longer available/,
+  );
+  await db.query("rollback to savepoint unavailable_asset");
+
+  await save(f.token, "save_warehouse_location", {
+    id: room.id,
+    version: 2,
+    warehouse_id: site.id,
+    room_name: "Lab",
+    active: true,
+  });
+  await save(f.token, "save_warehouse", {
+    id: site.id,
+    version: 1,
+    name: "Inactive site",
+    active: false,
+  });
+  assert.deepEqual(await read(), []);
+});
+
+test("packed pallets prevent deactivation even with zero aggregate stock", async () => {
+  const f = await fixture(),
+    { site, room } = await create(f.token);
+  await db.query(
+    "insert into erp_pallets(number,location_id,state,created_by) values($1,$2,'packed',$3)",
+    [randomUUID(), room.id, f.actor],
+  );
+  await db.query("savepoint pallet");
+  await assert.rejects(
+    save(f.token, "save_warehouse_location", {
+      id: room.id,
+      version: 1,
+      warehouse_id: site.id,
+      room_name: "Lab",
+      active: false,
+    }),
+    /open operations/,
+  );
+  await db.query("rollback to savepoint pallet");
 });

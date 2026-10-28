@@ -18,6 +18,7 @@ before(async () => {
     "035_forms_delete",
     "036_forms_performance",
     "037_sites_rooms",
+    "038_forms_rooms_integrity",
   ]) {
     const sql = await readFile(
       new URL("../src/lib/db/migrations/" + name + ".sql", import.meta.url),
@@ -30,6 +31,7 @@ before(async () => {
         "034_general_forms_references",
         "035_forms_delete",
         "036_forms_performance",
+        "038_forms_rooms_integrity",
       ].includes(name)
     )
       await db.query(sql);
@@ -562,4 +564,105 @@ test("lean form guards never rebuild full public choices and retain private ACLs
     /no_data_found/,
   );
   await db.query("rollback to savepoint lean_paused");
+});
+
+test("idempotent submit identifies whether a retry owns the committed attachment paths", async () => {
+  const f = await referenceFixture(),
+    request = randomUUID();
+  const files = [{ name: "original.pdf", path: "private/original.pdf" }];
+  const submit = async (attachments: unknown) =>
+    (
+      await db.query("select erp_form_submit($1,1,$2,$3,$4,$5) r", [
+        f.form.public_token,
+        request,
+        "same-payload-hash",
+        { record: f.product },
+        JSON.stringify(attachments),
+      ])
+    ).rows[0].r;
+  assert.equal((await submit(files)).duplicate, false);
+  assert.equal((await submit(files)).attachments_committed, true);
+  assert.equal(
+    (await submit([{ name: "original.pdf", path: "private/losing-retry.pdf" }]))
+      .attachments_committed,
+    false,
+  );
+  const stored = (
+    await db.query("select files from erp_form_submissions where form_id=$1", [
+      f.form.id,
+    ])
+  ).rows[0].files;
+  assert.deepEqual(stored, files);
+});
+
+test("administration retries create and save exactly once and retain audit attribution", async () => {
+  const f = await fixture(),
+    request = randomUUID();
+  const template = {
+    title: "Replay checklist",
+    description: "",
+    kind: "general",
+    fields: [
+      { id: "name", label: "Name", type: "text", required: true, options: [] },
+    ],
+  };
+  const command = async (
+    action: string,
+    key: string,
+    id: string | null,
+    t: unknown,
+    version: number | null,
+  ) =>
+    (
+      await db.query("select erp_form_command($1,$2,$3,$4,$5,$6) r", [
+        f.token,
+        action,
+        key,
+        id,
+        t,
+        version,
+      ])
+    ).rows[0].r;
+  const created = await command("create", request, null, template, null);
+  assert.deepEqual(
+    await command("create", request, null, template, null),
+    created,
+  );
+  assert.equal(
+    (
+      await db.query(
+        "select count(*)::int n from erp_forms where owner_id=(select user_id from sessions where token=$1) and draft->>'title'='Replay checklist'",
+        [f.token],
+      )
+    ).rows[0].n,
+    1,
+  );
+  assert.equal(
+    (
+      await db.query(
+        "select count(*)::int n from erp_work_events where entity='forms' and record_id=$1 and action='create'",
+        [created.id],
+      )
+    ).rows[0].n,
+    1,
+  );
+  const update = randomUUID(),
+    updated = { ...template, title: "Updated" };
+  await command("save", update, created.id, updated, 1);
+  await command("save", update, created.id, updated, 1);
+  assert.equal((await admin(f.token, "detail", created.id)).version, 2);
+  await db.query("savepoint reused_request");
+  await assert.rejects(
+    command("create", request, null, updated, null),
+    /already been used/,
+  );
+  await db.query("rollback to savepoint reused_request");
+  assert.equal(
+    (
+      await db.query(
+        "select has_function_privilege('anon','erp_form_command(text,text,uuid,uuid,jsonb,integer)','execute') a",
+      )
+    ).rows[0].a,
+    false,
+  );
 });

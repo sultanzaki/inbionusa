@@ -8,7 +8,7 @@ const name = z
   .trim()
   .min(1)
   .max(100)
-  .refine((v) => !v.includes("/"), "Gunakan nama tanpa tanda /.");
+  .refine((v) => !v.includes("/"), "Use a name without /.");
 const save = z.object({
   action: z.enum(["save_warehouse", "save_warehouse_location"]),
   request_key: z.uuid(),
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
       site_id: p.get("site") || "",
     });
   if (!query.success)
-    return privateJson({ message: "Periksa pencarian dan halaman." }, 400);
+    return privateJson({ message: "Review the search and page number." }, 400);
   const { data, error } = await erpRpc("erp_places_admin", {
     p_action: "list",
     p: query.data,

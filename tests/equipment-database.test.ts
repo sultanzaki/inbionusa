@@ -36,6 +36,21 @@ before(async () => {
   );
   await db.query(latest);
   await db.query(latest);
+  // Exercise the current schema too: legacy Google imports must coexist with native forms and sites.
+  for (const name of [
+    "033_native_forms",
+    "034_general_forms_references",
+    "035_forms_delete",
+    "036_forms_performance",
+    "037_sites_rooms",
+    "038_forms_rooms_integrity",
+  ])
+    await db.query(
+      await readFile(
+        new URL("../src/lib/db/migrations/" + name + ".sql", import.meta.url),
+        "utf8",
+      ),
+    );
 });
 after(() => db.end());
 beforeEach(() => db.query("begin"));
